@@ -66,7 +66,7 @@ namespace TeampptAddin
                 _taskPane = CTPFactoryInst.CreateCTP(
                     "TeampptAddin.TaskPaneHost",
                     "TEAMPPT");
-                _taskPane.Width = 320;
+                _taskPane.Width = 660;
                 _taskPane.DockPosition = MsoCTPDockPosition.msoCTPDockPositionRight;
                 _taskPane.Visible = true;
             }

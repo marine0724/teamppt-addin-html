@@ -16,6 +16,7 @@ namespace TeampptAddin
     {
         public event Action<AssetCard> CardClickInsert;
         public event Action<AssetCard> CardDragStart;
+        public event Action<StylePalette, StyleFont> StyleApplyRequested;
 
         private List<HeaderAsset> _allAssets = new List<HeaderAsset>();
         private List<AssetCard> _assetCards = new List<AssetCard>();
@@ -37,6 +38,12 @@ namespace TeampptAddin
         private Border[] _categoryBtns;
         private readonly string[] _categories = { "전체", "헤더", "섹션", "레이아웃", "마무리" };
         private string _activeCategory = "전체";
+
+        private StylePalette _selectedPalette;
+        private StyleFont _selectedFont;
+        private StackPanel _styleStack;
+        private Border[] _paletteBtns;
+        private Border[] _fontBtns;
 
         private TextBlock _statusText;
 
@@ -792,35 +799,306 @@ namespace TeampptAddin
         }
 
         // ══════════════════════════════════════════════════════════════
-        //  STYLE TAB (Step 7 placeholder)
+        //  STYLE TAB
         // ══════════════════════════════════════════════════════════════
 
         private FrameworkElement BuildStyleTab()
         {
-            var panel = new StackPanel
+            var dock = new DockPanel { LastChildFill = true };
+
+            var applyArea = new Border
             {
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(20)
+                Background = ThemeResources.BgSurface,
+                BorderBrush = ThemeResources.BorderBase,
+                BorderThickness = new Thickness(0, 1, 0, 0),
+                Padding = new Thickness(12)
             };
-            panel.Children.Add(new TextBlock
+            var applyBtn = new Border
             {
-                Text = "컬러 & 폰트",
-                FontSize = 15,
+                Background = ThemeResources.Accent,
+                CornerRadius = new CornerRadius(10),
+                Padding = new Thickness(0, 11, 0, 11),
+                Cursor = Cursors.Hand,
+                Child = new TextBlock
+                {
+                    Text = "현재 슬라이드에 적용",
+                    FontSize = 13,
+                    FontWeight = FontWeights.SemiBold,
+                    FontFamily = ThemeResources.FontBase,
+                    Foreground = Brushes.White,
+                    HorizontalAlignment = HorizontalAlignment.Center
+                }
+            };
+            applyBtn.MouseEnter += (s, e) => applyBtn.Background = new SolidColorBrush(Color.FromRgb(0x3D, 0x49, 0xD4));
+            applyBtn.MouseLeave += (s, e) => applyBtn.Background = ThemeResources.Accent;
+            applyBtn.MouseLeftButtonUp += (s, e) =>
+                StyleApplyRequested?.Invoke(_selectedPalette, _selectedFont);
+            applyArea.Child = applyBtn;
+            DockPanel.SetDock(applyArea, Dock.Bottom);
+            dock.Children.Add(applyArea);
+
+            _styleStack = new StackPanel { Margin = new Thickness(0, 4, 0, 12) };
+            var scroll = new ScrollViewer
+            {
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                Content = _styleStack,
+                Background = ThemeResources.BgBase
+            };
+            dock.Children.Add(scroll);
+
+            return new Border { Background = ThemeResources.BgBase, Child = dock };
+        }
+
+        private void PopulateStylePanel()
+        {
+            if (_styleConfig == null || _styleStack == null) return;
+            _styleStack.Children.Clear();
+
+            var palettes = _styleConfig.Palettes ?? new List<StylePalette>();
+            var fonts    = _styleConfig.Fonts    ?? new List<StyleFont>();
+
+            _selectedPalette = palettes.Count > 0 ? palettes[0] : null;
+            _selectedFont    = fonts.Count    > 0 ? fonts[0]    : null;
+
+            _styleStack.Children.Add(BuildSectionLabel("컬러 팔레트"));
+
+            _paletteBtns = new Border[palettes.Count];
+            for (int i = 0; i < palettes.Count; i++)
+            {
+                var idx  = i;
+                var card = BuildPaletteCard(palettes[i]);
+                card.MouseLeftButtonUp += (s, e) =>
+                {
+                    _selectedPalette = palettes[idx];
+                    RefreshPaletteSelection(idx);
+                };
+                _paletteBtns[i] = card;
+                _styleStack.Children.Add(card);
+            }
+            if (palettes.Count > 0) RefreshPaletteSelection(0);
+
+            _styleStack.Children.Add(BuildSectionLabel("폰트"));
+
+            var fontWrap = new WrapPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(12, 0, 12, 0)
+            };
+            _fontBtns = new Border[fonts.Count];
+            for (int i = 0; i < fonts.Count; i++)
+            {
+                var idx  = i;
+                var chip = BuildFontChip(fonts[i]);
+                chip.MouseLeftButtonUp += (s, e) =>
+                {
+                    _selectedFont = fonts[idx];
+                    RefreshFontSelection(idx);
+                };
+                _fontBtns[i] = chip;
+                fontWrap.Children.Add(chip);
+            }
+            _styleStack.Children.Add(fontWrap);
+            if (fonts.Count > 0) RefreshFontSelection(0);
+        }
+
+        private static TextBlock BuildSectionLabel(string text)
+        {
+            return new TextBlock
+            {
+                Text = text,
+                FontSize = 11,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = ThemeResources.TextSub,
+                FontFamily = ThemeResources.FontBase,
+                Margin = new Thickness(14, 16, 0, 8)
+            };
+        }
+
+        private static Border BuildPaletteCard(StylePalette p)
+        {
+            var colorGrid = new Grid { Height = 44 };
+            colorGrid.ColumnDefinitions.Add(new ColumnDefinition());
+            colorGrid.ColumnDefinitions.Add(new ColumnDefinition());
+            colorGrid.ColumnDefinitions.Add(new ColumnDefinition());
+            colorGrid.ColumnDefinitions.Add(new ColumnDefinition());
+
+            var hexColors = new[] { p.Colors?.Main, p.Colors?.Sub1, p.Colors?.Sub2, p.Colors?.Text };
+            for (int i = 0; i < 4; i++)
+            {
+                var rect = new System.Windows.Shapes.Rectangle
+                {
+                    Fill = BrushFromHex(hexColors[i] ?? "#CCCCCC")
+                };
+                Grid.SetColumn(rect, i);
+                colorGrid.Children.Add(rect);
+            }
+
+            var colorStrip = new Border
+            {
+                CornerRadius = new CornerRadius(10, 10, 0, 0),
+                ClipToBounds = true,
+                Child = colorGrid
+            };
+
+            var nameGrid = new Grid();
+            nameGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            nameGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var nameText = new TextBlock
+            {
+                Text = p.Name,
+                FontSize = 12,
                 FontWeight = FontWeights.SemiBold,
                 Foreground = ThemeResources.TextMain,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 0, 0, 6)
-            });
-            panel.Children.Add(new TextBlock
-            {
-                Text = "스타일 설정 준비 중",
-                FontSize = 12,
-                Foreground = ThemeResources.TextSub,
-                HorizontalAlignment = HorizontalAlignment.Center
-            });
+                FontFamily = ThemeResources.FontBase,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            Grid.SetColumn(nameText, 0);
+            nameGrid.Children.Add(nameText);
 
-            return new Border { Background = ThemeResources.BgBase, Child = panel };
+            var check = new Border
+            {
+                Background = ThemeResources.Accent,
+                CornerRadius = new CornerRadius(99),
+                Width = 18, Height = 18,
+                Visibility = Visibility.Hidden,
+                VerticalAlignment = VerticalAlignment.Center,
+                Child = new TextBlock
+                {
+                    Text = "✓",
+                    FontSize = 10,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = Brushes.White,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                }
+            };
+            check.Tag = "check";
+            Grid.SetColumn(check, 1);
+            nameGrid.Children.Add(check);
+
+            var moodText = new TextBlock
+            {
+                Text = p.Mood != null ? string.Join(" · ", p.Mood) : "",
+                FontSize = 10,
+                Foreground = ThemeResources.TextSub,
+                FontFamily = ThemeResources.FontBase,
+                Margin = new Thickness(0, 3, 0, 0)
+            };
+
+            var infoStack = new StackPanel();
+            infoStack.Children.Add(nameGrid);
+            infoStack.Children.Add(moodText);
+
+            var infoArea = new Border
+            {
+                Padding = new Thickness(10, 8, 10, 10),
+                Background = ThemeResources.BgCard,
+                CornerRadius = new CornerRadius(0, 0, 10, 10),
+                Child = infoStack
+            };
+
+            var cardStack = new StackPanel();
+            cardStack.Children.Add(colorStrip);
+            cardStack.Children.Add(infoArea);
+
+            var card = new Border
+            {
+                CornerRadius = new CornerRadius(12),
+                BorderBrush = ThemeResources.BorderCard,
+                BorderThickness = new Thickness(1.5),
+                Margin = new Thickness(12, 4, 12, 4),
+                Cursor = Cursors.Hand,
+                ClipToBounds = true,
+                Child = cardStack
+            };
+            card.Tag = check;
+
+            card.MouseEnter += (s, e) =>
+            {
+                if (card.BorderBrush != ThemeResources.Accent)
+                    card.BorderBrush = ThemeResources.BorderCardHover;
+            };
+            card.MouseLeave += (s, e) =>
+            {
+                if (card.BorderBrush != ThemeResources.Accent)
+                    card.BorderBrush = ThemeResources.BorderCard;
+            };
+
+            return card;
+        }
+
+        private static Border BuildFontChip(StyleFont f)
+        {
+            var chip = new Border
+            {
+                CornerRadius = new CornerRadius(99),
+                BorderBrush = ThemeResources.BorderCard,
+                BorderThickness = new Thickness(1.5),
+                Padding = new Thickness(14, 7, 14, 7),
+                Margin = new Thickness(3, 3, 3, 3),
+                Cursor = Cursors.Hand,
+                Background = Brushes.Transparent,
+                Child = new TextBlock
+                {
+                    Text = f.Name,
+                    FontSize = 12,
+                    FontFamily = ThemeResources.FontBase,
+                    Foreground = ThemeResources.TextSub
+                }
+            };
+
+            chip.MouseEnter += (s, e) =>
+            {
+                if (chip.Background != ThemeResources.BgCategoryActive)
+                    chip.Background = ThemeResources.BgChip;
+            };
+            chip.MouseLeave += (s, e) =>
+            {
+                if (chip.Background != ThemeResources.BgCategoryActive)
+                    chip.Background = Brushes.Transparent;
+            };
+
+            return chip;
+        }
+
+        private void RefreshPaletteSelection(int selectedIdx)
+        {
+            for (int i = 0; i < _paletteBtns.Length; i++)
+            {
+                var btn   = _paletteBtns[i];
+                var check = (Border)btn.Tag;
+                bool active = i == selectedIdx;
+                btn.BorderBrush = active ? ThemeResources.Accent : ThemeResources.BorderCard;
+                if (check != null)
+                    check.Visibility = active ? Visibility.Visible : Visibility.Hidden;
+            }
+        }
+
+        private void RefreshFontSelection(int selectedIdx)
+        {
+            for (int i = 0; i < _fontBtns.Length; i++)
+            {
+                var chip = _fontBtns[i];
+                var lbl  = (TextBlock)chip.Child;
+                bool active = i == selectedIdx;
+                chip.Background   = active ? ThemeResources.BgCategoryActive : Brushes.Transparent;
+                chip.BorderBrush  = active ? ThemeResources.AccentBorder : ThemeResources.BorderCard;
+                lbl.Foreground    = active ? ThemeResources.TextAccent : ThemeResources.TextSub;
+                lbl.FontWeight    = active ? FontWeights.SemiBold : FontWeights.Normal;
+            }
+        }
+
+        private static SolidColorBrush BrushFromHex(string hex)
+        {
+            hex = hex.TrimStart('#');
+            byte r = Convert.ToByte(hex.Substring(0, 2), 16);
+            byte g = Convert.ToByte(hex.Substring(2, 2), 16);
+            byte b = Convert.ToByte(hex.Substring(4, 2), 16);
+            var brush = new SolidColorBrush(Color.FromRgb(r, g, b));
+            brush.Freeze();
+            return brush;
         }
 
         // ══════════════════════════════════════════════════════════════
@@ -836,6 +1114,7 @@ namespace TeampptAddin
         {
             _aiService = aiService;
             _styleConfig = styles;
+            PopulateStylePanel();
         }
 
         public void AddAssetCard(AssetCard card, HeaderAsset asset)

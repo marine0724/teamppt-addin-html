@@ -2,10 +2,13 @@ using System;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using DrawingImage = System.Drawing.Image;
 
 namespace TeampptAddin
@@ -19,14 +22,42 @@ namespace TeampptAddin
         public string Title { get; }
         public DrawingImage DrawingThumbnail { get; }
 
+        private readonly string _category;
+        private readonly string _useWhen;
+        private readonly BitmapSource _bitmapThumb;
+
         private bool _mousePressed;
         private Point _dragStart;
 
-        public AssetCard(DrawingImage thumb, string title, string pptxPath)
+        private static AssetCard _currentPopupCard;
+        private static DispatcherTimer _closeTimer;
+
+        private Popup _popup;
+        private DispatcherTimer _popupTimer;
+
+        static AssetCard()
+        {
+            _closeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
+            _closeTimer.Tick += (s, e) =>
+            {
+                _closeTimer.Stop();
+                if (_currentPopupCard != null)
+                {
+                    _currentPopupCard.ClosePopupInternal();
+                    _currentPopupCard = null;
+                }
+            };
+        }
+
+        public AssetCard(DrawingImage thumb, string title, string pptxPath,
+            string category = "", string useWhen = "")
         {
             PptxPath = pptxPath;
             Title = title;
             DrawingThumbnail = thumb;
+            _category = category;
+            _useWhen = useWhen;
+            _bitmapThumb = thumb != null ? ConvertToBitmapSource(thumb) : null;
 
             CornerRadius = ThemeResources.RadiusCard;
             Background = ThemeResources.BgCard;
@@ -44,13 +75,12 @@ namespace TeampptAddin
             grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(100) });
             grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(36) });
 
-            // Thumbnail area
             var thumbBorder = new Border { Background = ThemeResources.BgThumb, ClipToBounds = true };
-            if (thumb != null)
+            if (_bitmapThumb != null)
             {
                 thumbBorder.Child = new Image
                 {
-                    Source = ConvertToBitmapSource(thumb),
+                    Source = _bitmapThumb,
                     Stretch = Stretch.Uniform,
                     Margin = new Thickness(8),
                     HorizontalAlignment = HorizontalAlignment.Center,
@@ -72,7 +102,6 @@ namespace TeampptAddin
             Grid.SetRow(thumbBorder, 0);
             grid.Children.Add(thumbBorder);
 
-            // Separator
             var sep = new Border
             {
                 Height = 1,
@@ -82,7 +111,6 @@ namespace TeampptAddin
             Grid.SetRow(sep, 0);
             grid.Children.Add(sep);
 
-            // Label row
             var labelGrid = new Grid();
             labelGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             labelGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -125,11 +153,14 @@ namespace TeampptAddin
 
             Child = grid;
 
-            MouseEnter          += OnMouseEnter;
-            MouseLeave          += OnMouseLeave;
+            _popupTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
+            _popupTimer.Tick += OnPopupTimerTick;
+
+            MouseEnter += OnMouseEnter;
+            MouseLeave += OnMouseLeave;
             MouseLeftButtonDown += OnMouseDown;
-            MouseMove           += OnMouseMove;
-            MouseLeftButtonUp   += OnMouseUp;
+            MouseMove += OnMouseMove;
+            MouseLeftButtonUp += OnMouseUp;
         }
 
         private void OnMouseEnter(object sender, MouseEventArgs e)
@@ -137,6 +168,21 @@ namespace TeampptAddin
             Background = ThemeResources.BgCardHover;
             BorderBrush = ThemeResources.BorderCardHover;
             AnimateScale(1.02);
+
+            _closeTimer.Stop();
+
+            if (_currentPopupCard != null && _currentPopupCard != this)
+            {
+                _currentPopupCard.ClosePopupInternal();
+                _currentPopupCard = null;
+            }
+
+            if (_currentPopupCard == this) return;
+
+            if (_closeTimer.Tag != null)
+                ShowPopup();
+            else
+                _popupTimer.Start();
         }
 
         private void OnMouseLeave(object sender, MouseEventArgs e)
@@ -144,12 +190,17 @@ namespace TeampptAddin
             Background = ThemeResources.BgCard;
             BorderBrush = ThemeResources.BorderCard;
             AnimateScale(1.0);
+            _popupTimer.Stop();
+
+            if (_popup != null)
+                _closeTimer.Start();
         }
 
         private void OnMouseDown(object sender, MouseButtonEventArgs e)
         {
             _mousePressed = true;
             _dragStart = e.GetPosition(this);
+            ClosePopup();
         }
 
         private void OnMouseMove(object sender, MouseEventArgs e)
@@ -170,6 +221,219 @@ namespace TeampptAddin
             _mousePressed = false;
             ClickInsertRequested?.Invoke(this);
         }
+
+        // ── Popup ────────────────────────────────────────────────────
+
+        private void OnPopupTimerTick(object sender, EventArgs e)
+        {
+            _popupTimer.Stop();
+            ShowPopup();
+        }
+
+        private void ShowPopup()
+        {
+            if (_popup != null) return;
+
+            var content = BuildPopupContent();
+            content.Opacity = 0;
+            content.RenderTransform = new TranslateTransform(6, 0);
+
+            _popup = new Popup
+            {
+                Child = content,
+                PlacementTarget = this,
+                Placement = PlacementMode.Left,
+                AllowsTransparency = true,
+                StaysOpen = true,
+                IsHitTestVisible = false,
+                IsOpen = true
+            };
+
+            _currentPopupCard = this;
+            _closeTimer.Tag = this;
+
+            var fadeIn = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(150));
+            var slideIn = new DoubleAnimation(6, 0, TimeSpan.FromMilliseconds(150));
+            content.BeginAnimation(OpacityProperty, fadeIn);
+            ((TranslateTransform)content.RenderTransform).BeginAnimation(TranslateTransform.XProperty, slideIn);
+        }
+
+        private void ClosePopupInternal()
+        {
+            _popupTimer.Stop();
+            if (_popup != null)
+            {
+                _popup.IsOpen = false;
+                _popup = null;
+            }
+        }
+
+        private void ClosePopup()
+        {
+            ClosePopupInternal();
+            _currentPopupCard = null;
+            _closeTimer.Tag = null;
+            _closeTimer.Stop();
+        }
+
+        private Border BuildPopupContent()
+        {
+            var outer = new Border
+            {
+                Width = 320,
+                CornerRadius = new CornerRadius(16),
+                Background = ThemeResources.BgBase,
+                BorderBrush = ThemeResources.BorderCard,
+                BorderThickness = new Thickness(1),
+                Margin = new Thickness(0, 0, 8, 0),
+                Effect = new DropShadowEffect
+                {
+                    Color = Color.FromRgb(0x19, 0x1F, 0x28),
+                    BlurRadius = 24,
+                    ShadowDepth = 4,
+                    Opacity = 0.10,
+                    Direction = 270
+                }
+            };
+
+            var stack = new StackPanel();
+
+            // ① Thumbnail
+            var thumbArea = new Border
+            {
+                Height = 180,
+                ClipToBounds = true,
+                CornerRadius = new CornerRadius(16, 16, 0, 0),
+                Background = ThemeResources.BgThumb
+            };
+            if (_bitmapThumb != null)
+            {
+                thumbArea.Child = new Image
+                {
+                    Source = _bitmapThumb,
+                    Stretch = Stretch.Uniform
+                };
+            }
+            else
+            {
+                thumbArea.Child = new TextBlock
+                {
+                    Text = Title,
+                    Foreground = ThemeResources.TextSub,
+                    FontSize = 13,
+                    FontWeight = FontWeights.SemiBold,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+            }
+            stack.Children.Add(thumbArea);
+
+            // ② Separator
+            stack.Children.Add(new Border { Height = 1, Background = ThemeResources.BorderBase });
+
+            // ③ Meta (name + category badge)
+            var metaGrid = new Grid();
+            metaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            metaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var nameText = new TextBlock
+            {
+                Text = Title,
+                FontSize = 13,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = ThemeResources.TextMain,
+                FontFamily = ThemeResources.FontBase,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            Grid.SetColumn(nameText, 0);
+            metaGrid.Children.Add(nameText);
+
+            if (!string.IsNullOrEmpty(_category))
+            {
+                var catBadge = new Border
+                {
+                    Background = ThemeResources.BgBadge,
+                    CornerRadius = new CornerRadius(6),
+                    Padding = new Thickness(6, 2, 6, 2),
+                    Margin = new Thickness(6, 0, 0, 0),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Child = new TextBlock
+                    {
+                        Text = _category,
+                        FontSize = 10,
+                        FontWeight = FontWeights.SemiBold,
+                        Foreground = ThemeResources.TextAccent,
+                        FontFamily = ThemeResources.FontBase
+                    }
+                };
+                Grid.SetColumn(catBadge, 1);
+                metaGrid.Children.Add(catBadge);
+            }
+
+            stack.Children.Add(new Border
+            {
+                Padding = new Thickness(12, 10, 12, 8),
+                Child = metaGrid
+            });
+
+            // ④ UseWhen
+            if (!string.IsNullOrEmpty(_useWhen))
+            {
+                stack.Children.Add(new Border
+                {
+                    Padding = new Thickness(12, 0, 12, 10),
+                    Child = new TextBlock
+                    {
+                        Text = _useWhen,
+                        FontSize = 11,
+                        Foreground = ThemeResources.TextSub,
+                        FontFamily = ThemeResources.FontBase,
+                        TextWrapping = TextWrapping.Wrap,
+                        LineHeight = 16
+                    }
+                });
+            }
+
+            // ⑤ Hint
+            var hintPanel = new StackPanel { Orientation = Orientation.Horizontal };
+            hintPanel.Children.Add(new TextBlock
+            {
+                Text = "클릭 삽입",
+                FontSize = 10,
+                Foreground = ThemeResources.TextSub,
+                FontFamily = ThemeResources.FontBase
+            });
+            hintPanel.Children.Add(new TextBlock
+            {
+                Text = "  ·  ",
+                FontSize = 10,
+                Foreground = ThemeResources.TextDim,
+                FontFamily = ThemeResources.FontBase
+            });
+            hintPanel.Children.Add(new TextBlock
+            {
+                Text = "드래그로 이동",
+                FontSize = 10,
+                Foreground = ThemeResources.TextSub,
+                FontFamily = ThemeResources.FontBase
+            });
+
+            stack.Children.Add(new Border
+            {
+                Background = ThemeResources.BgSurface,
+                CornerRadius = new CornerRadius(0, 0, 16, 16),
+                Padding = new Thickness(12, 8, 12, 8),
+                BorderBrush = ThemeResources.BorderBase,
+                BorderThickness = new Thickness(0, 1, 0, 0),
+                Child = hintPanel
+            });
+
+            outer.Child = stack;
+            return outer;
+        }
+
+        // ── Animation ────────────────────────────────────────────────
 
         private void AnimateScale(double target)
         {

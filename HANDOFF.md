@@ -1,6 +1,6 @@
 # TEAMPPT Add-in 개발 인계문서
 
-> 최종 업데이트: 2026-06-18  
+> 최종 업데이트: 2026-06-18 (Step 6~7 완료)  
 > 프로젝트 경로: `C:\Projects\teamppt-addin\src\TeampptAddin`
 
 ---
@@ -52,14 +52,25 @@ PowerPoint COM Add-in (.NET Framework 4.8). 오른쪽 Task Pane에 헤더 에셋
 
 | 파일 | 역할 |
 |------|------|
-| `AssetCard.cs` | WPF 카드 컨트롤 (호버 스케일 애니메이션, 클릭/드래그 이벤트) |
-| `AssetPanel.cs` | WPF 메인 패널 (헤더 + ScrollViewer 카드 리스트 + 상태바) |
+| `AssetCard.cs` | WPF 카드 컨트롤 (호버 스케일 애니메이션, 호버 Popup 프리뷰, 클릭/드래그 이벤트) |
+| `AssetPanel.cs` | WPF 메인 패널 (AI/에셋/스타일 3탭, AI 채팅, 카테고리 필터, StylePanel) |
+| `ThemeResources.cs` | Theme.xaml 런타임 미러 (정적 Brush/CornerRadius/FontFamily) |
 
 ### Models/
 
 | 파일 | 역할 |
 |------|------|
-| `HeaderAsset.cs` | 에셋 데이터 모델 (System.Drawing.Image 기반, WPF 의존성 제거) |
+| `HeaderAsset.cs` | 에셋 데이터 모델 (JsonProperty 어트리뷰트, AssetLoader용) |
+| `StylePalette.cs` | 스타일 데이터 모델 (PaletteColors, StylePalette, StyleFont, StyleConfig) |
+| `AiRecommendation.cs` | AI 추천 응답 모델 (AssetSuggestion, StyleSuggestion, AiRecommendation) |
+
+### Services/
+
+| 파일 | 역할 |
+|------|------|
+| `AssetLoader.cs` | assets.json 파싱 + 폴더 스캔 폴백 + 파일 존재 검증 |
+| `StyleLoader.cs` | styles.json 파싱 + 하드코딩 기본값 폴백 |
+| `IAiService.cs` | IAiService 인터페이스 + MockAiService stub |
 
 ### Interop/
 
@@ -180,17 +191,22 @@ Start-Sleep 2
 
 ---
 
-## 6. 현재 동작 상태 (2026-06-18 WPF UI 전환 후)
+## 6. 현재 동작 상태 (2026-06-18 Step 7 완료 후)
 
 | 기능 | 상태 | 비고 |
 |------|------|------|
 | Task Pane 표시 | **동작** | COM 호스팅 → ElementHost → WPF |
-| 카드 리스트 렌더링 | **동작** | WPF AssetPanel + AssetCard, 다크 테마 |
+| 3탭 네비게이션 | **동작** | AI / 에셋 / 스타일 탭 전환 |
+| AI 채팅 | **동작** | MockAiService stub, 채팅 버블, 에셋 추천 카드 |
+| 카드 리스트 렌더링 | **동작** | WPF AssetPanel + AssetCard, 라이트 테마 |
+| 카테고리 필터 | **동작** | 전체/헤더/섹션/레이아웃/마무리 |
+| 호버 Popup 프리뷰 | **동작** | 300ms 딜레이, 카드 간 즉시 전환, fade+slide 애니메이션 |
+| StylePanel | **동작** | 팔레트 카드 5개 + 폰트 칩 4개 + 적용 버튼 |
+| 스타일 적용 | **동작** | 현재 슬라이드 텍스트 shape에 폰트/색상 일괄 적용 (COM API) |
 | 썸네일 (shape-only PNG) | **동작** | Group→Export→Ungroup, 캐시 |
 | 클릭 삽입 | **동작** | InsertToActiveSlide |
 | 드래그앤드롭 | **동작** | TaskPaneHost에서 Win32 Capture 기반 처리 |
 | 고스트 윈도우 | **동작** | UpdateLayeredWindow, WPF/WinForms 공통 |
-| 드롭 위치 삽입 | **동작** | PointsToScreenPixels 역변환, 슬라이드 좌표 클램핑 |
 | 호버 애니메이션 | **동작** | WPF ScaleTransform 1.02x + 배경/테두리 색상 전환 (150ms ease) |
 | WinForms 폴백 | **대기** | WPF 초기화 실패 시 기존 WinForms UI 자동 로드 |
 
@@ -218,11 +234,15 @@ Start-Sleep 2
 - GhostWindow은 Win32 기반으로 WPF/WinForms 공통 재사용
 - **주의**: CoordinateConverter에 폴백 로직 추가 금지 (기존 non-fatal 패턴 유지)
 
-### Phase 4: AI 채팅 기능 추가
-1. Claude API 연동
+### Phase 4 (진행 예정): ThumbnailService 분리
+- Step 8: TaskPaneHost의 썸네일 로딩 로직 → ThumbnailService.cs 분리
+
+### Phase 5 (미래): AI 서비스 연동
+- MockAiService → ClaudeAiService 교체
+- Claude API 연동
 
 ### 잔여 TODO (우선순위 순)
-1. **WPF ScrollBar 다크 테마 스타일링**: 기본 시스템 스크롤바가 밝은색으로 표시됨
+1. **Step 7 스타일 적용 검증**: 사용자가 현재 테스트 중
 2. **WinForms 폴백 코드 정리**: WPF 안정화 확인 후 CardControl/DragHandler 제거 검토
 3. **드롭 위치 정확도 테스트**: 여러 줌 레벨/슬라이드 크기에서 좌표 변환 정확도 검증
 4. **다중 모니터 / DPI 스케일링**: `PointsToScreenPixelsX/Y` 좌표 변환 테스트
