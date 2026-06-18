@@ -1,0 +1,48 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Background -->
+    <SolidColorBrush x:Key="BgBase"             Color="#FFFFFF" />
+    <SolidColorBrush x:Key="BgSurface"          Color="#FAFAFA" />
+    <SolidColorBrush x:Key="BgCard"             Color="#FFFFFF" />
+    <SolidColorBrush x:Key="BgCardHover"        Color="#F8F9FF" />
+    <SolidColorBrush x:Key="BgThumb"            Color="#F8F9FA" />
+    <SolidColorBrush x:Key="BgInput"            Color="#F4F5FE" />
+    <SolidColorBrush x:Key="BgChip"             Color="#F8F9FA" />
+    <SolidColorBrush x:Key="BgCategoryActive"   Color="#EEF0FE" />
+    <SolidColorBrush x:Key="BgBadge"            Color="#EEF0FE" />
+    <SolidColorBrush x:Key="BgAiResponse"       Color="#F8F9FA" />
+    <SolidColorBrush x:Key="BgUserBubble"       Color="#4F5CF5" />
+
+    <!-- Accent -->
+    <SolidColorBrush x:Key="Accent"             Color="#4F5CF5" />
+    <SolidColorBrush x:Key="AccentBorder"       Color="#C7CAFC" />
+    <SolidColorBrush x:Key="AccentBorderFocus"  Color="#4F5CF5" />
+
+    <!-- Text -->
+    <SolidColorBrush x:Key="TextMain"           Color="#191F28" />
+    <SolidColorBrush x:Key="TextSub"            Color="#8B95A1" />
+    <SolidColorBrush x:Key="TextDim"            Color="#B0B8C1" />
+    <SolidColorBrush x:Key="TextAccent"         Color="#4F5CF5" />
+
+    <!-- Border -->
+    <SolidColorBrush x:Key="BorderBase"         Color="#F2F4F6" />
+    <SolidColorBrush x:Key="BorderCard"         Color="#E5E8EB" />
+    <SolidColorBrush x:Key="BorderCardHover"    Color="#4F5CF5" />
+
+    <!-- Status -->
+    <SolidColorBrush x:Key="StatusSuccess"      Color="#10B981" />
+    <SolidColorBrush x:Key="StatusError"        Color="#F87171" />
+
+    <!-- Corner Radius -->
+    <CornerRadius x:Key="RadiusPane">18</CornerRadius>
+    <CornerRadius x:Key="RadiusCard">13</CornerRadius>
+    <CornerRadius x:Key="RadiusInput">14</CornerRadius>
+    <CornerRadius x:Key="RadiusBadge">5</CornerRadius>
+    <CornerRadius x:Key="RadiusChip">99</CornerRadius>
+    <CornerRadius x:Key="RadiusBubble">14</CornerRadius>
+
+    <!-- Font -->
+    <FontFamily x:Key="FontBase">Pretendard, Segoe UI, sans-serif</FontFamily>
+
+</ResourceDictionary>

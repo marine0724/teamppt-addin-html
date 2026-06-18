@@ -1,18 +1,26 @@
-using System.Drawing;
+using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace TeampptAddin
 {
-    /// <summary>
-    /// 헤더 에셋 데이터 모델.
-    /// Assets 폴더의 header_N.pptx 파일 하나를 나타냄.
-    /// System.Drawing.Image 기반 (WPF BitmapImage 의존성 없음).
-    /// </summary>
     public class HeaderAsset
     {
-        public int Index { get; set; }
+        [JsonProperty("file")]
+        public string File { get; set; }
+
+        [JsonProperty("name")]
         public string Name { get; set; }
-        public string PptxPath { get; set; }
-        public string ThumbnailPath { get; set; }
-        public Image Thumbnail { get; set; }
+
+        [JsonProperty("category")]
+        public string Category { get; set; }
+
+        [JsonProperty("content_fit")]
+        public List<string> ContentFit { get; set; }
+
+        [JsonProperty("use_when")]
+        public string UseWhen { get; set; }
+
+        [JsonProperty("grid_columns")]
+        public int GridColumns { get; set; } = 1;
     }
 }

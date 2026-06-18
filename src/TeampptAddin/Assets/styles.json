@@ -1,0 +1,70 @@
+{
+  "palettes": [
+    {
+      "id": "blue-professional",
+      "name": "블루 프로페셔널",
+      "colors": {
+        "main":  "#2563EB",
+        "sub1":  "#3B82F6",
+        "sub2":  "#93C5FD",
+        "text":  "#1E293B"
+      },
+      "mood": ["신뢰", "전문성", "기업"],
+      "use_when": "B2B 제안서, 기업 소개, 공식 발표"
+    },
+    {
+      "id": "monochrome-dark",
+      "name": "모노크롬 다크",
+      "colors": {
+        "main":  "#18181B",
+        "sub1":  "#3F3F46",
+        "sub2":  "#A1A1AA",
+        "text":  "#FAFAFA"
+      },
+      "mood": ["미니멀", "세련", "고급"],
+      "use_when": "포트폴리오, 디자인 시안, 럭셔리 브랜드"
+    },
+    {
+      "id": "red-orange-energy",
+      "name": "레드-오렌지 에너지",
+      "colors": {
+        "main":  "#DC2626",
+        "sub1":  "#F97316",
+        "sub2":  "#FED7AA",
+        "text":  "#1C1917"
+      },
+      "mood": ["열정", "에너지", "역동"],
+      "use_when": "스타트업 피칭, 캠페인, 이벤트 발표"
+    },
+    {
+      "id": "navy-formal",
+      "name": "네이비 포멀",
+      "colors": {
+        "main":  "#1E3A5F",
+        "sub1":  "#2563EB",
+        "sub2":  "#BFDBFE",
+        "text":  "#0F172A"
+      },
+      "mood": ["격식", "안정", "공식"],
+      "use_when": "정부 보고서, 학회 발표, 금융권 제안"
+    },
+    {
+      "id": "warm-brown",
+      "name": "웜 브라운",
+      "colors": {
+        "main":  "#92400E",
+        "sub1":  "#B45309",
+        "sub2":  "#FDE68A",
+        "text":  "#1C1917"
+      },
+      "mood": ["따뜻함", "친근", "자연"],
+      "use_when": "교육, 커뮤니티, 카페·F&B 브랜드"
+    }
+  ],
+  "fonts": [
+    { "name": "Pretendard",   "mood": ["모던", "가독성"], "use_when": "범용, 스타트업, 깔끔한 느낌" },
+    { "name": "Noto Sans KR", "mood": ["안정", "공식"],   "use_when": "공공기관, 보고서" },
+    { "name": "S-Core Dream", "mood": ["세련", "감성"],   "use_when": "브랜드, 크리에이티브" },
+    { "name": "Paperlogy",    "mood": ["친근", "캐주얼"], "use_when": "교육, 라이트한 발표" }
+  ]
+}

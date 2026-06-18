@@ -54,8 +54,14 @@
     <Compile Include="UI\GhostWindow.cs" />
     <Compile Include="UI\Wpf\AssetCard.cs" />
     <Compile Include="UI\Wpf\AssetPanel.cs" />
+    <Compile Include="UI\Wpf\ThemeResources.cs" />
     <Compile Include="Models\HeaderAsset.cs" />
     <Compile Include="Interop\IObjectSafety.cs" />
+    <Compile Include="Models\AiRecommendation.cs" />
+    <Compile Include="Models\StylePalette.cs" />
+    <Compile Include="Services\AssetLoader.cs" />
+    <Compile Include="Services\IAiService.cs" />
+    <Compile Include="Services\StyleLoader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -63,8 +69,21 @@
     <None Include="uninstall.bat" />
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="Views\Styles\Theme.xaml" />
+    <Resource Include="App.xaml" />
+    <Content Include="Assets\assets.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\styles.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Microsoft.Office.Interop.PowerPoint">
       <Version>15.0.4420.1018</Version>
+    </PackageReference>
+    <PackageReference Include="Newtonsoft.Json">
+      <Version>13.0.3</Version>
     </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

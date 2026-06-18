@@ -160,17 +160,23 @@ namespace TeampptAddin
         private void LoadWpfCards()
         {
             var assetsDir = Globals.AssetsDir;
-            var thumbDir = Globals.ThumbnailDir;
 
-            for (int i = 1; i <= 7; i++)
+            // Load metadata + styles
+            var assets = AssetLoader.Load(assetsDir);
+            var styles = StyleLoader.Load(assetsDir);
+            var ai     = new MockAiService();
+
+            _wpfPanel.SetAssets(assets);
+            _wpfPanel.InitAi(ai, styles);
+
+            // Create cards with thumbnails
+            foreach (var asset in assets)
             {
-                var pptxPath = Path.Combine(assetsDir, $"header_{i}.pptx");
-                if (!File.Exists(pptxPath)) continue;
-
-                var thumbPath = Path.Combine(thumbDir, $"header_{i}.png");
+                var pptxPath  = Path.Combine(assetsDir, asset.File);
+                var thumbPath = Path.Combine(Globals.ThumbnailDir,
+                    Path.GetFileNameWithoutExtension(asset.File) + ".png");
                 var thumb = LoadThumbnail(pptxPath, thumbPath);
-
-                _wpfPanel.AddCard(new AssetCard(thumb, $"Header {i}", pptxPath));
+                _wpfPanel.AddAssetCard(new AssetCard(thumb, asset.Name, pptxPath), asset);
             }
 
             _wpfPanel.ResetStatus();
@@ -186,12 +192,12 @@ namespace TeampptAddin
             {
                 ShapeInserter.InsertToActiveSlide(card.PptxPath);
                 _wpfPanel.SetStatus($"✓ {card.Title} 삽입 완료",
-                    System.Windows.Media.Color.FromRgb(134, 239, 172));
+                    ThemeResources.StatusSuccess.Color);
             }
             catch (Exception ex)
             {
                 _wpfPanel.SetStatus($"삽입 실패: {ex.Message}",
-                    System.Windows.Media.Color.FromRgb(252, 165, 165));
+                    ThemeResources.StatusError.Color);
                 Logger.Log($"WPF ClickInsert fail: {ex}");
             }
         }
@@ -213,14 +219,14 @@ namespace TeampptAddin
                 Cursor.Current = Cursors.Cross;
 
                 _wpfPanel.SetStatus($"{card.Title} → 슬라이드에 놓으세요",
-                    System.Windows.Media.Color.FromRgb(99, 102, 241));
+                    ThemeResources.Accent.Color);
             }
             catch (Exception ex)
             {
                 _wpfDragging = false;
                 DisposeWpfDragGhost();
                 _wpfPanel.SetStatus($"드래그 실패: {ex.Message}",
-                    System.Windows.Media.Color.FromRgb(252, 165, 165));
+                    ThemeResources.StatusError.Color);
                 Logger.Log($"WPF BeginDrag fail: {ex}");
             }
         }
@@ -257,12 +263,12 @@ namespace TeampptAddin
                     CoordinateConverter.PositionShapesAtCursor(shapes, screenPos, window);
 
                     _wpfPanel.SetStatus($"✓ {card.Title} 삽입 완료",
-                        System.Windows.Media.Color.FromRgb(134, 239, 172));
+                        ThemeResources.StatusSuccess.Color);
                 }
                 catch (Exception ex)
                 {
                     _wpfPanel.SetStatus($"삽입 실패: {ex.Message}",
-                        System.Windows.Media.Color.FromRgb(252, 165, 165));
+                        ThemeResources.StatusError.Color);
                     Logger.Log($"WPF EndDrag paste fail: {ex}");
                 }
             }

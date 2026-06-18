@@ -22,24 +22,15 @@ namespace TeampptAddin
         private bool _mousePressed;
         private Point _dragStart;
 
-        static readonly SolidColorBrush CardBgBrush = Freeze(new SolidColorBrush(Color.FromRgb(39, 39, 42)));
-        static readonly SolidColorBrush CardHoverBrush = Freeze(new SolidColorBrush(Color.FromRgb(52, 52, 56)));
-        static readonly SolidColorBrush ThumbBgBrush = Freeze(new SolidColorBrush(Color.FromRgb(28, 28, 32)));
-        static readonly SolidColorBrush AccentBrush = Freeze(new SolidColorBrush(Color.FromRgb(99, 102, 241)));
-        static readonly SolidColorBrush TextMainBrush = Freeze(new SolidColorBrush(Color.FromRgb(228, 228, 231)));
-        static readonly SolidColorBrush TextSubBrush = Freeze(new SolidColorBrush(Color.FromRgb(113, 113, 122)));
-        static readonly SolidColorBrush BorderNormalBrush = Freeze(new SolidColorBrush(Color.FromRgb(50, 50, 55)));
-        static readonly SolidColorBrush BadgeBgBrush = Freeze(new SolidColorBrush(Color.FromArgb(30, 99, 102, 241)));
-
         public AssetCard(DrawingImage thumb, string title, string pptxPath)
         {
             PptxPath = pptxPath;
             Title = title;
             DrawingThumbnail = thumb;
 
-            CornerRadius = new CornerRadius(10);
-            Background = CardBgBrush;
-            BorderBrush = BorderNormalBrush;
+            CornerRadius = ThemeResources.RadiusCard;
+            Background = ThemeResources.BgCard;
+            BorderBrush = ThemeResources.BorderCard;
             BorderThickness = new Thickness(1);
             Margin = new Thickness(10, 5, 10, 5);
             Cursor = Cursors.Hand;
@@ -50,16 +41,16 @@ namespace TeampptAddin
             RenderTransformOrigin = new Point(0.5, 0.5);
 
             var grid = new Grid();
-            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(120) });
+            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(100) });
             grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(36) });
 
-            var thumbPanel = new Border { Background = ThumbBgBrush, ClipToBounds = true };
+            // Thumbnail area
+            var thumbBorder = new Border { Background = ThemeResources.BgThumb, ClipToBounds = true };
             if (thumb != null)
             {
-                var bitmapSource = ConvertToBitmapSource(thumb);
-                thumbPanel.Child = new Image
+                thumbBorder.Child = new Image
                 {
-                    Source = bitmapSource,
+                    Source = ConvertToBitmapSource(thumb),
                     Stretch = Stretch.Uniform,
                     Margin = new Thickness(8),
                     HorizontalAlignment = HorizontalAlignment.Center,
@@ -68,28 +59,30 @@ namespace TeampptAddin
             }
             else
             {
-                thumbPanel.Child = new TextBlock
+                thumbBorder.Child = new TextBlock
                 {
                     Text = title,
-                    Foreground = TextSubBrush,
-                    FontSize = 13,
+                    Foreground = ThemeResources.TextSub,
+                    FontSize = 12,
                     FontWeight = FontWeights.Bold,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center
                 };
             }
-            Grid.SetRow(thumbPanel, 0);
-            grid.Children.Add(thumbPanel);
+            Grid.SetRow(thumbBorder, 0);
+            grid.Children.Add(thumbBorder);
 
-            var separator = new Border
+            // Separator
+            var sep = new Border
             {
                 Height = 1,
-                Background = BorderNormalBrush,
+                Background = ThemeResources.BorderBase,
                 VerticalAlignment = VerticalAlignment.Bottom
             };
-            Grid.SetRow(separator, 0);
-            grid.Children.Add(separator);
+            Grid.SetRow(sep, 0);
+            grid.Children.Add(sep);
 
+            // Label row
             var labelGrid = new Grid();
             labelGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             labelGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -97,10 +90,10 @@ namespace TeampptAddin
             var titleText = new TextBlock
             {
                 Text = title,
-                Foreground = TextMainBrush,
+                Foreground = ThemeResources.TextMain,
                 FontSize = 11,
-                FontWeight = FontWeights.Bold,
-                FontFamily = new FontFamily("Segoe UI"),
+                FontWeight = FontWeights.SemiBold,
+                FontFamily = ThemeResources.FontBase,
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(12, 0, 0, 0),
                 TextTrimming = TextTrimming.CharacterEllipsis
@@ -110,18 +103,18 @@ namespace TeampptAddin
 
             var badge = new Border
             {
-                Background = BadgeBgBrush,
-                CornerRadius = new CornerRadius(3),
+                Background = ThemeResources.BgBadge,
+                CornerRadius = ThemeResources.RadiusBadge,
                 Padding = new Thickness(6, 2, 6, 2),
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(0, 0, 10, 0),
                 Child = new TextBlock
                 {
                     Text = "DRAG",
-                    Foreground = AccentBrush,
+                    Foreground = ThemeResources.TextAccent,
                     FontSize = 8,
                     FontWeight = FontWeights.Bold,
-                    FontFamily = new FontFamily("Segoe UI")
+                    FontFamily = ThemeResources.FontBase
                 }
             };
             Grid.SetColumn(badge, 1);
@@ -132,37 +125,36 @@ namespace TeampptAddin
 
             Child = grid;
 
-            MouseEnter += OnCardMouseEnter;
-            MouseLeave += OnCardMouseLeave;
-            MouseLeftButtonDown += OnCardMouseDown;
-            MouseMove += OnCardMouseMove;
-            MouseLeftButtonUp += OnCardMouseUp;
+            MouseEnter          += OnMouseEnter;
+            MouseLeave          += OnMouseLeave;
+            MouseLeftButtonDown += OnMouseDown;
+            MouseMove           += OnMouseMove;
+            MouseLeftButtonUp   += OnMouseUp;
         }
 
-        private void OnCardMouseEnter(object sender, MouseEventArgs e)
+        private void OnMouseEnter(object sender, MouseEventArgs e)
         {
-            Background = CardHoverBrush;
-            BorderBrush = AccentBrush;
+            Background = ThemeResources.BgCardHover;
+            BorderBrush = ThemeResources.BorderCardHover;
             AnimateScale(1.02);
         }
 
-        private void OnCardMouseLeave(object sender, MouseEventArgs e)
+        private void OnMouseLeave(object sender, MouseEventArgs e)
         {
-            Background = CardBgBrush;
-            BorderBrush = BorderNormalBrush;
+            Background = ThemeResources.BgCard;
+            BorderBrush = ThemeResources.BorderCard;
             AnimateScale(1.0);
         }
 
-        private void OnCardMouseDown(object sender, MouseButtonEventArgs e)
+        private void OnMouseDown(object sender, MouseButtonEventArgs e)
         {
             _mousePressed = true;
             _dragStart = e.GetPosition(this);
         }
 
-        private void OnCardMouseMove(object sender, MouseEventArgs e)
+        private void OnMouseMove(object sender, MouseEventArgs e)
         {
             if (!_mousePressed || e.LeftButton != MouseButtonState.Pressed) return;
-
             var pos = e.GetPosition(this);
             if (Math.Abs(pos.X - _dragStart.X) > SystemParameters.MinimumHorizontalDragDistance ||
                 Math.Abs(pos.Y - _dragStart.Y) > SystemParameters.MinimumVerticalDragDistance)
@@ -172,13 +164,11 @@ namespace TeampptAddin
             }
         }
 
-        private void OnCardMouseUp(object sender, MouseButtonEventArgs e)
+        private void OnMouseUp(object sender, MouseButtonEventArgs e)
         {
-            if (_mousePressed)
-            {
-                _mousePressed = false;
-                ClickInsertRequested?.Invoke(this);
-            }
+            if (!_mousePressed) return;
+            _mousePressed = false;
+            ClickInsertRequested?.Invoke(this);
         }
 
         private void AnimateScale(double target)
@@ -206,12 +196,6 @@ namespace TeampptAddin
                 bmp.Freeze();
                 return bmp;
             }
-        }
-
-        private static SolidColorBrush Freeze(SolidColorBrush brush)
-        {
-            brush.Freeze();
-            return brush;
         }
     }
 }
