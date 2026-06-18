@@ -5,7 +5,14 @@
     "category": "헤더",
     "content_fit": ["제목 강조", "프로젝트 소개", "브랜드 첫인상"],
     "use_when": "프레젠테이션 첫 슬라이드에 임팩트 있는 타이틀이 필요할 때",
-    "grid_columns": 1
+    "grid_columns": 1,
+    "tags": ["타이틀", "임팩트", "풀블리드", "첫슬라이드"],
+    "colors": {
+      "main": "#2563EB",
+      "sub1": "#3B82F6",
+      "sub2": "#93C5FD",
+      "text": "#FFFFFF"
+    }
   },
   {
     "file": "header_2.pptx",
@@ -13,7 +20,14 @@
     "category": "헤더",
     "content_fit": ["서비스 소개", "제품 설명", "핵심 메시지"],
     "use_when": "서비스나 제품의 핵심 가치를 한눈에 보여줄 때",
-    "grid_columns": 1
+    "grid_columns": 1,
+    "tags": ["서비스", "제품", "소개"],
+    "colors": {
+      "main": "#2563EB",
+      "sub1": "#3B82F6",
+      "sub2": "#93C5FD",
+      "text": "#1E293B"
+    }
   },
   {
     "file": "header_3.pptx",
@@ -21,7 +35,14 @@
     "category": "헤더",
     "content_fit": ["장점 나열", "특징 비교", "기능 소개"],
     "use_when": "3~4가지 핵심 장점을 아이콘과 함께 나열할 때",
-    "grid_columns": 1
+    "grid_columns": 1,
+    "tags": ["장점", "나열", "아이콘", "비교"],
+    "colors": {
+      "main": "#2563EB",
+      "sub1": "#3B82F6",
+      "sub2": "#93C5FD",
+      "text": "#1E293B"
+    }
   },
   {
     "file": "header_4.pptx",
@@ -29,7 +50,14 @@
     "category": "헤더",
     "content_fit": ["팀 소개", "조직 구성", "멤버 프로필"],
     "use_when": "팀원이나 조직 구성을 시각적으로 보여줄 때",
-    "grid_columns": 1
+    "grid_columns": 1,
+    "tags": ["팀", "조직", "멤버"],
+    "colors": {
+      "main": "#2563EB",
+      "sub1": "#3B82F6",
+      "sub2": "#93C5FD",
+      "text": "#1E293B"
+    }
   },
   {
     "file": "header_5.pptx",
@@ -37,7 +65,14 @@
     "category": "헤더",
     "content_fit": ["일정 안내", "프로세스 흐름", "로드맵"],
     "use_when": "프로젝트 일정이나 단계별 진행 과정을 보여줄 때",
-    "grid_columns": 1
+    "grid_columns": 1,
+    "tags": ["타임라인", "일정", "프로세스", "로드맵"],
+    "colors": {
+      "main": "#2563EB",
+      "sub1": "#3B82F6",
+      "sub2": "#93C5FD",
+      "text": "#1E293B"
+    }
   },
   {
     "file": "header_6.pptx",
@@ -45,7 +80,14 @@
     "category": "헤더",
     "content_fit": ["수치 강조", "성과 요약", "KPI 대시보드"],
     "use_when": "핵심 숫자나 성과 지표를 크게 강조할 때",
-    "grid_columns": 1
+    "grid_columns": 1,
+    "tags": ["데이터", "수치", "KPI", "대시보드"],
+    "colors": {
+      "main": "#2563EB",
+      "sub1": "#3B82F6",
+      "sub2": "#93C5FD",
+      "text": "#1E293B"
+    }
   },
   {
     "file": "header_7.pptx",
@@ -53,6 +95,13 @@
     "category": "헤더",
     "content_fit": ["마무리 인사", "연락처 안내", "다음 단계"],
     "use_when": "프레젠테이션 마지막에 감사 인사와 연락처를 남길 때",
-    "grid_columns": 1
+    "grid_columns": 1,
+    "tags": ["마무리", "CTA", "연락처"],
+    "colors": {
+      "main": "#2563EB",
+      "sub1": "#3B82F6",
+      "sub2": "#93C5FD",
+      "text": "#1E293B"
+    }
   }
 ]

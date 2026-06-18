@@ -8,7 +8,10 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+using System.Windows.Threading;
 using DrawingImage = System.Drawing.Image;
 
 namespace TeampptAddin
@@ -251,6 +254,44 @@ namespace TeampptAddin
                 Margin = new Thickness(20, 48, 20, 20)
             };
 
+            var iconScale = new ScaleTransform(1, 1);
+            var iconBorder = new Border
+            {
+                Width = 52,
+                Height = 52,
+                CornerRadius = new CornerRadius(26),
+                Background = ThemeResources.BgChip,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 0, 0, 12),
+                RenderTransform = iconScale,
+                RenderTransformOrigin = new Point(0.5, 0.5),
+                Child = new TextBlock
+                {
+                    Text = "✦",
+                    FontSize = 22,
+                    Foreground = ThemeResources.Accent,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                }
+            };
+            panel.Children.Add(iconBorder);
+
+            try
+            {
+                var pulseAnim = new DoubleAnimation
+                {
+                    From = 1.0,
+                    To = 1.06,
+                    Duration = TimeSpan.FromSeconds(1.4),
+                    AutoReverse = true,
+                    RepeatBehavior = RepeatBehavior.Forever,
+                    EasingFunction = new SineEase()
+                };
+                iconScale.BeginAnimation(ScaleTransform.ScaleXProperty, pulseAnim);
+                iconScale.BeginAnimation(ScaleTransform.ScaleYProperty, pulseAnim);
+            }
+            catch { }
+
             panel.Children.Add(new TextBlock
             {
                 Text = "슬라이드 디자인을\n도와드릴게요",
@@ -431,8 +472,21 @@ namespace TeampptAddin
 
         private async Task SendAiMessage(string intent)
         {
-            if (_emptyState != null)
-                _emptyState.Visibility = Visibility.Collapsed;
+            if (_emptyState != null && _emptyState.Visibility == Visibility.Visible)
+            {
+                try
+                {
+                    var fadeOut = new DoubleAnimation
+                    {
+                        From = 1,
+                        To = 0,
+                        Duration = TimeSpan.FromMilliseconds(150)
+                    };
+                    fadeOut.Completed += (s, e) => _emptyState.Visibility = Visibility.Collapsed;
+                    _emptyState.BeginAnimation(OpacityProperty, fadeOut);
+                }
+                catch { _emptyState.Visibility = Visibility.Collapsed; }
+            }
 
             AddUserBubble(intent);
 
@@ -464,9 +518,11 @@ namespace TeampptAddin
             _chatScroll.ScrollToBottom();
         }
 
+        private bool _isFirstMessage = true;
+
         private void AddUserBubble(string text)
         {
-            _chatStack.Children.Add(new Border
+            var bubble = new Border
             {
                 Background = ThemeResources.BgUserBubble,
                 CornerRadius = new CornerRadius(14, 4, 14, 14),
@@ -482,7 +538,30 @@ namespace TeampptAddin
                     TextWrapping = TextWrapping.Wrap,
                     FontFamily = ThemeResources.FontBase
                 }
-            });
+            };
+
+            if (_isFirstMessage)
+            {
+                _isFirstMessage = false;
+                bubble.Opacity = 0;
+                _chatStack.Children.Add(bubble);
+                try
+                {
+                    var fadeIn = new DoubleAnimation
+                    {
+                        From = 0,
+                        To = 1,
+                        Duration = TimeSpan.FromMilliseconds(200),
+                        BeginTime = TimeSpan.FromMilliseconds(50)
+                    };
+                    bubble.BeginAnimation(OpacityProperty, fadeIn);
+                }
+                catch { bubble.Opacity = 1; }
+            }
+            else
+            {
+                _chatStack.Children.Add(bubble);
+            }
         }
 
         private FrameworkElement AddAiLoadingBubble()
@@ -498,19 +577,49 @@ namespace TeampptAddin
                 Margin = new Thickness(4, 0, 0, 3)
             });
 
+            var dotsPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            for (int i = 0; i < 3; i++)
+            {
+                var dot = new Ellipse
+                {
+                    Width = 6,
+                    Height = 6,
+                    Fill = ThemeResources.BgThumb,
+                    Margin = new Thickness(i == 0 ? 0 : 4, 0, 0, 0),
+                    RenderTransform = new TranslateTransform(0, 0)
+                };
+
+                try
+                {
+                    var bounce = new DoubleAnimation
+                    {
+                        From = 0,
+                        To = -5,
+                        Duration = TimeSpan.FromSeconds(0.6),
+                        AutoReverse = true,
+                        RepeatBehavior = RepeatBehavior.Forever,
+                        EasingFunction = new SineEase(),
+                        BeginTime = TimeSpan.FromMilliseconds(i * 200)
+                    };
+                    ((TranslateTransform)dot.RenderTransform).BeginAnimation(TranslateTransform.YProperty, bounce);
+                }
+                catch { }
+
+                dotsPanel.Children.Add(dot);
+            }
+
             wrapper.Children.Add(new Border
             {
                 Background = ThemeResources.BgAiResponse,
                 CornerRadius = new CornerRadius(4, 13, 13, 13),
-                Padding = new Thickness(12, 8, 12, 8),
+                Padding = new Thickness(14, 12, 14, 12),
                 HorizontalAlignment = HorizontalAlignment.Left,
-                Child = new TextBlock
-                {
-                    Text = "분석 중...",
-                    Foreground = ThemeResources.TextSub,
-                    FontSize = 12,
-                    FontFamily = ThemeResources.FontBase
-                }
+                Child = dotsPanel
             });
 
             _chatStack.Children.Add(wrapper);
@@ -519,7 +628,11 @@ namespace TeampptAddin
 
         private void AddAiBubble(string text)
         {
-            var wrapper = new StackPanel { Margin = new Thickness(12, 4, 40, 4) };
+            var wrapper = new StackPanel
+            {
+                Margin = new Thickness(12, 4, 40, 4),
+                Opacity = 0
+            };
 
             wrapper.Children.Add(new TextBlock
             {
@@ -530,23 +643,68 @@ namespace TeampptAddin
                 Margin = new Thickness(4, 0, 0, 3)
             });
 
+            var tb = new TextBlock
+            {
+                Text = "",
+                Foreground = ThemeResources.TextMain,
+                FontSize = 12,
+                TextWrapping = TextWrapping.Wrap,
+                FontFamily = ThemeResources.FontBase
+            };
+
             wrapper.Children.Add(new Border
             {
                 Background = ThemeResources.BgAiResponse,
                 CornerRadius = new CornerRadius(4, 13, 13, 13),
                 Padding = new Thickness(12, 8, 12, 8),
                 HorizontalAlignment = HorizontalAlignment.Left,
-                Child = new TextBlock
-                {
-                    Text = text,
-                    Foreground = ThemeResources.TextMain,
-                    FontSize = 12,
-                    TextWrapping = TextWrapping.Wrap,
-                    FontFamily = ThemeResources.FontBase
-                }
+                Child = tb
             });
 
             _chatStack.Children.Add(wrapper);
+            wrapper.Opacity = 1;
+
+            try
+            {
+                var rng = new Random();
+                int charIdx = 0;
+                tb.Text = "|";
+
+                var typeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(30) };
+                typeTimer.Tick += (s, e) =>
+                {
+                    try
+                    {
+                        typeTimer.Interval = TimeSpan.FromMilliseconds(30 + rng.Next(16));
+                        if (charIdx < text.Length)
+                        {
+                            tb.Text = text.Substring(0, charIdx + 1) + "|";
+                            charIdx++;
+                            _chatScroll.ScrollToBottom();
+                        }
+                        else
+                        {
+                            typeTimer.Stop();
+                            int blinks = 0;
+                            var cursorTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
+                            cursorTimer.Tick += (s2, e2) =>
+                            {
+                                blinks++;
+                                tb.Text = blinks % 2 == 0 ? text + "|" : text;
+                                if (blinks >= 2)
+                                {
+                                    cursorTimer.Stop();
+                                    tb.Text = text;
+                                }
+                            };
+                            cursorTimer.Start();
+                        }
+                    }
+                    catch { typeTimer.Stop(); tb.Text = text; }
+                };
+                typeTimer.Start();
+            }
+            catch { tb.Text = text; }
         }
 
         private void ShowAiResponse(AiRecommendation rec)
@@ -564,8 +722,45 @@ namespace TeampptAddin
                 Margin = new Thickness(12, 8, 0, 2)
             });
 
-            foreach (var s in rec.Assets)
-                _chatStack.Children.Add(BuildAiAssetCard(s));
+            for (int i = 0; i < rec.Assets.Count; i++)
+            {
+                var card = BuildAiAssetCard(rec.Assets[i]);
+                card.Opacity = 0;
+                card.RenderTransform = new TranslateTransform(0, 12);
+                _chatStack.Children.Add(card);
+
+                try
+                {
+                    var fadeIn = new DoubleAnimation
+                    {
+                        From = 0,
+                        To = 1,
+                        Duration = TimeSpan.FromMilliseconds(300),
+                        EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut },
+                        BeginTime = TimeSpan.FromMilliseconds(i * 80)
+                    };
+
+                    var slideUp = new DoubleAnimation
+                    {
+                        From = 12,
+                        To = 0,
+                        Duration = TimeSpan.FromMilliseconds(300),
+                        EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut },
+                        BeginTime = TimeSpan.FromMilliseconds(i * 80)
+                    };
+
+                    var sb = new Storyboard();
+                    Storyboard.SetTarget(fadeIn, card);
+                    Storyboard.SetTargetProperty(fadeIn, new PropertyPath(OpacityProperty));
+                    Storyboard.SetTarget(slideUp, card);
+                    Storyboard.SetTargetProperty(slideUp,
+                        new PropertyPath("(UIElement.RenderTransform).(TranslateTransform.Y)"));
+                    sb.Children.Add(fadeIn);
+                    sb.Children.Add(slideUp);
+                    sb.Begin();
+                }
+                catch { card.Opacity = 1; card.RenderTransform = null; }
+            }
         }
 
         private Border BuildAiAssetCard(AssetSuggestion suggestion)

@@ -1,6 +1,6 @@
 # TEAMPPT Add-in 개발 인계문서
 
-> 최종 업데이트: 2026-06-18 (Step 6~7 완료)  
+> 최종 업데이트: 2026-06-18 (Step 8.5~9 완료)  
 > 프로젝트 경로: `C:\Projects\teamppt-addin\src\TeampptAddin`
 
 ---
@@ -53,14 +53,14 @@ PowerPoint COM Add-in (.NET Framework 4.8). 오른쪽 Task Pane에 헤더 에셋
 | 파일 | 역할 |
 |------|------|
 | `AssetCard.cs` | WPF 카드 컨트롤 (호버 스케일 애니메이션, 호버 Popup 프리뷰, 클릭/드래그 이벤트) |
-| `AssetPanel.cs` | WPF 메인 패널 (AI/에셋/스타일 3탭, AI 채팅, 카테고리 필터, StylePanel) |
+| `AssetPanel.cs` | WPF 메인 패널 (AI/에셋/스타일 3탭, AI 채팅+애니메이션, 카테고리 필터, StylePanel) |
 | `ThemeResources.cs` | Theme.xaml 런타임 미러 (정적 Brush/CornerRadius/FontFamily) |
 
 ### Models/
 
 | 파일 | 역할 |
 |------|------|
-| `HeaderAsset.cs` | 에셋 데이터 모델 (JsonProperty 어트리뷰트, AssetLoader용) |
+| `HeaderAsset.cs` | 에셋 데이터 모델 (Tags, Colors, JsonExtensionData 포함) |
 | `StylePalette.cs` | 스타일 데이터 모델 (PaletteColors, StylePalette, StyleFont, StyleConfig) |
 | `AiRecommendation.cs` | AI 추천 응답 모델 (AssetSuggestion, StyleSuggestion, AiRecommendation) |
 
@@ -191,13 +191,15 @@ Start-Sleep 2
 
 ---
 
-## 6. 현재 동작 상태 (2026-06-18 Step 7 완료 후)
+## 6. 현재 동작 상태 (2026-06-18 Step 9 완료 후)
 
 | 기능 | 상태 | 비고 |
 |------|------|------|
 | Task Pane 표시 | **동작** | COM 호스팅 → ElementHost → WPF |
 | 3탭 네비게이션 | **동작** | AI / 에셋 / 스타일 탭 전환 |
 | AI 채팅 | **동작** | MockAiService stub, 채팅 버블, 에셋 추천 카드 |
+| AI 애니메이션 | **동작** | 빈 상태 아이콘 펄스, 로딩 점 바운스, 타이핑 효과, 카드 스태거 슬라이드인, 크로스페이드 |
+| 에셋 스키마 확장 | **동작** | HeaderAsset에 Tags/Colors/Extra, AssetColors 클래스, assets.json에 tags+colors |
 | 카드 리스트 렌더링 | **동작** | WPF AssetPanel + AssetCard, 라이트 테마 |
 | 카테고리 필터 | **동작** | 전체/헤더/섹션/레이아웃/마무리 |
 | 호버 Popup 프리뷰 | **동작** | 300ms 딜레이, 카드 간 즉시 전환, fade+slide 애니메이션 |
@@ -234,8 +236,10 @@ Start-Sleep 2
 - GhostWindow은 Win32 기반으로 WPF/WinForms 공통 재사용
 - **주의**: CoordinateConverter에 폴백 로직 추가 금지 (기존 non-fatal 패턴 유지)
 
-### Phase 4 (진행 예정): ThumbnailService 분리
-- Step 8: TaskPaneHost의 썸네일 로딩 로직 → ThumbnailService.cs 분리
+### Phase 4 완료: 에셋 스키마 확장 + AI 애니메이션 (2026-06-18)
+- Step 8: ThumbnailService.cs 분리 (LoadThumbnail, LoadImageNoLock → TaskPaneHost에서 추출)
+- Step 8.5: HeaderAsset에 Tags/Colors/JsonExtensionData 추가, AssetColors 클래스 신규, assets.json에 tags+colors 필드 채움
+- Step 9: AI탭 애니메이션 5종 — 빈 상태 아이콘 펄스, 로딩 점 바운스, 타이핑 효과, 카드 스태거 슬라이드인, 크로스페이드
 
 ### Phase 5 (미래): AI 서비스 연동
 - MockAiService → ClaudeAiService 교체
