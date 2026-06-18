@@ -191,31 +191,30 @@ Start-Sleep 2
 ### Phase 1 완료: 모듈화 (2026-06-18)
 - Core/UI/Models/Interop 분리 완료
 - 미사용 파일 제거 (TaskPaneControl.cs)
-- WPF 참조 제거 (PresentationCore, PresentationFramework 등)
 - HeaderAsset WPF→System.Drawing 전환 완료
 - 빌드 검증 완료 (에러/경고 0)
 
-### Phase 2: VS 2022 + VSTO 전환
-1. VSTO 프로젝트 생성 (PowerPoint Add-in)
-2. Core/ 파일 그대로 복사
-3. COM 수동 등록 → VSTO 자동 배포로 전환
+### Phase 2 완료: WPF 지연 초기화 검증 (2026-06-18)
+- **VSTO 전환 불필요** — COM Add-in 그대로 유지
+- WPF ElementHost를 `OnSizeChanged(Width > 0)`에서 생성하면 COM 충돌 없음 확인
+- 핵심 원리: 생성자(COM 초기화 중)가 아닌 지연 시점에서 ElementHost 생성
+- csproj에 WPF 참조 추가 완료 (PresentationCore, PresentationFramework, WindowsFormsIntegration 등)
 
-### Phase 3: WPF XAML UI 재작성
-1. UI/ 폴더를 WPF XAML로 교체 (Core/는 그대로 유지)
-2. VSTO의 WPF 공식 지원으로 ElementHost 문제 없음
+### Phase 3 진행 중: WPF XAML UI 재작성
+- UI/ 폴더의 WinForms 코드를 WPF XAML로 교체
+- Core/는 그대로 유지, TaskPaneHost에서 ElementHost로 WPF 컨트롤 호스팅
+- 다크 테마 디자인, 카드 리스트, 호버/드래그 애니메이션
 
 ### Phase 4: AI 채팅 기능 추가
 1. Claude API 연동
 
 ### 기존 TODO (우선순위 순)
-1. **UI 최종 확인**: 썸네일 캐시 클리어 후 shape-only PNG가 투명 배경으로 정확히 나오는지 확인
-2. **드롭 위치 정확도 테스트**: 여러 줌 레벨/슬라이드 크기에서 좌표 변환 정확도 검증
-3. **다중 모니터 / DPI 스케일링**: `PointsToScreenPixelsX/Y` 좌표 변환 테스트
-4. **Assets 폴더 자동 포함**: csproj에 빌드 시 Assets 복사 설정 추가
-5. **에셋 동적 로딩**: 하드코딩된 `header_1~7` 대신 Assets 폴더 자동 스캔
-6. **Strong Name 서명**: RegAsm 경고 해결
-7. **호버 스케일 애니메이션**: WinForms Timer로 카드 확대/축소
-10. **인스톨러 제작**: MSI 또는 ClickOnce로 원클릭 설치
+1. **드롭 위치 정확도 테스트**: 여러 줌 레벨/슬라이드 크기에서 좌표 변환 정확도 검증
+2. **다중 모니터 / DPI 스케일링**: `PointsToScreenPixelsX/Y` 좌표 변환 테스트
+3. **Assets 폴더 자동 포함**: csproj에 빌드 시 Assets 복사 설정 추가
+4. **에셋 동적 로딩**: 하드코딩된 `header_1~7` 대신 Assets 폴더 자동 스캔
+5. **Strong Name 서명**: RegAsm 경고 해결
+6. **인스톨러 제작**: MSI 또는 ClickOnce로 원클릭 설치
 
 ---
 
