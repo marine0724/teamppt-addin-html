@@ -16,3 +16,6 @@ thumbnails/
 
 # NuGet
 packages/
+
+# API keys (secrets)
+**/api-keys.json
