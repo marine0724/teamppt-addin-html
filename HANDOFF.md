@@ -1,6 +1,6 @@
 # TEAMPPT Add-in 개발 인계문서
 
-> 최종 업데이트: 2026-06-18 (Step 8.5~9 완료)  
+> 최종 업데이트: 2026-06-19 (Phase A 완료, Phase E 착수 대기)  
 > 프로젝트 경로: `C:\Projects\teamppt-addin\src\TeampptAddin`
 
 ---
@@ -60,7 +60,10 @@ PowerPoint COM Add-in (.NET Framework 4.8). 오른쪽 Task Pane에 헤더 에셋
 
 | 파일 | 역할 |
 |------|------|
-| `HeaderAsset.cs` | 에셋 데이터 모델 (Tags, Colors, JsonExtensionData 포함) |
+| `HeaderAsset.cs` | 에셋 저장 모델 v2 (SchemaVersion/Kind/Scope/Provenance/Colors→List\<AssetColor\>/Fonts/Slots) |
+| `AssetSchema.cs` | 값 타입: AssetColor{Role,Value,Locked}, AssetFont{Role,Family,Fallback,Weight,Source}, AssetSlot{Name,Type,PerSlide} |
+| `DesignConcept.cs` | 컨셉 모델 (Id/Name/StyleTags/Colors:역할→hex/Fonts:역할→family) |
+| `CatalogEntry.cs` | 런타임 컴팩트 카탈로그 항목 (hex/family 제외, 역할·슬롯 이름만 투영) |
 | `StylePalette.cs` | 스타일 데이터 모델 (PaletteColors, StylePalette, StyleFont, StyleConfig) |
 | `AiRecommendation.cs` | AI 추천 응답 모델 (AssetSuggestion, StyleSuggestion, AiRecommendation) |
 
@@ -68,9 +71,13 @@ PowerPoint COM Add-in (.NET Framework 4.8). 오른쪽 Task Pane에 헤더 에셋
 
 | 파일 | 역할 |
 |------|------|
-| `AssetLoader.cs` | assets.json 파싱 + 폴더 스캔 폴백 + 파일 존재 검증 |
+| `AssetLoader.cs` | assets.json 파싱 (JArray→마이그레이터→바인딩) + 폴더 스캔 폴백 + 파일 존재 검증 |
+| `AssetSchemaMigrator.cs` | v1→v2 정규화 (객체형 colors→역할 배열, scope/kind 기본값) |
+| `CatalogBuilder.cs` | HeaderAsset 리스트 → CatalogEntry 리스트 (무거운 값 제외, 역할/슬롯 이름만) |
+| `ConceptResolver.cs` | 역할 치환 순수 함수 (ResolveColors/ResolveFonts, locked·missing 존중) |
 | `StyleLoader.cs` | styles.json 파싱 + 하드코딩 기본값 폴백 |
 | `IAiService.cs` | IAiService 인터페이스 + MockAiService stub |
+| `ThumbnailService.cs` | LoadThumbnail, LoadImageNoLock (TaskPaneHost에서 추출) |
 
 ### Interop/
 
@@ -138,14 +145,25 @@ slideX = (mouseScreenX - originX) / scaleX
 
 ## 4. 빌드 및 배포 절차
 
-### 4.1 빌드
+### 4.1 테스트 실행
+```powershell
+# 1) MSBuild로 솔루션 빌드 (dotnet은 COM 프로젝트 빌드 불가)
+& "C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe" `
+  src\TeampptAddin\TeampptAddin.sln /p:RegisterForComInterop=false /v:quiet
+# 2) vstest.console.exe로 테스트 DLL 실행
+& "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe" `
+  src\TeampptAddin.Tests\bin\Debug\net48\TeampptAddin.Tests.dll
+```
+> `dotnet test`는 legacy COM 프로젝트 빌드 실패 → MSBuild+vstest 폴백 확정 (Phase A Task 1)
+
+### 4.2 빌드
 ```powershell
 & "C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe" `
   "C:\Projects\teamppt-addin\src\TeampptAddin\TeampptAddin.sln" /p:Configuration=Debug /v:minimal
 ```
 > **주의**: PowerPoint가 DLL을 잠그므로 빌드 전 반드시 PPT 종료
 
-### 4.2 COM 등록 (관리자 권한 필요)
+### 4.3 COM 등록 (관리자 권한 필요)
 ```powershell
 & "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319\RegAsm.exe" `
   "C:\Projects\teamppt-addin\src\TeampptAddin\bin\Debug\TeampptAddin.dll" /codebase /tlb
@@ -154,7 +172,7 @@ slideX = (mouseScreenX - originX) / scaleX
 New-Item -Path "Registry::HKEY_CLASSES_ROOT\CLSID\{2D4E6F8A-1B3C-5D7E-9F0A-4C6E8D2B1A3F}\Implemented Categories\{40FC6ED4-2438-11CF-A3DB-080036F12502}" -Force
 ```
 
-### 4.3 PowerPoint Add-in 레지스트리
+### 4.4 PowerPoint Add-in 레지스트리
 ```powershell
 $regPath = "HKCU:\Software\Microsoft\Office\PowerPoint\Addins\TeampptAddin.Connect"
 New-Item -Path $regPath -Force
@@ -163,13 +181,13 @@ Set-ItemProperty -Path $regPath -Name "Description" -Value "TEAMPPT Header Asset
 Set-ItemProperty -Path $regPath -Name "LoadBehavior" -Type DWord -Value 3
 ```
 
-### 4.4 썸네일 캐시 클리어 (shape-only 재생성 시)
+### 4.5 썸네일 캐시 클리어 (shape-only 재생성 시)
 ```powershell
 Get-ChildItem "$env:LOCALAPPDATA\TeampptAddin\thumbnails" -File |
   ForEach-Object { Remove-Item $_.FullName -Force }
 ```
 
-### 4.5 전체 원커맨드 배포
+### 4.6 전체 원커맨드 배포
 ```powershell
 Stop-Process -Name "POWERPNT" -Force -ErrorAction SilentlyContinue
 Start-Sleep 2
@@ -199,7 +217,10 @@ Start-Sleep 2
 | 3탭 네비게이션 | **동작** | AI / 에셋 / 스타일 탭 전환 |
 | AI 채팅 | **동작** | MockAiService stub, 채팅 버블, 에셋 추천 카드 |
 | AI 애니메이션 | **동작** | 빈 상태 아이콘 펄스, 로딩 점 바운스, 타이핑 효과, 카드 스태거 슬라이드인, 크로스페이드 |
-| 에셋 스키마 확장 | **동작** | HeaderAsset에 Tags/Colors/Extra, AssetColors 클래스, assets.json에 tags+colors |
+| 에셋 스키마 v2 | **동작** | 역할 기반 색/폰트 + 슬롯 + scope + kind, AssetSchemaMigrator v1→v2 자동 변환 |
+| 카탈로그 빌더 | **동작** | HeaderAsset→CatalogEntry 컴팩트 투영 (런타임 토큰 절감) |
+| 컨셉 리졸버 | **동작** | DesignConcept으로 역할 치환 (locked/missing 존중) |
+| 단위 테스트 | **동작** | xUnit 12개 PASS (src/TeampptAddin.Tests, MSBuild+vstest 러너) |
 | 카드 리스트 렌더링 | **동작** | WPF AssetPanel + AssetCard, 라이트 테마 |
 | 카테고리 필터 | **동작** | 전체/헤더/섹션/레이아웃/마무리 |
 | 호버 Popup 프리뷰 | **동작** | 300ms 딜레이, 카드 간 즉시 전환, fade+slide 애니메이션 |
@@ -247,7 +268,9 @@ Start-Sleep 2
 
 **보류:** "캔버스 위 카드 클릭(웹UI)" 아이디어 — 편집모드 클릭=선택이라 폴리싱 비용 큼. **모든 진행은 우측 패널에서 상세히 처리.**
 
-**Phase A 범위(순수 C#/JSON, COM·LLM 불필요, 단위테스트 가능):** 스키마 v2(역할 색/폰트·슬롯·scope) + `AssetSchemaMigrator`(v1→v2) + `CatalogBuilder`(컴팩트 런타임 투영) + `ConceptResolver`(역할 치환 키스톤) + 신규 xUnit 테스트 프로젝트 `src/TeampptAddin.Tests`.
+**Phase A (완료 2026-06-19):** 스키마 v2 + AssetSchemaMigrator + CatalogBuilder + ConceptResolver + xUnit 12개 PASS. `phase-a-asset-schema` 브랜치 → main 머지 완료.
+
+**Phase E (다음):** Gemini Flash API 연동. MockAiService → GeminiAiService. API 키는 JSON 파일(gitignore). 향후 저장/인제스트는 Claude API, 런타임은 Gemini 이원화 예정이나 현재 테스트 단계에서는 전부 Gemini Flash.
 
 ---
 
@@ -276,16 +299,29 @@ Start-Sleep 2
 - Step 8.5: HeaderAsset에 Tags/Colors/JsonExtensionData 추가, AssetColors 클래스 신규, assets.json에 tags+colors 필드 채움
 - Step 9: AI탭 애니메이션 5종 — 빈 상태 아이콘 펄스, 로딩 점 바운스, 타이핑 효과, 카드 스태거 슬라이드인, 크로스페이드
 
-### Phase 5 (미래): AI 서비스 연동
-- MockAiService → ClaudeAiService 교체
-- Claude API 연동
+### Phase A 완료: 에셋 데이터 스키마 v2 (2026-06-19)
+- xUnit 테스트 프로젝트 구축 (MSBuild + vstest.console.exe 러너)
+- AssetColor/AssetFont/AssetSlot 값 타입 + HeaderAsset v2 확장 (SchemaVersion/Kind/Scope/Provenance/Fonts/Slots, Colors→List)
+- AssetSchemaMigrator: v1 객체형 colors→v2 역할 배열, scope/kind 기본값 자동 부여
+- AssetLoader가 마이그레이터 경유 (JArray→Migrate→ToObject)
+- DesignConcept + CatalogEntry + CatalogBuilder (컴팩트 런타임 투영)
+- ConceptResolver: 역할 치환 순수 함수 (locked·missing 존중)
+- assets.json 7개 항목 v2로 재작성 (roles/fonts/slots/scope)
+- 기존 AssetColors 클래스 삭제 (소비처 없음 확인 완료)
+- 12개 단위테스트 전부 PASS
+
+### Phase E (다음): AI 서비스 연동 — Gemini Flash
+- MockAiService → GeminiAiService 교체 (IAiService 인터페이스 유지)
+- **Gemini Flash** API 연동 (테스트 단계, 전부 Gemini Flash로 진행)
+- API 키: `src/TeampptAddin/Assets/api-keys.json` (gitignore 처리)
+- 향후 계획: 저장/인제스트 시 Claude API, 사용자 런타임은 Gemini — 현재는 전부 Gemini Flash
 
 ### 잔여 TODO (우선순위 순)
 
-#### Step 10: Claude API 연동
-- `MockAiService` → `ClaudeAiService` 교체 (IAiService 인터페이스 그대로 유지)
-- API 키 관리 (환경변수 또는 `%AppData%\TEAMPPT\settings.json`)
-- 사용자 입력 + assets.json 전체 컨텍스트 → Claude API 호출
+#### Step 10 (Phase E): Gemini Flash API 연동
+- `MockAiService` → `GeminiAiService` 교체 (IAiService 인터페이스 그대로 유지)
+- API 키: `api-keys.json` 파일 (gitignore 처리)
+- 사용자 입력 + CatalogEntry 컨텍스트 → Gemini Flash API 호출
 - 응답을 `AiRecommendation` JSON으로 파싱 (에셋 파일명 3개 + 메시지)
 - UI 변경 없음
 
