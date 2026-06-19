@@ -14,6 +14,8 @@ namespace TeampptAddin
     {
         private static readonly HttpClient Http = new HttpClient();
         private readonly string _apiKey;
+        private readonly List<JObject> _history = new List<JObject>();
+        private const int MaxHistoryTurns = 10;
 
         public GeminiAiService(string apiKey)
         {
@@ -46,31 +48,33 @@ namespace TeampptAddin
                 catalog, paletteList, fontList);
             var userPrompt = GeminiPromptBuilder.BuildUserPrompt(userIntent);
 
-            var requestBody = new
+            _history.Add(new JObject
             {
-                contents = new[]
+                ["role"] = "user",
+                ["parts"] = new JArray { new JObject { ["text"] = userPrompt } }
+            });
+
+            while (_history.Count > MaxHistoryTurns * 2)
+                _history.RemoveAt(0);
+
+            var requestBody = new JObject
+            {
+                ["contents"] = new JArray(_history.ToArray()),
+                ["systemInstruction"] = new JObject
                 {
-                    new
-                    {
-                        role = "user",
-                        parts = new[] { new { text = userPrompt } }
-                    }
+                    ["parts"] = new JArray { new JObject { ["text"] = systemPrompt } }
                 },
-                systemInstruction = new
+                ["generationConfig"] = new JObject
                 {
-                    parts = new[] { new { text = systemPrompt } }
-                },
-                generationConfig = new
-                {
-                    temperature = 0.7,
-                    responseMimeType = "application/json",
-                    thinkingConfig = new { thinkingBudget = 1024 }
+                    ["temperature"] = 0.7,
+                    ["responseMimeType"] = "application/json",
+                    ["thinkingConfig"] = new JObject { ["thinkingBudget"] = 1024 }
                 }
             };
 
             var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={_apiKey}";
             var content = new StringContent(
-                JsonConvert.SerializeObject(requestBody),
+                requestBody.ToString(Formatting.None),
                 Encoding.UTF8, "application/json");
 
             var response = await Http.PostAsync(url, content).ConfigureAwait(false);
@@ -87,6 +91,12 @@ namespace TeampptAddin
             var text = root["candidates"]?[0]?["content"]?["parts"]?[0]?["text"]?.ToString();
             if (string.IsNullOrEmpty(text))
                 throw new InvalidOperationException("Gemini 응답에 텍스트가 없습니다.");
+
+            _history.Add(new JObject
+            {
+                ["role"] = "model",
+                ["parts"] = new JArray { new JObject { ["text"] = text } }
+            });
 
             return ParseResponse(text, assetList, paletteList, fontList);
         }

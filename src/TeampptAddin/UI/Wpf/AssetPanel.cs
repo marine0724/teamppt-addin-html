@@ -644,7 +644,7 @@ namespace TeampptAddin
 
             var tb = new TextBlock
             {
-                Text = text,
+                Text = "",
                 Foreground = ThemeResources.TextMain,
                 FontSize = 12,
                 TextWrapping = TextWrapping.Wrap,
@@ -662,6 +662,19 @@ namespace TeampptAddin
 
             _chatStack.Children.Add(wrapper);
             wrapper.Opacity = 1;
+
+            int charIdx = 0;
+            var typeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(12) };
+            typeTimer.Tick += (s, e) =>
+            {
+                int charsPerTick = Math.Min(3, text.Length - charIdx);
+                charIdx += charsPerTick;
+                tb.Text = text.Substring(0, charIdx);
+                _chatScroll.ScrollToBottom();
+                if (charIdx >= text.Length)
+                    typeTimer.Stop();
+            };
+            typeTimer.Start();
         }
 
         private void ShowAiResponse(AiRecommendation rec)
