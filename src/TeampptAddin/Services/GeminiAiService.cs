@@ -74,16 +74,35 @@ namespace TeampptAddin
             };
 
             var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={_apiKey}";
-            var content = new StringContent(
-                requestBody.ToString(Formatting.None),
-                Encoding.UTF8, "application/json");
+            var bodyString = requestBody.ToString(Formatting.None);
 
-            var response = await Http.PostAsync(url, content).ConfigureAwait(false);
-            var body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            const int maxAttempts = 3;
+            HttpResponseMessage response = null;
+            string body = null;
 
-            if (!response.IsSuccessStatusCode)
-                throw new HttpRequestException(
-                    $"Gemini API 오류 ({(int)response.StatusCode}): {body}");
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                // StringContent는 전송 후 재사용 불가하므로 시도마다 새로 만든다
+                var content = new StringContent(bodyString, Encoding.UTF8, "application/json");
+                response = await Http.PostAsync(url, content).ConfigureAwait(false);
+                body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                if (response.IsSuccessStatusCode)
+                    break;
+
+                var status = (int)response.StatusCode;
+                // 503(과부하)·429(쿼터)·500은 일시적 → 백오프 후 재시도. 403 등은 즉시 실패.
+                bool transient = status == 503 || status == 429 || status == 500;
+                if (transient && attempt < maxAttempts)
+                {
+                    var delayMs = 500 * (1 << (attempt - 1)); // 500, 1000, 2000ms
+                    Logger.Log($"[Gemini] 일시 오류 {status}, {delayMs}ms 후 재시도 ({attempt}/{maxAttempts})");
+                    await Task.Delay(delayMs).ConfigureAwait(false);
+                    continue;
+                }
+
+                throw new HttpRequestException($"Gemini API 오류 ({status}): {body}");
+            }
 
             var root = JObject.Parse(body);
 
