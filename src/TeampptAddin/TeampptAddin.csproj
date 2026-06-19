@@ -60,6 +60,7 @@
     <Compile Include="Interop\IObjectSafety.cs" />
     <Compile Include="Models\AiRecommendation.cs" />
     <Compile Include="Models\StylePalette.cs" />
+    <Compile Include="Services\AssetSchemaMigrator.cs" />
     <Compile Include="Services\AssetLoader.cs" />
     <Compile Include="Services\IAiService.cs" />
     <Compile Include="Services\StyleLoader.cs" />
