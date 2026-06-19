@@ -44,9 +44,11 @@
 
 ```json
 {
-  "gemini": "AIzaSyB7Q3p-bhQTc5WZGKNEvr5BNGi17RDRthg"
+  "gemini": "<YOUR_GEMINI_API_KEY>"
 }
 ```
+
+> ⚠️ 실제 키를 문서/커밋에 절대 넣지 말 것. 키는 gitignore된 api-keys.json에만. (이전에 여기 평문 키가 커밋되어 유출·비활성화된 사고 있었음)
 
 - [ ] **Step 3: csproj에 Content Include 추가**
 
