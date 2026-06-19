@@ -506,12 +506,12 @@ namespace TeampptAddin
                     _styleConfig?.Palettes ?? new List<StylePalette>(),
                     _styleConfig?.Fonts ?? new List<StyleFont>());
 
-                _chatStack.Children.Remove(loading);
+                RemoveLoadingBubble(loading);
                 ShowAiResponse(rec);
             }
             catch (Exception ex)
             {
-                _chatStack.Children.Remove(loading);
+                RemoveLoadingBubble(loading);
                 AddAiBubble($"오류가 발생했습니다: {ex.Message}");
             }
 
@@ -577,57 +577,52 @@ namespace TeampptAddin
                 Margin = new Thickness(4, 0, 0, 3)
             });
 
-            var dotsPanel = new StackPanel
+            var dotsTb = new TextBlock
             {
-                Orientation = Orientation.Horizontal,
-                VerticalAlignment = VerticalAlignment.Center
+                Text = "·",
+                FontSize = 16,
+                FontWeight = FontWeights.Bold,
+                Foreground = ThemeResources.TextSub,
+                FontFamily = ThemeResources.FontBase
             };
 
-            for (int i = 0; i < 3; i++)
+            var dotTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(400) };
+            int dotCount = 1;
+            dotTimer.Tick += (s, e) =>
             {
-                var idx = i;
-                var dot = new Ellipse
-                {
-                    Width = 6,
-                    Height = 6,
-                    Fill = ThemeResources.BgThumb,
-                    Margin = new Thickness(i == 0 ? 0 : 4, 0, 0, 0),
-                    RenderTransform = new TranslateTransform(0, 0)
-                };
+                dotCount = dotCount % 3 + 1;
+                dotsTb.Text = new string('·', dotCount);
+            };
+            dotTimer.Start();
 
-                dot.Loaded += (s, e) =>
-                {
-                    try
-                    {
-                        var bounce = new DoubleAnimation
-                        {
-                            From = 0,
-                            To = -5,
-                            Duration = TimeSpan.FromSeconds(0.6),
-                            AutoReverse = true,
-                            RepeatBehavior = RepeatBehavior.Forever,
-                            EasingFunction = new SineEase(),
-                            BeginTime = TimeSpan.FromMilliseconds(idx * 200)
-                        };
-                        ((TranslateTransform)((Ellipse)s).RenderTransform).BeginAnimation(TranslateTransform.YProperty, bounce);
-                    }
-                    catch { }
-                };
-
-                dotsPanel.Children.Add(dot);
-            }
-
-            wrapper.Children.Add(new Border
+            var border = new Border
             {
                 Background = ThemeResources.BgAiResponse,
                 CornerRadius = new CornerRadius(4, 13, 13, 13),
-                Padding = new Thickness(14, 12, 14, 12),
+                Padding = new Thickness(14, 10, 14, 10),
                 HorizontalAlignment = HorizontalAlignment.Left,
-                Child = dotsPanel
-            });
+                MinWidth = 50,
+                Child = dotsTb,
+                Tag = dotTimer
+            };
+
+            wrapper.Children.Add(border);
 
             _chatStack.Children.Add(wrapper);
             return wrapper;
+        }
+
+        private void RemoveLoadingBubble(FrameworkElement loading)
+        {
+            if (loading is StackPanel sp)
+            {
+                foreach (var child in sp.Children)
+                {
+                    if (child is Border b && b.Tag is DispatcherTimer timer)
+                        timer.Stop();
+                }
+            }
+            _chatStack.Children.Remove(loading);
         }
 
         private void AddAiBubble(string text)
@@ -649,7 +644,7 @@ namespace TeampptAddin
 
             var tb = new TextBlock
             {
-                Text = "",
+                Text = text,
                 Foreground = ThemeResources.TextMain,
                 FontSize = 12,
                 TextWrapping = TextWrapping.Wrap,
@@ -667,48 +662,6 @@ namespace TeampptAddin
 
             _chatStack.Children.Add(wrapper);
             wrapper.Opacity = 1;
-
-            try
-            {
-                var rng = new Random();
-                int charIdx = 0;
-                tb.Text = "|";
-
-                var typeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(30) };
-                typeTimer.Tick += (s, e) =>
-                {
-                    try
-                    {
-                        typeTimer.Interval = TimeSpan.FromMilliseconds(30 + rng.Next(16));
-                        if (charIdx < text.Length)
-                        {
-                            tb.Text = text.Substring(0, charIdx + 1) + "|";
-                            charIdx++;
-                            _chatScroll.ScrollToBottom();
-                        }
-                        else
-                        {
-                            typeTimer.Stop();
-                            int blinks = 0;
-                            var cursorTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
-                            cursorTimer.Tick += (s2, e2) =>
-                            {
-                                blinks++;
-                                tb.Text = blinks % 2 == 0 ? text + "|" : text;
-                                if (blinks >= 2)
-                                {
-                                    cursorTimer.Stop();
-                                    tb.Text = text;
-                                }
-                            };
-                            cursorTimer.Start();
-                        }
-                    }
-                    catch { typeTimer.Stop(); tb.Text = text; }
-                };
-                typeTimer.Start();
-            }
-            catch { tb.Text = text; }
         }
 
         private void ShowAiResponse(AiRecommendation rec)
