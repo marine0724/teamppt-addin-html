@@ -64,6 +64,7 @@
     <Compile Include="Models\StylePalette.cs" />
     <Compile Include="Services\AssetSchemaMigrator.cs" />
     <Compile Include="Services\CatalogBuilder.cs" />
+    <Compile Include="Services\ConceptResolver.cs" />
     <Compile Include="Services\AssetLoader.cs" />
     <Compile Include="Services\IAiService.cs" />
     <Compile Include="Services\StyleLoader.cs" />
