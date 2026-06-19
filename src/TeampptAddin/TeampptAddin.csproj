@@ -66,6 +66,7 @@
     <Compile Include="Services\CatalogBuilder.cs" />
     <Compile Include="Services\ConceptResolver.cs" />
     <Compile Include="Services\AssetLoader.cs" />
+    <Compile Include="Services\GeminiPromptBuilder.cs" />
     <Compile Include="Services\IAiService.cs" />
     <Compile Include="Services\StyleLoader.cs" />
     <Compile Include="Services\ThumbnailService.cs" />
