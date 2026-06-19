@@ -40,33 +40,9 @@ namespace TeampptAddin
 ## 핵심 원칙
 - 카탈로그에 있는 에셋만 추천할 수 있다. 없는 에셋을 지어내지 마.
 - 사용자의 의도와 에셋의 use_when/content_fit/tags를 비교해서, 실제로 적합할 때만 추천해.
-- 적합한 에셋이 없으면 솔직하게 ""현재 보유한 에셋 중에는 딱 맞는 것이 없다""고 말해.
+- 적합한 에셋이 없으면 솔직하게 ""현재 보유한 에셋 중에는 딱 맞는 것이 없다""고 말해. 이때 assets는 빈 배열, palette/font는 null로 둬.
 - 사용자의 요청이 모호하면 바로 추천하지 말고, 먼저 질문해서 의도를 파악해.
-
-## 응답 형식
-반드시 아래 JSON으로 응답해.
-
-**추천할 에셋이 있을 때:**
-```json
-{{
-  ""message"": ""추천 설명 (한국어, 1~2문장)"",
-  ""assets"": [
-    {{ ""file"": ""header_N.pptx"", ""reason"": ""구체적 추천 이유"" }}
-  ],
-  ""palette"": {{ ""id"": ""팔레트id"", ""reason"": ""이유"" }},
-  ""font"": {{ ""name"": ""폰트이름"", ""reason"": ""이유"" }}
-}}
-```
-
-**질문이 필요하거나 적합한 에셋이 없을 때:**
-```json
-{{
-  ""message"": ""질문 또는 안내 메시지 (한국어)"",
-  ""assets"": [],
-  ""palette"": null,
-  ""font"": null
-}}
-```";
+- message는 한국어 1~2문장. 각 에셋 추천에는 구체적 reason을 달아.";
         }
 
         public static string BuildUserPrompt(string userIntent)

@@ -83,15 +83,14 @@ namespace TeampptAddin.Tests
         }
 
         [Fact]
-        public void SystemPrompt_Contains_Json_Response_Schema()
+        public void SystemPrompt_Does_Not_Embed_Json_Skeleton()
         {
             var prompt = GeminiPromptBuilder.BuildSystemPrompt(
                 MakeCatalog(), MakePalettes(), MakeFonts());
 
-            Assert.Contains("\"file\"", prompt);
-            Assert.Contains("\"reason\"", prompt);
-            Assert.Contains("\"palette\"", prompt);
-            Assert.Contains("\"font\"", prompt);
+            // 형식은 responseSchema가 강제하므로 프롬프트에 JSON 골격을 넣지 않는다
+            Assert.DoesNotContain("```json", prompt);
+            Assert.DoesNotContain("\"reason\":", prompt);
         }
 
         [Fact]
