@@ -1,6 +1,6 @@
 # TEAMPPT Add-in 개발 인계문서
 
-> 최종 업데이트: 2026-06-19 (Phase E 완료, 구조화 출력 완료, **Phase F 설계 확정·API키 블로커**)  
+> 최종 업데이트: 2026-06-20 (Phase E 완료·LLM 정상작동, **Phase B 인제스트/저장 설계 확정 + 로컬 인제스트 코어 계획 완성**, DB=**Supabase 확정**)  
 > 프로젝트 경로: `C:\Projects\teamppt-addin\src\TeampptAddin`
 
 ---
@@ -9,18 +9,26 @@
 
 **브랜치:** `phase-e-gemini-flash`
 
-**최근 완료:**
-- 구조화 출력(Gemini `responseSchema`): `BuildResponseSchema()` 추가, 프롬프트 형식블록 제거, 요청에 연결. 단위테스트 19개 PASS. → [plans/2026-06-19-structured-output-responseschema.md](docs/superpowers/plans/2026-06-19-structured-output-responseschema.md)
-- 503/429/500 일시오류 지수백오프 재시도 추가 ([GeminiAiService.cs](src/TeampptAddin/Services/GeminiAiService.cs)).
-- 유출된 평문 API 키를 계획문서에서 제거(키는 Google이 비활성화됨).
+**바로 할 일:** 아래 계획을 **서브에이전트 방식(superpowers:subagent-driven-development)**으로 Task 1→7 순서대로 실행.
+→ **계획: [plans/2026-06-20-local-ingest-core.md](docs/superpowers/plans/2026-06-20-local-ingest-core.md)** (Phase B plan 1, 로컬 인제스트 코어)
 
-**🚫 현재 블로커 — Gemini API 키:**
-AI Studio에서 받은 키가 `AQ.`로 시작하는 53자(임시/OAuth 토큰, 곧 만료 → 400 `API_KEY_INVALID`). **정상 Gemini API 키는 `AIza`로 시작 ~39자.** 올바른 "API key"를 받아 `src/TeampptAddin/Assets/api-keys.json`에 넣고 **관리자 재빌드**(아래 4.2/Start-Process RunAs) 필요. ⚠️ repo가 **공개**라 키를 문서/커밋에 절대 넣지 말 것.
+- 외부 의존성 0 (Supabase/LLM 없음). 섹션 분류된 묶음 pptx → 슬라이드 1장=에셋 1개 split + 768px 썸네일.
+- 순수 로직(AssetIdGenerator/IngestPlanner)은 xUnit TDD, COM 어댑터(SectionReader/SlideSplitter/SlideImageRenderer)는 PowerPoint 수동 검증.
+- 계획서대로 정확히 진행 — 임의로 범위 늘리지 말 것. 각 Task 끝 커밋.
 
-**빌드 메모(이 PC):** MSBuild = `C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe`. 단위테스트는 관리자 불필요: 본프로젝트 `/p:RegisterForComInterop=false` 빌드 → 테스트프로젝트 `/p:BuildProjectReferences=false` 빌드 → `dotnet test --no-build --no-restore`. (`dotnet test` 직접 실행은 레거시 csproj 복원 깨짐.)
+**확정 사항(이번 세션):**
+- **DB = Supabase 확정** (Firebase 탈락). 이유: 제품 심장=pgvector 벡터검색이 Postgres 네이티브, net48/COM은 HttpClient REST만 쓰므로 Firebase SDK 장점 못 씀, jsonb로 유동성 확보. [[design-ai-redesign]]
+- Phase B 인제스트/저장 규약 설계 완료 → [specs/2026-06-20-asset-ingestion-storage-design.md](docs/superpowers/specs/2026-06-20-asset-ingestion-storage-design.md)
+  - 에셋 단위=섹션 안 슬라이드 1장(섹션명=category), 흐름=코드 split 먼저→LLM은 이해만(의도·슬롯·색·폰트 시각추론), 디자이너 부담 최소(섹션분류+텍스트박스만).
+  - 관리자 게이트=로컬 `%LOCALAPPDATA%\TeampptAddin\admin.json`(service-role키) 존재여부(로그인서버 불필요).
+  - 저장: Postgres(메타+벡터) / Storage(pptx·thumb) / 로컬캐시. embed_text↔metadata 분리. 유동성=고정은 검색용 최소골격, 나머지 jsonb.
+  - PNG 렌더 전역상수 `LlmImageLongEdgePx=768`. Gemini=타일과금, Claude=면적과금(W×H/750). 하이브리드: 인제스트=Claude Opus4.8, 사용자출력=Gemini.
 
-**다음 작업 — Phase F (Supabase 벡터 + 대화 메모리):** 설계 확정, 미결 7개. → [specs/2026-06-19-phase-f-supabase-vector-design.md](docs/superpowers/specs/2026-06-19-phase-f-supabase-vector-design.md)
-순서: ① (사용자) AIza 키 확보 → 구조화 출력 PowerPoint 검증 → ② 미결 7개 결정 → ③ Phase F 코드 계획 작성·실행.
+**최근 완료:** 구조화 출력(responseSchema) 19개 PASS, 503/429/500 재시도, Gemini 키 정상작동 확인, Assets CopyToOutput=Always.
+
+**빌드 메모(이 PC):** MSBuild = `C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe`. 단위테스트는 관리자 불필요: 본프로젝트 `/p:RegisterForComInterop=false` 빌드 → 테스트프로젝트 `/p:BuildProjectReferences=false` 빌드 → `dotnet test --no-build --no-restore`. COM 등록 빌드(애드인 실 구동)는 `Start-Process -Verb RunAs` 필수.
+
+**이후 plan (이 계획 밖):** LLM 이해 어댑터(Gemini/Claude) → 임베딩+Supabase 업로드+관리자 게이트 → 추천·삽입 읽기 경로.
 
 ---
 
