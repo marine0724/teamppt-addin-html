@@ -41,12 +41,13 @@
 
 | # | Task | 무엇을 | 상태 |
 |---|------|--------|------|
-| — | 설계·spec·계획 | brainstorming 접근법 A → [spec](docs/superpowers/specs/2026-06-21-panel-button-per-window-design.md) → [plan](docs/superpowers/plans/2026-06-21-panel-button-per-window.md) | ✅ 완료 |
-| 0 | systematic-debugging | `debug.log`로 `CTPFactoryAvailable`/`WindowActivate` 실측 → §2 진단 확정 | ⬜ 다음 |
-| 1 | WindowSweep (TDD) | 회수판단 순수함수 + 단위테스트 4 GREEN | ⬜ |
-| 2 | TaskPaneManager | 창별 CTP 추적·해제 3종 세트 (신규 모듈) | ⬜ |
-| 3 | Connect 버튼화 | 리본 토글 버튼 + 위임, 자동 생성 제거 (수동검증 1~4) | ⬜ |
-| 4 | 동기화 견고화 | 창 전환/닫기/종료 회수 검증 (수동검증 5~10) | ⬜ |
+| — | 설계·spec·계획 | brainstorming 접근법 A → [spec](docs/superpowers/specs/2026-06-21-panel-button-per-window-design.md) → [plan](docs/superpowers/plans/2026-06-21-panel-button-per-window.md) | ✅ |
+| 0 | systematic-debugging | 실측 확정: 파일 연속 열기→`CTPFactoryAvailable` 4회·CTP 4개 = 누적중복 (spec §2.1) | ✅ |
+| 1 | WindowSweep (TDD) | 회수판단 순수함수 + 단위테스트 4 GREEN | ✅ |
+| 2 | TaskPaneManager | 창별 CTP 추적·해제 3종 세트 (신규 모듈, 컴파일 OK) | ✅ |
+| 3 | Connect 버튼화 | 리본 토글 버튼 + 위임, 자동 생성 제거. **코드 완료, 빌드+수동검증 1~4 대기** | 🔄 |
+| 4 | 동기화 견고화 | 창 전환/닫기/종료 회수 검증 (수동검증 5~10) | ⬜ 새 세션 |
 | 5 | 마무리 | 보드/인계 갱신 + main 통합 | ⬜ |
 
-> Task 0이 구현 선행. 순수함수만 TDD GREEN, 나머지는 PowerPoint 수동검증 PASS로 확정.
+> **현재 위치:** Task 3 코드 작성 완료(Connect.cs 전면 교체). 다음 = 빌드 → PowerPoint 수동검증 체크리스트 1~4.
+> **새 세션 인계:** 사용자 부재로 Task 4부터 새 창에서 진행. 빌드=직접 recompile(`/p:Platform=AnyCPU /p:RegisterForComInterop=false`, elevated 래퍼 무력 — plan Global Constraints 참조). COM 등록은 이미 완료(재등록 불필요).

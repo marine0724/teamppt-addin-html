@@ -7,28 +7,20 @@ using PowerPoint = Microsoft.Office.Interop.PowerPoint;
 namespace TeampptAddin
 {
     /// <summary>
-    /// COM Add-in 진입점. PowerPoint가 시작될 때 이 클래스를 로드.
-    ///
-    /// IDTExtensibility2: Add-in 생명주기 관리
-    /// - OnConnection: PowerPoint Application 참조를 Globals에 저장
-    /// - OnDisconnection: 참조 해제
-    ///
-    /// ICustomTaskPaneConsumer: Task Pane 생성
-    /// - CTPFactoryAvailable: CreateCTP("TeampptAddin.TaskPaneHost")로 오른쪽 패널 생성
-    ///   → TaskPaneHost가 ActiveX 컨트롤로 호스팅됨
-    ///
-    /// 레지스트리 등록:
-    /// HKCU\Software\Microsoft\Office\PowerPoint\Addins\TeampptAddin.Connect
-    /// LoadBehavior=3 (시작 시 자동 로드)
+    /// COM Add-in 진입점. 직접 패널을 만들지 않고 전부 TaskPaneManager에 위임한다.
+    /// - IDTExtensibility2: 생명주기. OnConnection에서 앱 이벤트 구독.
+    /// - ICustomTaskPaneConsumer: CTPFactoryAvailable에서 팩토리를 Manager에 보관(생성 안 함).
+    /// - IRibbonExtensibility: TEAMPPT 탭 토글 버튼. 버튼이 활성창 패널을 토글.
+    /// LoadBehavior=3 유지(리본 표시). 자동 생성만 제거.
     /// </summary>
     [ComVisible(true)]
     [Guid("7B3A4D1E-9F2C-4A85-B6D0-3E8F1C5A7B92")]
     [ProgId("TeampptAddin.Connect")]
     [ClassInterface(ClassInterfaceType.None)]
-    public class Connect : IDTExtensibility2, ICustomTaskPaneConsumer
+    public class Connect : IDTExtensibility2, ICustomTaskPaneConsumer, IRibbonExtensibility
     {
         private PowerPoint.Application _app;
-        private _CustomTaskPane _taskPane;
+        private readonly TaskPaneManager _manager = new TaskPaneManager();
 
         #region IDTExtensibility2
 
@@ -38,16 +30,24 @@ namespace TeampptAddin
             _app = (PowerPoint.Application)Application;
             Globals.Application = _app;
 
-            _app.WindowActivate += (pres, win) =>
-            {
-                int hwnd = 0;
-                try { hwnd = win.HWND; } catch { }
-                Logger.Log($"DIAG WindowActivate. HWND={hwnd}");
-            };
+            _app.WindowActivate += App_WindowActivate;
+            _app.PresentationClose += App_PresentationClose;
+            Logger.Log("Connect.OnConnection: events wired");
         }
 
         public void OnDisconnection(ext_DisconnectMode RemoveMode, ref Array custom)
         {
+            try
+            {
+                if (_app != null)
+                {
+                    _app.WindowActivate -= App_WindowActivate;
+                    _app.PresentationClose -= App_PresentationClose;
+                }
+            }
+            catch (Exception ex) { Logger.Log($"OnDisconnection unwire failed: {ex.Message}"); }
+
+            _manager.ReleaseAll();
             _app = null;
             Globals.Application = null;
         }
@@ -58,37 +58,77 @@ namespace TeampptAddin
 
         public void OnBeginShutdown(ref Array custom)
         {
-            if (_taskPane != null)
-                _taskPane.Visible = false;
+            _manager.ReleaseAll();
+        }
+
+        #endregion
+
+        #region App events
+
+        private void App_WindowActivate(PowerPoint.Presentation Pres, PowerPoint.DocumentWindow Wn)
+        {
+            _manager.SweepClosedWindows();
+        }
+
+        private void App_PresentationClose(PowerPoint.Presentation Pres)
+        {
+            _manager.SweepClosedWindows();
         }
 
         #endregion
 
         #region ICustomTaskPaneConsumer
 
+        // 자동 생성 제거: 팩토리만 보관(idempotent). 패널은 버튼으로만 생성.
         public void CTPFactoryAvailable(ICTPFactory CTPFactoryInst)
         {
-            try
-            {
-                int wins = 0;
-                try { wins = Globals.Application?.Windows?.Count ?? -1; } catch { wins = -2; }
-                Logger.Log($"DIAG CTPFactoryAvailable called. Windows.Count={wins}");
-
-                _taskPane = CTPFactoryInst.CreateCTP(
-                    "TeampptAddin.TaskPaneHost",
-                    "TEAMPPT");
-                _taskPane.Width = 660;
-                _taskPane.DockPosition = MsoCTPDockPosition.msoCTPDockPositionRight;
-                _taskPane.Visible = true;
-            }
-            catch (Exception ex)
-            {
-                System.Windows.Forms.MessageBox.Show(
-                    $"TEAMPPT Task Pane 생성 실패:\n{ex.Message}",
-                    "TEAMPPT", System.Windows.Forms.MessageBoxButtons.OK,
-                    System.Windows.Forms.MessageBoxIcon.Error);
-            }
+            _manager.SetFactory(CTPFactoryInst);
         }
+
+        #endregion
+
+        #region IRibbonExtensibility
+
+        public string GetCustomUI(string RibbonID)
+        {
+            return RibbonXml;
+        }
+
+        public void OnRibbonLoad(IRibbonUI ribbon)
+        {
+            _manager.SetRibbon(ribbon);
+        }
+
+        public void OnToggleAction(IRibbonControl control, bool pressed)
+        {
+            _manager.Toggle(ActiveHwnd(), pressed);
+        }
+
+        public bool GetTogglePressed(IRibbonControl control)
+        {
+            return _manager.IsVisible(ActiveHwnd());
+        }
+
+        private int ActiveHwnd()
+        {
+            try { return _app?.ActiveWindow?.HWND ?? 0; }
+            catch { return 0; }
+        }
+
+        private const string RibbonXml =
+@"<customUI xmlns='http://schemas.microsoft.com/office/2009/07/customui' onLoad='OnRibbonLoad'>
+  <ribbon>
+    <tabs>
+      <tab id='teampptTab' label='TEAMPPT'>
+        <group id='teampptGroup' label='패널'>
+          <toggleButton id='teampptToggle' label='TEAMPPT 패널'
+                        size='large' imageMso='PaneInsert'
+                        onAction='OnToggleAction' getPressed='GetTogglePressed'/>
+        </group>
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>";
 
         #endregion
     }
