@@ -2,7 +2,7 @@
 
 > 이 파일 하나만 열어두면 "지금 어디서 뭘 하는지" 보입니다. Claude가 매 세션 함께 유지.
 > **기록용 아카이브가 아니라 "지금 여기" 작업 보드.** 끝난 잎(Task)은 지우고 교체, 숲·나무 단위는 끝날 때까지 유지. (규칙: CLAUDE.md)
-> 최종 갱신: 2026-06-21 · 현재 작업: **패널 버튼화 + 중복 본질 해결 (설계 중 / brainstorming)**
+> 최종 갱신: 2026-06-21 · 현재 작업: **패널 버튼화 + 중복 본질 해결 (설계 승인·spec 완료 → 다음: writing-plans, 새 세션·별도 브랜치)**
 
 ---
 
@@ -39,6 +39,8 @@
 
 | # | Task | 무엇을 | 상태 |
 |---|------|--------|------|
-| — | (설계 중) | brainstorming으로 접근법 확정 → spec → writing-plans로 Task 분해 | 🔵 진행 중 |
+| — | 설계·spec | brainstorming 접근법 A 확정 → [spec](docs/superpowers/specs/2026-06-21-panel-button-per-window-design.md) 작성·커밋 | ✅ 완료 |
+| 0 | systematic-debugging | `debug.log`로 `CTPFactoryAvailable` 트리거 실측 확정 (구현 선행) | ⬜ 다음 |
+| — | (writing-plans) | spec → 구현계획으로 Task 분해 (새 세션·별도 브랜치) | ⬜ 다음 |
 
-> 설계 승인 후 writing-plans가 이 표를 실제 Task로 채운다.
+> 다음 세션이 writing-plans로 이 표를 실제 구현 Task로 채운다. (spec §4~8 기준)

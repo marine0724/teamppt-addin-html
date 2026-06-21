@@ -9,28 +9,27 @@
 
 > **📌 고정 규칙 (매 세션):** [PROGRESS-BOARD.md](PROGRESS-BOARD.md)를 항상 함께 유지한다. 기록용 아카이브가 아니라 "지금 여기" 작업 보드 — 끝난 잎(Task)은 지우고 다음으로 교체하되, 숲(로드맵)·나무(현재 plan) 단위가 끝난 게 아니면 골격은 유지. top 문제 해결까지 끌고 간다. (상세 규칙은 CLAUDE.md)
 
-**브랜치:** `phase-e-gemini-flash`
+**브랜치:** `main` (인제스트 plan 머지 완료, `phase-e-gemini-flash` 삭제됨)
 
-**현황 (2026-06-21):** 로컬 인제스트 코어(plan: [local-ingest-core](docs/superpowers/plans/2026-06-20-local-ingest-core.md)) **Task 1~7 구현·코드리뷰·단위테스트 전부 완료, 커밋됨.** 단위테스트 24/24 GREEN. 진행 보드: [PROGRESS-BOARD.md](PROGRESS-BOARD.md).
+**현황 (2026-06-21):**
+- ✅ **로컬 인제스트 코어 완료·main 머지** ([local-ingest-core](docs/superpowers/plans/2026-06-20-local-ingest-core.md)). Task 1~7 구현·단위테스트 24/24 GREEN + **수동검증 35/35 PASS**(`{섹션명}_NN.pptx` 1슬라이드 + `_NN.png` 768px). 커밋 `5040e3c`.
+- ✅ **패널 작업 설계 승인·spec 작성 완료** → [specs/2026-06-21-panel-button-per-window-design.md](docs/superpowers/specs/2026-06-21-panel-button-per-window-design.md). 다음은 구현계획(writing-plans).
 
-**제품 코드는 동작 확인됨:** 애드인 미로드 상태의 깨끗한 PowerPoint에서 `IngestRunner.Run`으로 돌린 실행이 **23슬라이드까지 정상 분할**(debug.log 증거). 분할 파이프라인 자체는 OK. 남은 건 **Task 7 전체 수동검증**뿐.
+### 🔴 다음 세션 첫 할 일 — 패널 버튼화 + 중복 본질 해결
+**무엇:** 우측 패널을 시작 시 자동 표시 → **리본 전용 TEAMPPT 탭의 토글 버튼**으로 전환하고, **창마다 1개**를 `Dictionary<HWND,CTP>`로 소유·추적·해제해 **누적 중복을 구조적으로 제거**. 2개 이상 창에서 각각 독립 작동. (상세·이벤트8개·해제3종세트·테스트: **spec 정독**.)
 
-### 🔴 다음 세션 첫 할 일 (블로커)
-1. **검증 하니스 스크립트 수정** — `scripts/manual-verify-task7.ps1`이 진행률 표시하려고 COM 어댑터를 쪼개 호출 → PowerShell이 `New-Object -ComObject`의 `__ComObject`를 강타입 `PowerPoint.Presentation` 인자로 **변환 못 해 실패**(`Read`/`SplitSlide` 등).
-   **해결책(중요):** 어댑터 직접 호출 대신 **`[TeampptAddin.IngestRunner]::Run($Bundle, $OutDir)` 호출** — 인자가 문자열 2개뿐이라 COM 변환 문제 없음(17:28 성공 실행이 바로 이 경로). 진행률은 IngestRunner가 항목마다 `debug.log`에 남기므로: Run 호출 + 전후로 plan/결과 출력 + `debug.log` tail(또는 Run을 백그라운드 잡으로 돌리며 tail)로 충분.
-2. **전체 묶음 검증** — `assets/layout_test_aseet.pptx`(15섹션) 전부 PASS: `{섹션명}_NN.pptx`(각 **1슬라이드**) + `{섹션명}_NN.png`(**긴변 768**) 짝 생성. 출력 폴더 = `C:\Projects\teamppt-addin\test`.
-3. PASS 후 **plan 마무리** — superpowers:finishing-a-development-branch (전체 브랜치 최종 리뷰 → main 머지 검토).
+순서:
+1. **별도 브랜치 생성** (Connect.cs/TaskPaneHost 영역 → 인제스트와 분리).
+2. **writing-plans로 구현계획 작성.** 계획의 **Task 0 = systematic-debugging**: `debug.log`로 `CTPFactoryAvailable`이 실제로 언제 몇 번 불리는지 실측해 진단(spec §2) 확정 + PPT의 CTP↔활성창 바인딩 확인.
+3. 계획대로 구현 → 순수함수(회수판단) 단위테스트 GREEN → PowerPoint 수동검증 체크리스트 1~10(spec §8) PASS.
 
-### 🟡 별도 task (인제스트와 무관, 나중에) — 패널 중복 버그
-- **증상:** PowerPoint 창을 새로 열거나 껐다 켜면 우측 TEAMPPT 패널이 **누적 중복**.
-- **원인(`Connect.cs`):** `_taskPane` 필드 1개를 덮어쓰기만 함(dedup 없음) + `OnBeginShutdown`은 `Visible=false`만(Delete/ReleaseComObject 없음) + `OnDisconnection`은 패널 정리 안 함 → 누적. 로그의 반복 `Constructor STA`가 창마다 CTP 생성 증거.
-- **해결:** (0) systematic-debugging으로 생성 트리거 확정 → (1) 단일 인스턴스 가드 + `OnDisconnection`/`OnBeginShutdown`에서 `Delete()`+`ReleaseComObject` → (2) 창마다 생성이면 `Dictionary<window,CTP>`로 창당 1개·창 닫힐 때 해제.
-- **주의:** `Connect.cs`/`TaskPaneHost` 수정 필요 → 인제스트 plan(이 두 파일 수정 금지)과 **분리, 별도 브랜치**.
+**핵심 결정(spec 요약):** Connect 얇게 + **TaskPaneManager 신규**(모듈화). `TaskPaneHost` **무변경**(지연 초기화 유지 — ActiveX 충돌 구조적 보장). `LoadBehavior=3` 유지(리본 표시), 자동 *생성*만 제거.
 
 ### 메모
-- **검증 스크립트 인코딩:** Windows PowerShell 5.1은 BOM 없는 .ps1의 한글을 깨뜨림 → 스크립트 **문자열 리터럴은 ASCII**로 유지(런타임 데이터의 한글은 무방).
-- **검증 시 PowerPoint 완전히 닫을 것** — 켜진(애드인 로드) 인스턴스에 붙으면 패널 중복 + 인제스트 충돌(slide 5에서 크래시 사례). 스크립트가 POWERPNT 실행 중이면 막도록 되어 있음.
-- 더블 언더스코어 파일명(`레이아웃_목차__01`)은 정상 — 섹션명 `레이아웃(목차)`의 괄호가 `_`로 치환된 것(AssetIdGenerator 명세).
+- **검증 시 PowerPoint 완전히 닫을 것** — 켜진(애드인 로드) 인스턴스에 붙으면 패널 중복 + COM 충돌.
+- **PowerShell .ps1 문자열 리터럴은 ASCII 유지** (Win PS 5.1이 BOM 없는 한글 깨뜨림). 런타임 데이터 한글은 무방.
+- 더블 언더스코어 파일명(`레이아웃_목차__01`)은 정상 — 섹션명 괄호가 `_`로 치환(AssetIdGenerator 명세).
+- 인제스트 수동검증 하니스: `scripts/manual-verify-task7.ps1` (어댑터 직접호출 금지, `IngestRunner.Run` 문자열 2개 경로만 — COM 마샬링 회피).
 
 **확정 사항(이번 세션):**
 - **DB = Supabase 확정** (Firebase 탈락). 이유: 제품 심장=pgvector 벡터검색이 Postgres 네이티브, net48/COM은 HttpClient REST만 쓰므로 Firebase SDK 장점 못 씀, jsonb로 유동성 확보. [[design-ai-redesign]]
