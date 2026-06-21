@@ -16,7 +16,7 @@ namespace TeampptAddin
     [ComVisible(true)]
     [Guid("7B3A4D1E-9F2C-4A85-B6D0-3E8F1C5A7B92")]
     [ProgId("TeampptAddin.Connect")]
-    [ClassInterface(ClassInterfaceType.None)]
+    [ClassInterface(ClassInterfaceType.AutoDual)]
     public class Connect : IDTExtensibility2, ICustomTaskPaneConsumer, IRibbonExtensibility
     {
         private PowerPoint.Application _app;
@@ -115,14 +115,16 @@ namespace TeampptAddin
             catch { return 0; }
         }
 
+        // 전용 탭이 아니라 홈 탭(TabHome) 끝에 그룹 1개를 끼워 넣는다 (Plus AI 스타일).
         private const string RibbonXml =
 @"<customUI xmlns='http://schemas.microsoft.com/office/2009/07/customui' onLoad='OnRibbonLoad'>
   <ribbon>
     <tabs>
-      <tab id='teampptTab' label='TEAMPPT'>
-        <group id='teampptGroup' label='패널'>
+      <tab idMso='TabHome'>
+        <group id='teampptGroup' label='TEAMPPT'>
           <toggleButton id='teampptToggle' label='TEAMPPT 패널'
-                        size='large' imageMso='PaneInsert'
+                        size='large' imageMso='SelectionPane'
+                        screentip='TEAMPPT 패널 열기/닫기'
                         onAction='OnToggleAction' getPressed='GetTogglePressed'/>
         </group>
       </tab>
