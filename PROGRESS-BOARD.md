@@ -37,10 +37,16 @@
 
 ## 🍃 잎 — Task 현황
 
+> 브랜치 `panel-button-per-window` · [구현계획](docs/superpowers/plans/2026-06-21-panel-button-per-window.md) 작성 완료.
+
 | # | Task | 무엇을 | 상태 |
 |---|------|--------|------|
-| — | 설계·spec | brainstorming 접근법 A 확정 → [spec](docs/superpowers/specs/2026-06-21-panel-button-per-window-design.md) 작성·커밋 | ✅ 완료 |
-| 0 | systematic-debugging | `debug.log`로 `CTPFactoryAvailable` 트리거 실측 확정 (구현 선행) | ⬜ 다음 |
-| — | (writing-plans) | spec → 구현계획으로 Task 분해 (새 세션·별도 브랜치) | ⬜ 다음 |
+| — | 설계·spec·계획 | brainstorming 접근법 A → [spec](docs/superpowers/specs/2026-06-21-panel-button-per-window-design.md) → [plan](docs/superpowers/plans/2026-06-21-panel-button-per-window.md) | ✅ 완료 |
+| 0 | systematic-debugging | `debug.log`로 `CTPFactoryAvailable`/`WindowActivate` 실측 → §2 진단 확정 | ⬜ 다음 |
+| 1 | WindowSweep (TDD) | 회수판단 순수함수 + 단위테스트 4 GREEN | ⬜ |
+| 2 | TaskPaneManager | 창별 CTP 추적·해제 3종 세트 (신규 모듈) | ⬜ |
+| 3 | Connect 버튼화 | 리본 토글 버튼 + 위임, 자동 생성 제거 (수동검증 1~4) | ⬜ |
+| 4 | 동기화 견고화 | 창 전환/닫기/종료 회수 검증 (수동검증 5~10) | ⬜ |
+| 5 | 마무리 | 보드/인계 갱신 + main 통합 | ⬜ |
 
-> 다음 세션이 writing-plans로 이 표를 실제 구현 Task로 채운다. (spec §4~8 기준)
+> Task 0이 구현 선행. 순수함수만 TDD GREEN, 나머지는 PowerPoint 수동검증 PASS로 확정.
