@@ -109,6 +109,38 @@ namespace TeampptAddin
             return _manager.IsVisible(ActiveHwnd());
         }
 
+        // 커스텀 브랜드 아이콘 (Assets/teamppt-icon.png). 1회 로드 후 캐시.
+        private static System.Drawing.Image _iconImage;
+        private static stdole.IPictureDisp _iconPic;
+
+        public stdole.IPictureDisp GetButtonImage(IRibbonControl control)
+        {
+            try
+            {
+                if (_iconPic == null)
+                {
+                    var path = System.IO.Path.Combine(Globals.AssetsDir, "teamppt-icon.png");
+                    var bytes = System.IO.File.ReadAllBytes(path);
+                    _iconImage = System.Drawing.Image.FromStream(new System.IO.MemoryStream(bytes));
+                    _iconPic = RibbonImage.Convert(_iconImage);
+                }
+                return _iconPic;
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"GetButtonImage failed: {ex.Message}");
+                return null;
+            }
+        }
+
+        // System.Drawing.Image -> stdole.IPictureDisp 변환 (AxHost 보호 헬퍼 노출).
+        private sealed class RibbonImage : System.Windows.Forms.AxHost
+        {
+            private RibbonImage() : base("4f2f3c5a-1b2d-4e6f-9a8b-0c1d2e3f4a5b") { }
+            public static stdole.IPictureDisp Convert(System.Drawing.Image image)
+                => (stdole.IPictureDisp)GetIPictureDispFromPicture(image);
+        }
+
         private int ActiveHwnd()
         {
             try { return _app?.ActiveWindow?.HWND ?? 0; }
@@ -123,7 +155,7 @@ namespace TeampptAddin
       <tab idMso='TabHome'>
         <group id='teampptGroup' label='TEAMPPT'>
           <toggleButton id='teampptToggle' label='TEAMPPT 패널'
-                        size='large' imageMso='SelectionPane'
+                        size='large' getImage='GetButtonImage'
                         screentip='TEAMPPT 패널 열기/닫기'
                         onAction='OnToggleAction' getPressed='GetTogglePressed'/>
         </group>
