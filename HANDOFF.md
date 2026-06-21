@@ -7,6 +7,8 @@
 
 ## ⚡ 재개 지점 (READ FIRST — 새 세션은 여기부터)
 
+> **📌 고정 규칙 (매 세션):** [PROGRESS-BOARD.md](PROGRESS-BOARD.md)를 항상 함께 유지한다. 기록용 아카이브가 아니라 "지금 여기" 작업 보드 — 끝난 잎(Task)은 지우고 다음으로 교체하되, 숲(로드맵)·나무(현재 plan) 단위가 끝난 게 아니면 골격은 유지. top 문제 해결까지 끌고 간다. (상세 규칙은 CLAUDE.md)
+
 **브랜치:** `phase-e-gemini-flash`
 
 **현황 (2026-06-21):** 로컬 인제스트 코어(plan: [local-ingest-core](docs/superpowers/plans/2026-06-20-local-ingest-core.md)) **Task 1~7 구현·코드리뷰·단위테스트 전부 완료, 커밋됨.** 단위테스트 24/24 GREEN. 진행 보드: [PROGRESS-BOARD.md](PROGRESS-BOARD.md).
