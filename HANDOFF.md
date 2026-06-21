@@ -9,21 +9,23 @@
 
 > **📌 고정 규칙 (매 세션):** [PROGRESS-BOARD.md](PROGRESS-BOARD.md)를 항상 함께 유지한다. 기록용 아카이브가 아니라 "지금 여기" 작업 보드 — 끝난 잎(Task)은 지우고 다음으로 교체하되, 숲(로드맵)·나무(현재 plan) 단위가 끝난 게 아니면 골격은 유지. top 문제 해결까지 끌고 간다. (상세 규칙은 CLAUDE.md)
 
-**브랜치:** `main` (인제스트 plan 머지 완료, `phase-e-gemini-flash` 삭제됨)
+**브랜치:** `panel-button-per-window` (main 미머지 — 패널 작업 진행 중. 완료 후 통합)
 
-**현황 (2026-06-21):**
-- ✅ **로컬 인제스트 코어 완료·main 머지** ([local-ingest-core](docs/superpowers/plans/2026-06-20-local-ingest-core.md)). Task 1~7 구현·단위테스트 24/24 GREEN + **수동검증 35/35 PASS**(`{섹션명}_NN.pptx` 1슬라이드 + `_NN.png` 768px). 커밋 `5040e3c`.
-- ✅ **패널 작업 설계 승인·spec 작성 완료** → [specs/2026-06-21-panel-button-per-window-design.md](docs/superpowers/specs/2026-06-21-panel-button-per-window-design.md). 다음은 구현계획(writing-plans).
+**현황 (2026-06-21):** 패널 버튼화 [구현계획](docs/superpowers/plans/2026-06-21-panel-button-per-window.md) 실행 중 — **Task 0~3 코드 완료, Task 3 수동검증 + Task 4~5 남음.**
+- ✅ Task 0: 실측으로 spec §2 진단 확정(파일 연속 열기 → `CTPFactoryAvailable` 4회·CTP 4개 = 누적 중복. spec §2.1 기록). 커밋 `7942efe`.
+- ✅ Task 1: `Core/WindowSweep.cs` 회수판단 순수함수 + 단위테스트 4 GREEN. 커밋 `4840459`.
+- ✅ Task 2: `UI/TaskPaneManager.cs` 신규(창별 CTP 추적·해제 3종 세트). 컴파일 OK. 커밋 `0a0fb32`.
+- 🔄 Task 3: `Connect.cs` 전면 교체(리본 토글 버튼 + 위임, 자동 생성 제거). **빌드 0에러·DLL 갱신 완료. 커밋 `48e1df8`.** ← **수동검증 1~4 미실행.**
 
-### 🔴 다음 세션 첫 할 일 — 패널 버튼화 + 중복 본질 해결
-**무엇:** 우측 패널을 시작 시 자동 표시 → **리본 전용 TEAMPPT 탭의 토글 버튼**으로 전환하고, **창마다 1개**를 `Dictionary<HWND,CTP>`로 소유·추적·해제해 **누적 중복을 구조적으로 제거**. 2개 이상 창에서 각각 독립 작동. (상세·이벤트8개·해제3종세트·테스트: **spec 정독**.)
+### 🔴 다음 세션 첫 할 일 — Task 3 수동검증 → Task 4
+> [PROGRESS-BOARD.md](PROGRESS-BOARD.md) 잎 표가 정확한 현재 위치. [plan](docs/superpowers/plans/2026-06-21-panel-button-per-window.md) Task 3 Step 3부터.
 
-순서:
-1. **별도 브랜치 생성** (Connect.cs/TaskPaneHost 영역 → 인제스트와 분리).
-2. **writing-plans로 구현계획 작성.** 계획의 **Task 0 = systematic-debugging**: `debug.log`로 `CTPFactoryAvailable`이 실제로 언제 몇 번 불리는지 실측해 진단(spec §2) 확정 + PPT의 CTP↔활성창 바인딩 확인.
-3. 계획대로 구현 → 순수함수(회수판단) 단위테스트 GREEN → PowerPoint 수동검증 체크리스트 1~10(spec §8) PASS.
+1. **빌드 확인:** DLL은 이미 새 코드(20:04 빌드). 재빌드 필요시 `MSBuild TeampptAddin.csproj /t:Build /p:Configuration=Debug /p:Platform=AnyCPU /p:RegisterForComInterop=false`(비관리자 직접). **COM 재등록 불필요**(새 coclass/GUID 없음, 이미 등록됨). ⚠️ CLAUDE.md의 elevated `Start-Process RunAs cmd` 빌드 래퍼는 이 환경서 **무력**(build.log 갱신 안 됨)이니 쓰지 말 것.
+2. **Task 3 수동검증(체크리스트 1~4):** PowerPoint 완전히 닫고 시작 → 패널 자동 안 뜸+리본 TEAMPPT 탭/토글 버튼 / 버튼 토글 / 둘째 파일 열어도 자동 안 뜸 / 둘째 창 버튼 독립 패널. `debug.log`에 `Manager.Toggle created` 창마다 1회. 결과는 사용자가 붙여줌.
+3. **Task 4(수동검증 5~10):** 창 전환 버튼 동기화 / X로 닫기 동기화 / 한 창 닫기→그 패널만 회수 / 여러 번 껐다켜기 누적 0 / ActiveX 충돌 없음 / 종료 ReleaseAll. 어긋나면 systematic-debugging.
+4. **Task 5:** 보드/인계 갱신 + finishing-a-development-branch로 main 통합.
 
-**핵심 결정(spec 요약):** Connect 얇게 + **TaskPaneManager 신규**(모듈화). `TaskPaneHost` **무변경**(지연 초기화 유지 — ActiveX 충돌 구조적 보장). `LoadBehavior=3` 유지(리본 표시), 자동 *생성*만 제거.
+**핵심 결정(spec 요약):** Connect 얇게 + **TaskPaneManager 신규**(모듈화, 완료). `TaskPaneHost` **무변경**(지연 초기화 유지). `LoadBehavior=3` 유지, 자동 *생성*만 제거. 딕셔너리 키=HWND(실측 검증됨).
 
 ### 메모
 - **검증 시 PowerPoint 완전히 닫을 것** — 켜진(애드인 로드) 인스턴스에 붙으면 패널 중복 + COM 충돌.
