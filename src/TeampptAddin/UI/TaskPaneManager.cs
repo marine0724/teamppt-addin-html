@@ -97,6 +97,9 @@ namespace TeampptAddin
             if (reclaim.Count > 0) InvalidateButton();
         }
 
+        // 공유 리본: 활성창 전환 시 버튼을 무효화해 getPressed가 활성창 기준으로 재평가되게 한다.
+        public void RefreshButton() => InvalidateButton();
+
         public void ReleaseAll()
         {
             foreach (var hwnd in new List<int>(_panes.Keys))

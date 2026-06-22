@@ -68,6 +68,8 @@ namespace TeampptAddin
         private void App_WindowActivate(PowerPoint.Presentation Pres, PowerPoint.DocumentWindow Wn)
         {
             _manager.SweepClosedWindows();
+            // 공유 리본은 창 전환 시 getPressed를 자동 재평가하지 않는다. 활성창 기준으로 버튼을 갱신.
+            _manager.RefreshButton();
         }
 
         private void App_PresentationClose(PowerPoint.Presentation Pres)
