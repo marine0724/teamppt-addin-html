@@ -27,6 +27,7 @@ namespace TeampptAddin
         private Dictionary<string, AssetCard> _cardByFile = new Dictionary<string, AssetCard>();
         private IAiService _aiService;
         private StyleConfig _styleConfig;
+        private RemoteAssetCache _remoteCache;
 
         private Border[] _tabBorders;
         private FrameworkElement[] _tabPanels;
@@ -785,6 +786,8 @@ namespace TeampptAddin
         private Border BuildAiAssetCard(AssetSuggestion suggestion)
         {
             _cardByFile.TryGetValue(suggestion.Asset?.File ?? "", out var realCard);
+            var isRemote = realCard == null && suggestion.Asset?.Extra != null
+                && suggestion.Asset.Extra.ContainsKey("remote_thumb");
 
             var thumbBorder = new Border
             {
@@ -804,6 +807,11 @@ namespace TeampptAddin
                     Stretch = Stretch.Uniform,
                     Margin = new Thickness(4)
                 };
+            }
+            else if (isRemote && _remoteCache != null)
+            {
+                var remotePptx = suggestion.Asset.Extra["remote_file"].ToString();
+                LoadRemoteThumbAsync(thumbBorder, remotePptx);
             }
 
             var info = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
@@ -833,10 +841,10 @@ namespace TeampptAddin
                 Padding = new Thickness(6, 2, 6, 2),
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(6, 0, 0, 0),
-                Visibility = realCard != null ? Visibility.Visible : Visibility.Collapsed,
+                Visibility = (realCard != null || isRemote) ? Visibility.Visible : Visibility.Collapsed,
                 Child = new TextBlock
                 {
-                    Text = "DRAG",
+                    Text = isRemote ? "INSERT" : "DRAG",
                     Foreground = ThemeResources.TextAccent,
                     FontSize = 8,
                     FontWeight = FontWeights.Bold,
@@ -865,7 +873,7 @@ namespace TeampptAddin
                 ClipToBounds = true,
                 Padding = new Thickness(8),
                 Margin = new Thickness(12, 3, 12, 3),
-                Cursor = realCard != null ? Cursors.Hand : Cursors.Arrow
+                Cursor = (realCard != null || isRemote) ? Cursors.Hand : Cursors.Arrow
             };
             ThemeResources.ApplyRoundedClip(card, 11);
 
@@ -907,8 +915,278 @@ namespace TeampptAddin
                     CardClickInsert?.Invoke(realCard);
                 };
             }
+            else if (isRemote && _remoteCache != null)
+            {
+                var remoteFile = suggestion.Asset.Extra["remote_file"].ToString();
+                var assetName = suggestion.Asset?.Name ?? "에셋";
+                var category = suggestion.Asset?.Category ?? "";
+                var useWhen = suggestion.Reason ?? suggestion.Asset?.UseWhen ?? "";
+
+                bool mouseDown = false;
+                Point dragOrigin = default;
+                Popup remotePopup = null;
+                var popupTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
+                var closeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
+
+                popupTimer.Tick += (s2, e2) =>
+                {
+                    popupTimer.Stop();
+                    if (remotePopup != null) return;
+                    var popupContent = BuildRemotePopupContent(assetName, category, useWhen, thumbBorder);
+                    popupContent.Opacity = 0;
+                    popupContent.RenderTransform = new TranslateTransform(6, 0);
+                    remotePopup = new Popup
+                    {
+                        Child = popupContent,
+                        PlacementTarget = card,
+                        Placement = PlacementMode.Left,
+                        AllowsTransparency = true,
+                        StaysOpen = true,
+                        IsHitTestVisible = false,
+                        IsOpen = true
+                    };
+                    var fadeIn = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(150));
+                    var slideIn = new DoubleAnimation(6, 0, TimeSpan.FromMilliseconds(150));
+                    popupContent.BeginAnimation(OpacityProperty, fadeIn);
+                    ((TranslateTransform)popupContent.RenderTransform).BeginAnimation(TranslateTransform.XProperty, slideIn);
+                };
+
+                closeTimer.Tick += (s2, e2) =>
+                {
+                    closeTimer.Stop();
+                    if (remotePopup != null) { remotePopup.IsOpen = false; remotePopup = null; }
+                };
+
+                card.MouseEnter += (s, e) =>
+                {
+                    card.Background = ThemeResources.BgCardHover;
+                    card.BorderBrush = ThemeResources.BorderCardHover;
+                    closeTimer.Stop();
+                    if (remotePopup == null) popupTimer.Start();
+                };
+                card.MouseLeave += (s, e) =>
+                {
+                    card.Background = ThemeResources.BgCard;
+                    card.BorderBrush = ThemeResources.BorderCard;
+                    popupTimer.Stop();
+                    if (remotePopup != null) closeTimer.Start();
+                };
+                card.MouseLeftButtonDown += (s, e) =>
+                {
+                    mouseDown = true;
+                    dragOrigin = e.GetPosition(card);
+                    popupTimer.Stop();
+                    if (remotePopup != null) { remotePopup.IsOpen = false; remotePopup = null; }
+                };
+                card.MouseMove += (s, e) =>
+                {
+                    if (!mouseDown || e.LeftButton != MouseButtonState.Pressed) return;
+                    var pos = e.GetPosition(card);
+                    if (Math.Abs(pos.X - dragOrigin.X) > SystemParameters.MinimumHorizontalDragDistance ||
+                        Math.Abs(pos.Y - dragOrigin.Y) > SystemParameters.MinimumVerticalDragDistance)
+                    {
+                        mouseDown = false;
+                        DragRemoteAssetAsync(remoteFile, assetName);
+                    }
+                };
+                card.MouseLeftButtonUp += (s, e) =>
+                {
+                    if (!mouseDown) return;
+                    mouseDown = false;
+                    InsertRemoteAssetAsync(remoteFile, assetName);
+                };
+            }
 
             return card;
+        }
+
+        private async void LoadRemoteThumbAsync(Border thumbBorder, string remotePptxPath)
+        {
+            try
+            {
+                var localPptx = await _remoteCache.GetPptxAsync(remotePptxPath).ConfigureAwait(false);
+                Dispatcher.Invoke(() =>
+                {
+                    try
+                    {
+                        var thumbCachePath = System.IO.Path.Combine(
+                            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                            "TeampptAddin", "cache", "thumb-shape",
+                            System.IO.Path.GetFileNameWithoutExtension(localPptx) + ".png");
+                        var thumbImg = ThumbnailService.LoadThumbnail(localPptx, thumbCachePath);
+                        if (thumbImg != null)
+                        {
+                            var bmpSrc = ConvertToBitmapSource(thumbImg);
+                            thumbBorder.Child = new Image
+                            {
+                                Source = bmpSrc,
+                                Stretch = Stretch.Uniform,
+                                Margin = new Thickness(4)
+                            };
+                        }
+                    }
+                    catch (Exception ex) { Logger.Log($"[RemoteThumb] Shape-only 생성 실패: {ex.Message}"); }
+                });
+            }
+            catch (Exception ex) { Logger.Log($"[RemoteThumb] pptx 다운로드 실패: {ex.Message}"); }
+        }
+
+        private Border BuildRemotePopupContent(string name, string category, string useWhen, Border thumbSource)
+        {
+            var outer = new Border
+            {
+                Width = 320,
+                CornerRadius = new CornerRadius(16),
+                ClipToBounds = true,
+                Background = ThemeResources.BgBase,
+                BorderBrush = ThemeResources.BorderCard,
+                BorderThickness = new Thickness(1),
+                Margin = new Thickness(0, 0, 8, 0),
+                Effect = new System.Windows.Media.Effects.DropShadowEffect
+                {
+                    Color = Color.FromRgb(0x19, 0x1F, 0x28),
+                    BlurRadius = 24, ShadowDepth = 4, Opacity = 0.10, Direction = 270
+                }
+            };
+
+            var stack = new StackPanel();
+
+            var thumbArea = new Border
+            {
+                Height = 180, ClipToBounds = true,
+                CornerRadius = new CornerRadius(16, 16, 0, 0),
+                Background = ThemeResources.BgThumb
+            };
+            ThemeResources.ApplyRoundedClip(thumbArea, new CornerRadius(16, 16, 0, 0));
+            var srcImage = thumbSource.Child as Image;
+            if (srcImage?.Source != null)
+            {
+                thumbArea.Child = new Image { Source = srcImage.Source, Stretch = Stretch.Uniform };
+            }
+            stack.Children.Add(thumbArea);
+
+            stack.Children.Add(new Border { Height = 1, Background = ThemeResources.BorderBase });
+
+            var metaGrid = new Grid();
+            metaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            metaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var nameText = new TextBlock
+            {
+                Text = name, FontSize = 13, FontWeight = FontWeights.SemiBold,
+                Foreground = ThemeResources.TextMain, FontFamily = ThemeResources.FontBase,
+                TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center
+            };
+            Grid.SetColumn(nameText, 0);
+            metaGrid.Children.Add(nameText);
+            if (!string.IsNullOrEmpty(category))
+            {
+                var catBadge = new Border
+                {
+                    Background = ThemeResources.BgBadge, CornerRadius = new CornerRadius(6),
+                    Padding = new Thickness(6, 2, 6, 2), Margin = new Thickness(6, 0, 0, 0),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Child = new TextBlock
+                    {
+                        Text = category, FontSize = 10, FontWeight = FontWeights.SemiBold,
+                        Foreground = ThemeResources.TextAccent, FontFamily = ThemeResources.FontBase
+                    }
+                };
+                Grid.SetColumn(catBadge, 1);
+                metaGrid.Children.Add(catBadge);
+            }
+            stack.Children.Add(new Border { Padding = new Thickness(12, 10, 12, 8), Child = metaGrid });
+
+            if (!string.IsNullOrEmpty(useWhen))
+            {
+                stack.Children.Add(new Border
+                {
+                    Padding = new Thickness(12, 0, 12, 10),
+                    Child = new TextBlock
+                    {
+                        Text = useWhen, FontSize = 11, Foreground = ThemeResources.TextSub,
+                        FontFamily = ThemeResources.FontBase, TextWrapping = TextWrapping.Wrap, LineHeight = 16
+                    }
+                });
+            }
+
+            var hintPanel = new StackPanel { Orientation = Orientation.Horizontal };
+            hintPanel.Children.Add(new TextBlock { Text = "클릭 삽입", FontSize = 10, Foreground = ThemeResources.TextSub, FontFamily = ThemeResources.FontBase });
+            hintPanel.Children.Add(new TextBlock { Text = "  ·  ", FontSize = 10, Foreground = ThemeResources.TextDim, FontFamily = ThemeResources.FontBase });
+            hintPanel.Children.Add(new TextBlock { Text = "드래그로 이동", FontSize = 10, Foreground = ThemeResources.TextSub, FontFamily = ThemeResources.FontBase });
+            stack.Children.Add(new Border
+            {
+                Background = ThemeResources.BgSurface,
+                CornerRadius = new CornerRadius(0, 0, 16, 16),
+                Padding = new Thickness(12, 8, 12, 8),
+                BorderBrush = ThemeResources.BorderBase,
+                BorderThickness = new Thickness(0, 1, 0, 0),
+                Child = hintPanel
+            });
+
+            outer.Child = stack;
+            ThemeResources.ApplyRoundedClip(outer, 16);
+            return outer;
+        }
+
+        private async void DragRemoteAssetAsync(string remotePptx, string assetName)
+        {
+            try
+            {
+                SetStatus($"⬇ {assetName} 다운로드 중...", ThemeResources.TextSub.Color);
+                var localPptx = await _remoteCache.GetPptxAsync(remotePptx).ConfigureAwait(false);
+                Dispatcher.Invoke(() =>
+                {
+                    try
+                    {
+                        var thumbCachePath = System.IO.Path.Combine(
+                            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                            "TeampptAddin", "cache", "thumb-shape",
+                            System.IO.Path.GetFileNameWithoutExtension(localPptx) + ".png");
+                        var thumbImg = ThumbnailService.LoadThumbnail(localPptx, thumbCachePath);
+                        var tempCard = new AssetCard(thumbImg, assetName, localPptx);
+                        CardDragStart?.Invoke(tempCard);
+                    }
+                    catch (Exception ex)
+                    {
+                        SetStatus($"드래그 실패: {ex.Message}", ThemeResources.StatusError.Color);
+                        Logger.Log($"[RemoteDrag] 실패: {ex}");
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Dispatcher.Invoke(() =>
+                    SetStatus($"다운로드 실패: {ex.Message}", ThemeResources.StatusError.Color));
+                Logger.Log($"[RemoteDrag] 다운로드 실패: {ex}");
+            }
+        }
+
+        private async void InsertRemoteAssetAsync(string remotePath, string assetName)
+        {
+            try
+            {
+                SetStatus($"⬇ {assetName} 다운로드 중...", ThemeResources.TextSub.Color);
+                var localPath = await _remoteCache.GetPptxAsync(remotePath).ConfigureAwait(false);
+                Dispatcher.Invoke(() =>
+                {
+                    try
+                    {
+                        ShapeInserter.InsertToActiveSlide(localPath);
+                        SetStatus($"✓ {assetName} 삽입 완료", ThemeResources.StatusSuccess.Color);
+                    }
+                    catch (Exception ex)
+                    {
+                        SetStatus($"삽입 실패: {ex.Message}", ThemeResources.StatusError.Color);
+                        Logger.Log($"[RemoteInsert] 삽입 실패: {ex}");
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Dispatcher.Invoke(() =>
+                    SetStatus($"다운로드 실패: {ex.Message}", ThemeResources.StatusError.Color));
+                Logger.Log($"[RemoteInsert] 다운로드 실패: {ex}");
+            }
         }
 
         // ══════════════════════════════════════════════════════════════
@@ -1320,10 +1598,11 @@ namespace TeampptAddin
             _allAssets = assets ?? new List<HeaderAsset>();
         }
 
-        public void InitAi(IAiService aiService, StyleConfig styles)
+        public void InitAi(IAiService aiService, StyleConfig styles, RemoteAssetCache remoteCache = null)
         {
             _aiService = aiService;
             _styleConfig = styles;
+            _remoteCache = remoteCache;
             PopulateStylePanel();
         }
 

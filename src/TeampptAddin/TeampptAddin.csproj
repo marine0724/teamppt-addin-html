@@ -96,6 +96,11 @@
     <Compile Include="Services\EmbeddingService.cs" />
     <Compile Include="Services\SupabaseClient.cs" />
     <Compile Include="Services\AssetIngestUploader.cs" />
+    <Compile Include="Services\SupabaseAssetMapper.cs" />
+    <Compile Include="Services\MatchQuery.cs" />
+    <Compile Include="Services\RecommendationCache.cs" />
+    <Compile Include="Services\RemoteAssetCache.cs" />
+    <Compile Include="Services\VectorRecommendService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

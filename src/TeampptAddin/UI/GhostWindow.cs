@@ -148,16 +148,15 @@ namespace TeampptAddin
                 return fb;
             }
 
-            int w = src.Width;
-            int h = src.Height;
-
+            // Shape.Export는 72~96 DPI로 뽑아서 PPT 화면보다 작음.
+            // 슬라이드 화면 기준 ~75% 느낌을 내려면 export 크기를 약간 키워야 함.
             var screenW = Screen.PrimaryScreen.WorkingArea.Width;
-            if (w > screenW * 0.85)
-            {
-                float s = (screenW * 0.85f) / w;
-                w = (int)(w * s);
-                h = Math.Max(20, (int)(h * s));
-            }
+            const int stdSlideExportW = 1280; // 16:9 슬라이드 Shape.Export 기준 너비 (96DPI)
+            float targetFullSlideW = screenW * 0.7f; // PPT 편집 뷰에서 슬라이드가 차지하는 대략적 너비
+            float upscale = (targetFullSlideW / stdSlideExportW) * 0.75f;
+
+            int w = Math.Max(40, (int)(src.Width * upscale));
+            int h = Math.Max(40, (int)(src.Height * upscale));
 
             var bmp = new Bitmap(w, h, PixelFormat.Format32bppArgb);
             using (var g = Graphics.FromImage(bmp))

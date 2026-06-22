@@ -3,7 +3,7 @@
 > 이 파일 하나만 열어두면 "지금 어디서 뭘 하는지" 보입니다. Claude가 매 세션 함께 유지.
 > **기록용 아카이브가 아니라 "지금 여기" 작업 보드.** 끝난 잎(Task)은 지우고 교체, 숲·나무 단위는 끝날 때까지 유지. (규칙: CLAUDE.md)
 > 계층: **나라 > 대지 > 숲 > 나무 > 잎** (2026-06-22 재정립)
-> 최종 갱신: 2026-06-22 · 현재 작업: **A-1b/c 수동 검증 완료 → A-1d 착수 대기.**
+> 최종 갱신: 2026-06-23 · 현재 작업: **A-1d 벡터검색 읽기경로 구현 완료 → PPT 수동 검증 대기.**
 
 ---
 
@@ -47,13 +47,14 @@
 |---|---|---|
 | [A-1a LLM 이해 어댑터](docs/superpowers/plans/2026-06-22-a1a-llm-understanding-adapter.md) | PNG+섹션명 → Gemini 멀티모달 이해 → 구조화 레코드 | ✅ 완료 |
 | [A-1b/c Supabase 적재경로](docs/superpowers/plans/2026-06-22-a1bc-supabase-ingest-upload.md) | 인프라+임베딩+업로드+관리자 게이트 | ✅ 완료 |
-| [A-1d 벡터검색 읽기경로](docs/superpowers/plans/2026-06-22-a1d-vector-read-path.md) | 질의→임베딩→match_assets→AI탭 추천 | ⬜ 대기 |
+| [A-1d 벡터검색 읽기경로](docs/superpowers/plans/2026-06-22-a1d-vector-read-path.md) | 질의→임베딩→match_assets→AI탭 추천 | ✅ 구현완료, 수동검증 대기 |
 
 ---
 
 ## 🍃 잎 — 현재 Task
 
-> **A-1d 벡터검색 읽기경로 착수 대기** (2026-06-22):
-> - A-1b/c 검증 완료: layout_test_asset 35개 + header family 7개 = 42행 Supabase 적재 확인
-> - 중복 upsert 정상 동작 (여러 번 실험해도 행 수 동일)
-> **다음:** A-1d 착수 여부 사용자 확인.
+> **A-1d 벡터검색 읽기경로 구현 완료** (2026-06-23):
+> - SupabaseAssetMapper / MatchQuery / RecommendationCache — 단위테스트 8개 전체 PASS (총 50개)
+> - RemoteAssetCache / VectorRecommendService — 빌드 확인
+> - TaskPaneHost 배선: supabase 설정 있으면 VectorRecommendService 주입, 없으면 기존 폴백
+> **다음:** PPT 재시작 → AI탭에서 텍스트 질의 → 벡터검색 추천 동작 수동 검증.

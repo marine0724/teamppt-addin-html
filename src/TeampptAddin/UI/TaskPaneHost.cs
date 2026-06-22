@@ -165,18 +165,35 @@ namespace TeampptAddin
             var assets = AssetLoader.Load(assetsDir);
             var styles = StyleLoader.Load(assetsDir);
             IAiService ai;
+            RemoteAssetCache remoteCache = null;
             try
             {
-                ai = GeminiAiService.FromAssetsDir(assetsDir);
+                var keysPath = Path.Combine(assetsDir, "api-keys.json");
+                var keys = Newtonsoft.Json.Linq.JObject.Parse(File.ReadAllText(keysPath));
+                var gemini = keys["gemini"]?.ToString();
+                var supaUrl = keys["supabaseUrl"]?.ToString();
+                var supaAnon = keys["supabaseAnonKey"]?.ToString();
+
+                if (!string.IsNullOrEmpty(supaUrl) && !string.IsNullOrEmpty(supaAnon) && !string.IsNullOrEmpty(gemini))
+                {
+                    ai = new VectorRecommendService(supaUrl, supaAnon, gemini);
+                    remoteCache = new RemoteAssetCache(supaUrl, supaAnon);
+                    Logger.Log("[AI] VectorRecommendService (Supabase 벡터검색) 사용");
+                }
+                else
+                {
+                    ai = GeminiAiService.FromAssetsDir(assetsDir);
+                    Logger.Log("[AI] Supabase 설정 없음 → GeminiAiService(로컬 카탈로그) 사용");
+                }
             }
             catch (Exception ex)
             {
-                Logger.Log($"[Gemini] API 키 로드 실패, MockAiService 사용: {ex.Message}");
+                Logger.Log($"[AI] 초기화 실패, MockAiService 사용: {ex.Message}");
                 ai = new MockAiService();
             }
 
             _wpfPanel.SetAssets(assets);
-            _wpfPanel.InitAi(ai, styles);
+            _wpfPanel.InitAi(ai, styles, remoteCache);
 
             // Create cards with thumbnails
             foreach (var asset in assets)
