@@ -89,6 +89,7 @@
     <Compile Include="Services\UnderstandingSchema.cs" />
     <Compile Include="Services\UnderstandingParser.cs" />
     <Compile Include="Services\EmbedTextBuilder.cs" />
+    <Compile Include="Services\AssetUnderstandingService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
