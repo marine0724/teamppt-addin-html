@@ -17,8 +17,12 @@ thumbnails/
 # NuGet
 packages/
 
-# API keys (secrets)
+# API keys / admin credentials (secrets)
 **/api-keys.json
+**/admin.json
+
+# R&D 에셋 원본 묶음 (공개 repo 노출 금지 — 로컬 보관, 인제스트 테스트용)
+assets/layout_test_asset.pptx
 
 # Build / verification logs
 build.log
