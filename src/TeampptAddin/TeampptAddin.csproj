@@ -37,6 +37,10 @@
     <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml" />
+    <Reference Include="stdole, Version=7.0.3300.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>C:\Windows\assembly\GAC\stdole\7.0.3300.0__b03f5f7f11d50a3a\stdole.dll</HintPath>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
+    </Reference>
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
@@ -49,10 +53,12 @@
     <Compile Include="Core\ShapeInserter.cs" />
     <Compile Include="Core\ThumbnailGenerator.cs" />
     <Compile Include="Core\CoordinateConverter.cs" />
+    <Compile Include="Core\WindowSweep.cs" />
     <Compile Include="Core\SectionReader.cs" />
     <Compile Include="Core\SlideSplitter.cs" />
     <Compile Include="Core\SlideImageRenderer.cs" />
     <Compile Include="UI\TaskPaneHost.cs" />
+    <Compile Include="UI\TaskPaneManager.cs" />
     <Compile Include="UI\CardControl.cs" />
     <Compile Include="UI\DragHandler.cs" />
     <Compile Include="UI\GhostWindow.cs" />
@@ -95,6 +101,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Assets\api-keys.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\teamppt-icon.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

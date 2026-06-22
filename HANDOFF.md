@@ -9,21 +9,20 @@
 
 > **📌 고정 규칙 (매 세션):** [PROGRESS-BOARD.md](PROGRESS-BOARD.md)를 항상 함께 유지한다. 기록용 아카이브가 아니라 "지금 여기" 작업 보드 — 끝난 잎(Task)은 지우고 다음으로 교체하되, 숲(로드맵)·나무(현재 plan) 단위가 끝난 게 아니면 골격은 유지. top 문제 해결까지 끌고 간다. (상세 규칙은 CLAUDE.md)
 
-**브랜치:** `main` (인제스트 plan 머지 완료, `phase-e-gemini-flash` 삭제됨)
+**브랜치:** `panel-button-per-window` (Task 0~5 완료 → **main 통합 진행 중**)
 
-**현황 (2026-06-21):**
-- ✅ **로컬 인제스트 코어 완료·main 머지** ([local-ingest-core](docs/superpowers/plans/2026-06-20-local-ingest-core.md)). Task 1~7 구현·단위테스트 24/24 GREEN + **수동검증 35/35 PASS**(`{섹션명}_NN.pptx` 1슬라이드 + `_NN.png` 768px). 커밋 `5040e3c`.
-- ✅ **패널 작업 설계 승인·spec 작성 완료** → [specs/2026-06-21-panel-button-per-window-design.md](docs/superpowers/specs/2026-06-21-panel-button-per-window-design.md). 다음은 구현계획(writing-plans).
+**현황 (2026-06-22):** 패널 버튼화 [구현계획](docs/superpowers/plans/2026-06-21-panel-button-per-window.md) **전체 완료 — Task 0~5 끝, 수동검증 1~10 전부 PASS.**
+- ✅ Task 0~3: 진단 확정 → `WindowSweep`(TDD) → `TaskPaneManager`(창별 추적·해제 3종) → `Connect` 리본 버튼화+위임. 사용자 실기 확인(토글·홈탭 배치·브랜드 아이콘). 커밋 `7942efe`·`4840459`·`0a0fb32`·`48e1df8`·`4bf741b`·`944f397`. (`ClassInterfaceType`=**AutoDual** 필수, 홈 탭(TabHome) 끝 그룹, `Assets/teamppt-icon.png` getImage.)
+- ✅ Task 4: 수동검증 5~10 전부 PASS. 검증 중 **항목 5(창 전환 시 토글 버튼 동기화) 결함 발견** → systematic-debugging. **근본원인:** PowerPoint 공유 리본은 창 전환 시 `getPressed`를 자동 재평가하지 않음 → 버튼이 직전 창 상태에 stale(활성창에 패널 없어도 "눌림"으로 보여 첫 클릭이 끄기로 헛돎). **수정:** `App_WindowActivate`에서 `RefreshButton()`(=`InvalidateControl`) 호출로 활성창 기준 재평가. debug.log 전·후 대비 검증(전: 전환 8회 0재평가 → 후: 전환마다 재평가). 커밋 `d5eb093`.
+- ✅ Task 5: 보드/인계 갱신 + main 통합.
 
-### 🔴 다음 세션 첫 할 일 — 패널 버튼화 + 중복 본질 해결
-**무엇:** 우측 패널을 시작 시 자동 표시 → **리본 전용 TEAMPPT 탭의 토글 버튼**으로 전환하고, **창마다 1개**를 `Dictionary<HWND,CTP>`로 소유·추적·해제해 **누적 중복을 구조적으로 제거**. 2개 이상 창에서 각각 독립 작동. (상세·이벤트8개·해제3종세트·테스트: **spec 정독**.)
+### 🔴 다음 세션 첫 할 일 — ⚠️ 사용자 큰 기획 수정 (자동 진행 금지)
+> 패널 plan은 끝났다. **다음 로드맵으로 자동 진행하지 말 것.** 사용자가 제품의 큰 기획(방향)을 수정·보완할 예정 — 이미 결정됨, **계획 수립은 Opus로**. 새 세션은 **무엇을 할지 사용자에게 먼저 물어본다.**
 
-순서:
-1. **별도 브랜치 생성** (Connect.cs/TaskPaneHost 영역 → 인제스트와 분리).
-2. **writing-plans로 구현계획 작성.** 계획의 **Task 0 = systematic-debugging**: `debug.log`로 `CTPFactoryAvailable`이 실제로 언제 몇 번 불리는지 실측해 진단(spec §2) 확정 + PPT의 CTP↔활성창 바인딩 확인.
-3. 계획대로 구현 → 순수함수(회수판단) 단위테스트 GREEN → PowerPoint 수동검증 체크리스트 1~10(spec §8) PASS.
+- 빌드: `MSBuild TeampptAddin.csproj /t:Build /p:Configuration=Debug /p:Platform=AnyCPU /p:RegisterForComInterop=false`(비관리자 직접). **COM 재등록 불필요.** ⚠️ CLAUDE.md elevated `Start-Process RunAs cmd` 래퍼는 이 환경서 무력 — 쓰지 말 것. 단위테스트 회귀: `dotnet test ... --filter WindowSweepTest`.
+- (참고) 기존 로드맵상 남은 곁가지: B 에셋 인제스트 재개(LLM 이해 어댑터 → 임베딩+Supabase 업로드+관리자 게이트 → 추천·삽입 읽기 경로). **단, 사용자 큰 기획 수정 결과에 따라 우선순위 바뀔 수 있음 → 먼저 확인.**
 
-**핵심 결정(spec 요약):** Connect 얇게 + **TaskPaneManager 신규**(모듈화). `TaskPaneHost` **무변경**(지연 초기화 유지 — ActiveX 충돌 구조적 보장). `LoadBehavior=3` 유지(리본 표시), 자동 *생성*만 제거.
+**핵심 결정(spec 요약):** Connect 얇게 + **TaskPaneManager 신규**(완료). `TaskPaneHost` **무변경**. `LoadBehavior=3` 유지, 자동 *생성*만 제거. 딕셔너리 키=HWND(실측 검증). 리본 콜백 위해 Connect=`AutoDual` 필수.
 
 ### 메모
 - **검증 시 PowerPoint 완전히 닫을 것** — 켜진(애드인 로드) 인스턴스에 붙으면 패널 중복 + COM 충돌.
