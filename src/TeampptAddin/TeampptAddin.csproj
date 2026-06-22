@@ -86,6 +86,7 @@
     <Compile Include="Services\AssetIdGenerator.cs" />
     <Compile Include="Services\IngestPlanner.cs" />
     <Compile Include="Services\IngestRunner.cs" />
+    <Compile Include="Services\UnderstandingSchema.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
