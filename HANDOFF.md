@@ -9,23 +9,18 @@
 
 > **📌 고정 규칙 (매 세션):** [PROGRESS-BOARD.md](PROGRESS-BOARD.md)를 항상 함께 유지한다. 기록용 아카이브가 아니라 "지금 여기" 작업 보드 — 끝난 잎(Task)은 지우고 다음으로 교체하되, 숲(로드맵)·나무(현재 plan) 단위가 끝난 게 아니면 골격은 유지. top 문제 해결까지 끌고 간다. (상세 규칙은 CLAUDE.md)
 
-**브랜치:** `panel-button-per-window` (main 미머지 — 패널 작업 진행 중. 완료 후 통합)
+**브랜치:** `panel-button-per-window` (Task 0~5 완료 → **main 통합 진행 중**)
 
-**현황 (2026-06-21):** 패널 버튼화 [구현계획](docs/superpowers/plans/2026-06-21-panel-button-per-window.md) 실행 중 — **Task 0~3 완료(사용자 확인), Task 4~5 남음.**
-- ✅ Task 0: 실측으로 spec §2 진단 확정(파일 연속 열기 → `CTPFactoryAvailable` 4회·CTP 4개 = 누적 중복. spec §2.1 기록). 커밋 `7942efe`.
-- ✅ Task 1: `Core/WindowSweep.cs` 회수판단 순수함수 + 단위테스트 4 GREEN. 커밋 `4840459`.
-- ✅ Task 2: `UI/TaskPaneManager.cs` 신규(창별 CTP 추적·해제 3종 세트). 커밋 `0a0fb32`.
-- ✅ Task 3: `Connect.cs` 리본 버튼화 + 위임. **사용자 실기 확인 완료** — 토글 작동·홈탭(TabHome) 배치·브랜드 아이콘 표시. 커밋 `48e1df8`·`4bf741b`·`944f397`.
-  - ⚙️ 버그수정: `ClassInterfaceType.None`→**`AutoDual`** (리본 콜백 IDispatch 미발화 → 발화). 전용 탭 → **홈 탭 끝 그룹**(Plus AI 스타일, 사용자 요청).
-  - 🎨 브랜드 아이콘: `Assets/teamppt-icon.png`(make-icon.ps1 생성) + `getImage` 콜백(`AxHost.GetIPictureDispFromPicture`, stdole PIA 참조).
+**현황 (2026-06-22):** 패널 버튼화 [구현계획](docs/superpowers/plans/2026-06-21-panel-button-per-window.md) **전체 완료 — Task 0~5 끝, 수동검증 1~10 전부 PASS.**
+- ✅ Task 0~3: 진단 확정 → `WindowSweep`(TDD) → `TaskPaneManager`(창별 추적·해제 3종) → `Connect` 리본 버튼화+위임. 사용자 실기 확인(토글·홈탭 배치·브랜드 아이콘). 커밋 `7942efe`·`4840459`·`0a0fb32`·`48e1df8`·`4bf741b`·`944f397`. (`ClassInterfaceType`=**AutoDual** 필수, 홈 탭(TabHome) 끝 그룹, `Assets/teamppt-icon.png` getImage.)
+- ✅ Task 4: 수동검증 5~10 전부 PASS. 검증 중 **항목 5(창 전환 시 토글 버튼 동기화) 결함 발견** → systematic-debugging. **근본원인:** PowerPoint 공유 리본은 창 전환 시 `getPressed`를 자동 재평가하지 않음 → 버튼이 직전 창 상태에 stale(활성창에 패널 없어도 "눌림"으로 보여 첫 클릭이 끄기로 헛돎). **수정:** `App_WindowActivate`에서 `RefreshButton()`(=`InvalidateControl`) 호출로 활성창 기준 재평가. debug.log 전·후 대비 검증(전: 전환 8회 0재평가 → 후: 전환마다 재평가). 커밋 `d5eb093`.
+- ✅ Task 5: 보드/인계 갱신 + main 통합.
 
-### 🔴 다음 세션 첫 할 일 — Task 4(수동검증 5~10)
-> [PROGRESS-BOARD.md](PROGRESS-BOARD.md) 잎 표가 현재 위치. [plan](docs/superpowers/plans/2026-06-21-panel-button-per-window.md) Task 4부터. **executing-plans로 이어서.**
+### 🔴 다음 세션 첫 할 일 — ⚠️ 사용자 큰 기획 수정 (자동 진행 금지)
+> 패널 plan은 끝났다. **다음 로드맵으로 자동 진행하지 말 것.** 사용자가 제품의 큰 기획(방향)을 수정·보완할 예정 — 이미 결정됨, **계획 수립은 Opus로**. 새 세션은 **무엇을 할지 사용자에게 먼저 물어본다.**
 
-1. **빌드:** 새 코드 이미 빌드·등록됨(8:17 DLL). 재빌드시 `MSBuild TeampptAddin.csproj /t:Build /p:Configuration=Debug /p:Platform=AnyCPU /p:RegisterForComInterop=false`(비관리자 직접). **COM 재등록 불필요**. ⚠️ CLAUDE.md elevated `Start-Process RunAs cmd` 빌드 래퍼는 이 환경서 **무력**(build.log 갱신 안 됨) — 쓰지 말 것. 단위테스트(WindowSweep) 회귀 확인은 `dotnet test ... --filter WindowSweepTest`.
-2. **Task 4 수동검증 5~10:** 창 전환 버튼 동기화 / 패널 X로 닫기→버튼 동기화 / 한 창 닫기→그 패널만 회수 / 여러 번 껐다켜기 누적 0 / 패널 열때 ActiveX 충돌 없음 / PPT 종료 ReleaseAll. `debug.log`로 `Manager.Sweep reclaimed`·`InvalidateButton`·`ReleaseAll done` 교차확인. 어긋나면 systematic-debugging. 결과는 사용자가 붙여줌.
-3. **Task 5 마무리:** 보드/인계 갱신 + finishing-a-development-branch로 main 통합.
-4. **⚠️ 그 다음:** 패널 task 끝나면 **자동으로 다음 로드맵 진행 금지 — 사용자에게 먼저 질문**. 사용자가 큰 기획(제품 방향) 수정·보완 예정(이미 결정, 계획 수립은 Opus로).
+- 빌드: `MSBuild TeampptAddin.csproj /t:Build /p:Configuration=Debug /p:Platform=AnyCPU /p:RegisterForComInterop=false`(비관리자 직접). **COM 재등록 불필요.** ⚠️ CLAUDE.md elevated `Start-Process RunAs cmd` 래퍼는 이 환경서 무력 — 쓰지 말 것. 단위테스트 회귀: `dotnet test ... --filter WindowSweepTest`.
+- (참고) 기존 로드맵상 남은 곁가지: B 에셋 인제스트 재개(LLM 이해 어댑터 → 임베딩+Supabase 업로드+관리자 게이트 → 추천·삽입 읽기 경로). **단, 사용자 큰 기획 수정 결과에 따라 우선순위 바뀔 수 있음 → 먼저 확인.**
 
 **핵심 결정(spec 요약):** Connect 얇게 + **TaskPaneManager 신규**(완료). `TaskPaneHost` **무변경**. `LoadBehavior=3` 유지, 자동 *생성*만 제거. 딕셔너리 키=HWND(실측 검증). 리본 콜백 위해 Connect=`AutoDual` 필수.
 
