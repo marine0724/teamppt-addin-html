@@ -69,7 +69,7 @@ namespace TeampptAddin
                     ["temperature"] = 0.7,
                     ["responseMimeType"] = "application/json",
                     ["responseSchema"] = GeminiPromptBuilder.BuildResponseSchema(),
-                    ["thinkingConfig"] = new JObject { ["thinkingBudget"] = 1024 }
+                    ["thinkingConfig"] = new JObject { ["thinkingBudget"] = 0 }
                 }
             };
 

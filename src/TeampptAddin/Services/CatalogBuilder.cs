@@ -13,12 +13,9 @@ namespace TeampptAddin
                 Name = a.Name,
                 Kind = a.Kind,
                 Category = a.Category,
-                Scope = a.Scope,
                 Tags = a.Tags ?? new List<string>(),
                 UseWhen = a.UseWhen,
-                SlotNames = (a.Slots ?? new List<AssetSlot>()).Select(s => s.Name).ToList(),
-                ColorRoles = (a.Colors ?? new List<AssetColor>()).Select(c => c.Role).ToList(),
-                FontRoles = (a.Fonts ?? new List<AssetFont>()).Select(f => f.Role).ToList()
+                ContentFit = a.ContentFit ?? new List<string>()
             }).ToList();
         }
     }

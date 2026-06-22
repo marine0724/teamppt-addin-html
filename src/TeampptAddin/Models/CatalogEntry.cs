@@ -8,11 +8,8 @@ namespace TeampptAddin
         public string Name { get; set; }
         public string Kind { get; set; }
         public string Category { get; set; }
-        public string Scope { get; set; }
         public List<string> Tags { get; set; }
         public string UseWhen { get; set; }
-        public List<string> SlotNames { get; set; }
-        public List<string> ColorRoles { get; set; }
-        public List<string> FontRoles { get; set; }
+        public List<string> ContentFit { get; set; }
     }
 }

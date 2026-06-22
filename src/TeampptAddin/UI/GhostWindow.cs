@@ -142,21 +142,22 @@ namespace TeampptAddin
         {
             if (src == null)
             {
+                Logger.Log("[Ghost] src is NULL — fallback 200x30 used");
                 var fb = new Bitmap(200, 30, PixelFormat.Format32bppArgb);
                 using (var g = Graphics.FromImage(fb))
                     g.Clear(Color.FromArgb(200, 39, 39, 42));
                 return fb;
             }
 
-            // Shape.Export는 72~96 DPI로 뽑아서 PPT 화면보다 작음.
-            // 슬라이드 화면 기준 ~75% 느낌을 내려면 export 크기를 약간 키워야 함.
             var screenW = Screen.PrimaryScreen.WorkingArea.Width;
-            const int stdSlideExportW = 1280; // 16:9 슬라이드 Shape.Export 기준 너비 (96DPI)
-            float targetFullSlideW = screenW * 0.7f; // PPT 편집 뷰에서 슬라이드가 차지하는 대략적 너비
+            const int stdSlideExportW = 1280;
+            float targetFullSlideW = screenW * 0.7f;
             float upscale = (targetFullSlideW / stdSlideExportW) * 0.75f;
 
             int w = Math.Max(40, (int)(src.Width * upscale));
             int h = Math.Max(40, (int)(src.Height * upscale));
+
+            Logger.Log($"[Ghost] src={src.Width}x{src.Height} screenW={screenW} upscale={upscale:F3} → ghost={w}x{h}");
 
             var bmp = new Bitmap(w, h, PixelFormat.Format32bppArgb);
             using (var g = Graphics.FromImage(bmp))
