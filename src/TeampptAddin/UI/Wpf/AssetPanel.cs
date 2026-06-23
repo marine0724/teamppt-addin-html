@@ -74,6 +74,12 @@ namespace TeampptAddin
         private Border _ingestScanLine;
         private TextBlock _ingestNameText;
         private int _ingestLastIndex;
+
+        private DispatcherTimer _searchStageTimer;
+        private DispatcherTimer _searchScrollTimer;
+        private DispatcherTimer _searchShimmerTimer;
+        private int _searchStage;
+
         private string _retryOutputDir;
         private string _retryBundleName;
         private int _retryStartFrom;
@@ -634,6 +640,8 @@ namespace TeampptAddin
 
         private FrameworkElement AddAiLoadingBubble()
         {
+            StopSearchAnimations();
+
             var wrapper = new StackPanel { Margin = new Thickness(12, 4, 40, 4) };
 
             wrapper.Children.Add(new TextBlock
@@ -645,23 +653,111 @@ namespace TeampptAddin
                 Margin = new Thickness(4, 0, 0, 3)
             });
 
-            var dotsTb = new TextBlock
+            var contentStack = new StackPanel();
+
+            var stageTb = new TextBlock
             {
-                Text = "·",
-                FontSize = 16,
-                FontWeight = FontWeights.Bold,
-                Foreground = ThemeResources.TextSub,
-                FontFamily = ThemeResources.FontBase
+                Text = "질의를 벡터로 변환하는 중···",
+                FontSize = 11,
+                Foreground = ThemeResources.TextDim,
+                FontFamily = ThemeResources.FontBase,
+                Margin = new Thickness(0, 0, 0, 6)
+            };
+            contentStack.Children.Add(stageTb);
+
+            // Stage 1: pulse bar
+            var pulseBar = new Border
+            {
+                Height = 3,
+                CornerRadius = new CornerRadius(1.5),
+                Background = ThemeResources.Accent,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Width = 0,
+                Margin = new Thickness(0, 0, 0, 4)
+            };
+            contentStack.Children.Add(pulseBar);
+
+            // ── Slot machine reel ──
+            var assets = _allAssets ?? new List<HeaderAsset>();
+            var rng = new Random();
+            var names = assets.Select(a => a.Name).Where(n => !string.IsNullOrEmpty(n)).ToList();
+            if (names.Count == 0) names.Add("에셋");
+            var shuffled = names.OrderBy(_ => rng.Next()).ToList();
+            int totalCount = Math.Max(assets.Count, 1);
+
+            const double reelHeight = 88;
+            const double itemHeight = 22;
+            int visibleItems = (int)(reelHeight / itemHeight);
+
+            var reelClip = new Border
+            {
+                Height = reelHeight,
+                ClipToBounds = true,
+                Visibility = Visibility.Collapsed,
+                Margin = new Thickness(0, 2, 0, 4),
+                CornerRadius = new CornerRadius(8),
+                Background = ThemeResources.BgSurface
             };
 
-            var dotTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(400) };
-            int dotCount = 1;
-            dotTimer.Tick += (s, e) =>
+            // Top/bottom fade overlays via OpacityMask
+            var fadeMask = new LinearGradientBrush
             {
-                dotCount = dotCount % 3 + 1;
-                dotsTb.Text = new string('·', dotCount);
+                StartPoint = new Point(0, 0),
+                EndPoint = new Point(0, 1)
             };
-            dotTimer.Start();
+            fadeMask.GradientStops.Add(new GradientStop(Color.FromArgb(0, 0, 0, 0), 0.0));
+            fadeMask.GradientStops.Add(new GradientStop(Colors.Black, 0.25));
+            fadeMask.GradientStops.Add(new GradientStop(Colors.Black, 0.75));
+            fadeMask.GradientStops.Add(new GradientStop(Color.FromArgb(0, 0, 0, 0), 1.0));
+            reelClip.OpacityMask = fadeMask;
+
+            var reelStack = new StackPanel
+            {
+                RenderTransform = new TranslateTransform(0, 0)
+            };
+
+            // Pre-fill reel with items
+            for (int i = 0; i < visibleItems + 2; i++)
+            {
+                reelStack.Children.Add(BuildReelItem(shuffled[i % shuffled.Count], i == visibleItems / 2));
+            }
+
+            reelClip.Child = reelStack;
+            contentStack.Children.Add(reelClip);
+
+            var counterTb = new TextBlock
+            {
+                FontSize = 10,
+                Foreground = ThemeResources.TextDim,
+                FontFamily = ThemeResources.FontBase,
+                Margin = new Thickness(0, 2, 0, 0)
+            };
+            contentStack.Children.Add(counterTb);
+
+            // Stage 3: shimmer cards
+            var shimmerStack = new StackPanel { Visibility = Visibility.Collapsed, Margin = new Thickness(0, 4, 0, 0) };
+            for (int i = 0; i < 3; i++)
+            {
+                var shimmerCard = new Border
+                {
+                    Height = 22,
+                    CornerRadius = new CornerRadius(6),
+                    Background = ThemeResources.BorderBase,
+                    Margin = new Thickness(0, 2, 0, 2),
+                    Opacity = 0.3,
+                    Child = new Border
+                    {
+                        Width = 60 + rng.Next(60),
+                        Height = 6,
+                        CornerRadius = new CornerRadius(3),
+                        Background = ThemeResources.BgChip,
+                        HorizontalAlignment = HorizontalAlignment.Left,
+                        Margin = new Thickness(8, 0, 0, 0)
+                    }
+                };
+                shimmerStack.Children.Add(shimmerCard);
+            }
+            contentStack.Children.Add(shimmerStack);
 
             var border = new Border
             {
@@ -669,19 +765,198 @@ namespace TeampptAddin
                 CornerRadius = new CornerRadius(4, 13, 13, 13),
                 Padding = new Thickness(14, 10, 14, 10),
                 HorizontalAlignment = HorizontalAlignment.Left,
-                MinWidth = 50,
-                Child = dotsTb,
-                Tag = dotTimer
+                MinWidth = 180,
+                Child = contentStack
             };
-
             wrapper.Children.Add(border);
-
             _chatStack.Children.Add(wrapper);
+
+            // ── Animation logic ──
+            _searchStage = 1;
+            int dotCount = 1;
+            bool pulseGrow = true;
+            double pulseWidth = 0;
+            int scrollIdx = visibleItems + 2;
+            int scannedCount = 0;
+
+            // Pulse bar (Stage 1)
+            var pulseTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(40) };
+            pulseTimer.Tick += (s, e) =>
+            {
+                if (_searchStage != 1) { pulseTimer.Stop(); return; }
+                pulseWidth += pulseGrow ? 10 : -10;
+                if (pulseWidth >= 180) pulseGrow = false;
+                if (pulseWidth <= 0) pulseGrow = true;
+                pulseBar.Width = Math.Max(0, Math.Min(180, pulseWidth));
+            };
+            pulseTimer.Start();
+            border.Tag = pulseTimer;
+
+            // Dots animation
+            _searchStageTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(350) };
+            _searchStageTimer.Tick += (s, e) =>
+            {
+                dotCount = dotCount % 3 + 1;
+                string dots = new string('·', dotCount);
+                if (_searchStage == 1) stageTb.Text = "질의를 벡터로 변환하는 중" + dots;
+                else if (_searchStage == 2) stageTb.Text = "에셋 스캐닝 중" + dots;
+                else if (_searchStage == 3) stageTb.Text = "최적 에셋 선별 중" + dots;
+            };
+            _searchStageTimer.Start();
+
+            // Stage 1 → 2 (500ms)
+            var stage1to2 = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
+            stage1to2.Tick += (s, e) =>
+            {
+                stage1to2.Stop();
+                _searchStage = 2;
+                pulseBar.Visibility = Visibility.Collapsed;
+                reelClip.Visibility = Visibility.Visible;
+                stageTb.Text = "에셋 스캐닝 중···";
+
+                // Slot reel scroll — fast (80ms per item)
+                _searchScrollTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(80) };
+                _searchScrollTimer.Tick += (s2, e2) =>
+                {
+                    if (_searchStage != 2) return;
+
+                    // Add new item at bottom, remove top
+                    reelStack.Children.Add(BuildReelItem(shuffled[scrollIdx % shuffled.Count], false));
+                    if (reelStack.Children.Count > visibleItems + 2)
+                        reelStack.Children.RemoveAt(0);
+
+                    // Highlight center item
+                    int centerIdx = reelStack.Children.Count / 2;
+                    for (int i = 0; i < reelStack.Children.Count; i++)
+                    {
+                        var item = reelStack.Children[i] as Border;
+                        if (item == null) continue;
+                        bool isCenter = (i == centerIdx);
+                        item.Background = isCenter
+                            ? new SolidColorBrush(Color.FromArgb(20, 79, 92, 245))
+                            : Brushes.Transparent;
+                        var tb = item.Child as TextBlock;
+                        if (tb != null)
+                        {
+                            tb.Foreground = isCenter ? ThemeResources.TextMain : ThemeResources.TextDim;
+                            tb.FontWeight = isCenter ? FontWeights.SemiBold : FontWeights.Normal;
+                            tb.FontSize = isCenter ? 12 : 11;
+                        }
+                    }
+
+                    scrollIdx++;
+                    scannedCount = Math.Min(scrollIdx - visibleItems, totalCount);
+                    counterTb.Text = $"{scannedCount} / {totalCount}";
+                };
+                _searchScrollTimer.Start();
+            };
+            stage1to2.Start();
+
+            // Stage 2 → 3 (2000ms): decelerate and stop
+            var stage2to3 = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(2000) };
+            stage2to3.Tick += (s, e) =>
+            {
+                stage2to3.Stop();
+                _searchStage = 3;
+                stageTb.Text = "최적 에셋 선별 중···";
+                counterTb.Text = $"{totalCount} / {totalCount}";
+
+                if (_searchScrollTimer != null) { _searchScrollTimer.Stop(); _searchScrollTimer = null; }
+
+                // Deceleration: slow scroll then stop
+                int decelTicks = 0;
+                var decelTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
+                decelTimer.Tick += (s2, e2) =>
+                {
+                    decelTicks++;
+                    if (decelTicks > 4)
+                    {
+                        decelTimer.Stop();
+                        // Fade out reel, show shimmer
+                        reelClip.Visibility = Visibility.Collapsed;
+                        shimmerStack.Visibility = Visibility.Visible;
+
+                        bool shimmerUp = true;
+                        _searchShimmerTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
+                        _searchShimmerTimer.Tick += (s3, e3) =>
+                        {
+                            foreach (Border card in shimmerStack.Children)
+                            {
+                                card.Opacity += shimmerUp ? 0.03 : -0.03;
+                                if (card.Opacity >= 0.7) shimmerUp = false;
+                                if (card.Opacity <= 0.3) shimmerUp = true;
+                            }
+                        };
+                        _searchShimmerTimer.Start();
+                        return;
+                    }
+
+                    decelTimer.Interval = TimeSpan.FromMilliseconds(200 + decelTicks * 100);
+
+                    reelStack.Children.Add(BuildReelItem(shuffled[scrollIdx % shuffled.Count], false));
+                    if (reelStack.Children.Count > visibleItems + 2)
+                        reelStack.Children.RemoveAt(0);
+
+                    int centerIdx = reelStack.Children.Count / 2;
+                    for (int i = 0; i < reelStack.Children.Count; i++)
+                    {
+                        var item = reelStack.Children[i] as Border;
+                        if (item == null) continue;
+                        bool isCenter = (i == centerIdx);
+                        item.Background = isCenter
+                            ? new SolidColorBrush(Color.FromArgb(20, 79, 92, 245))
+                            : Brushes.Transparent;
+                        var tb = item.Child as TextBlock;
+                        if (tb != null)
+                        {
+                            tb.Foreground = isCenter ? ThemeResources.TextMain : ThemeResources.TextDim;
+                            tb.FontWeight = isCenter ? FontWeights.SemiBold : FontWeights.Normal;
+                            tb.FontSize = isCenter ? 12 : 11;
+                        }
+                    }
+                    scrollIdx++;
+                };
+                _searchScrollTimer = decelTimer;
+                decelTimer.Start();
+            };
+            stage2to3.Start();
+
             return wrapper;
+        }
+
+        private static Border BuildReelItem(string name, bool isCenter)
+        {
+            return new Border
+            {
+                Height = 22,
+                Padding = new Thickness(10, 2, 10, 2),
+                CornerRadius = new CornerRadius(4),
+                Background = isCenter
+                    ? new SolidColorBrush(Color.FromArgb(20, 79, 92, 245))
+                    : Brushes.Transparent,
+                Child = new TextBlock
+                {
+                    Text = name,
+                    FontSize = isCenter ? 12 : 11,
+                    FontWeight = isCenter ? FontWeights.SemiBold : FontWeights.Normal,
+                    Foreground = isCenter ? ThemeResources.TextMain : ThemeResources.TextDim,
+                    FontFamily = ThemeResources.FontBase,
+                    TextTrimming = TextTrimming.CharacterEllipsis,
+                    VerticalAlignment = VerticalAlignment.Center
+                }
+            };
+        }
+
+        private void StopSearchAnimations()
+        {
+            if (_searchStageTimer != null) { _searchStageTimer.Stop(); _searchStageTimer = null; }
+            if (_searchScrollTimer != null) { _searchScrollTimer.Stop(); _searchScrollTimer = null; }
+            if (_searchShimmerTimer != null) { _searchShimmerTimer.Stop(); _searchShimmerTimer = null; }
         }
 
         private void RemoveLoadingBubble(FrameworkElement loading)
         {
+            StopSearchAnimations();
             if (loading is StackPanel sp)
             {
                 foreach (var child in sp.Children)
@@ -804,8 +1079,9 @@ namespace TeampptAddin
         private Border BuildAiAssetCard(AssetSuggestion suggestion)
         {
             _cardByFile.TryGetValue(suggestion.Asset?.File ?? "", out var realCard);
-            var isRemote = realCard == null && suggestion.Asset?.Extra != null
-                && suggestion.Asset.Extra.ContainsKey("remote_thumb");
+            var hasRemoteFile = suggestion.Asset?.Extra != null
+                && suggestion.Asset.Extra.ContainsKey("remote_file");
+            var isRemote = realCard == null && hasRemoteFile;
 
             var thumbBorder = new Border
             {
@@ -826,7 +1102,16 @@ namespace TeampptAddin
                     Margin = new Thickness(4)
                 };
             }
-            else if (isRemote && _remoteCache != null)
+            else if (realCard?.BitmapThumbnail != null)
+            {
+                thumbBorder.Child = new Image
+                {
+                    Source = realCard.BitmapThumbnail,
+                    Stretch = Stretch.Uniform,
+                    Margin = new Thickness(4)
+                };
+            }
+            else if (hasRemoteFile && _remoteCache != null)
             {
                 var remotePptx = suggestion.Asset.Extra["remote_file"].ToString();
                 LoadRemoteThumbAsync(thumbBorder, remotePptx);
@@ -895,7 +1180,9 @@ namespace TeampptAddin
             };
             ThemeResources.ApplyRoundedClip(card, 11);
 
-            if (realCard != null)
+            bool useLocalCard = realCard != null && !hasRemoteFile;
+
+            if (useLocalCard)
             {
                 bool mouseDown = false;
                 Point dragOrigin = default;
@@ -933,7 +1220,7 @@ namespace TeampptAddin
                     CardClickInsert?.Invoke(realCard);
                 };
             }
-            else if (isRemote && _remoteCache != null)
+            else if (hasRemoteFile && _remoteCache != null)
             {
                 var remoteFile = suggestion.Asset.Extra["remote_file"].ToString();
                 var assetName = suggestion.Asset?.Name ?? "에셋";

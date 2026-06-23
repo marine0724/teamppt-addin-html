@@ -25,6 +25,7 @@ namespace TeampptAddin
         private readonly string _category;
         private readonly string _useWhen;
         private BitmapSource _bitmapThumb;
+        public BitmapSource BitmapThumbnail => _bitmapThumb;
 
         private readonly Border _thumbBorder;
         private bool _mousePressed;
