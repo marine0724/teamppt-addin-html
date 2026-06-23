@@ -71,6 +71,7 @@
     <Compile Include="Models\DesignConcept.cs" />
     <Compile Include="Models\CatalogEntry.cs" />
     <Compile Include="Interop\IObjectSafety.cs" />
+    <Compile Include="Models\SlideDiagnosis.cs" />
     <Compile Include="Models\AiRecommendation.cs" />
     <Compile Include="Models\NormalizedPalette.cs" />
     <Compile Include="Models\StylePalette.cs" />
@@ -105,6 +106,8 @@
     <Compile Include="Services\MatchQuery.cs" />
     <Compile Include="Services\RecommendationCache.cs" />
     <Compile Include="Services\RemoteAssetCache.cs" />
+    <Compile Include="Services\SlideDiagnosisSchema.cs" />
+    <Compile Include="Services\SlideDiagnosisParser.cs" />
     <Compile Include="Services\VectorRecommendService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
