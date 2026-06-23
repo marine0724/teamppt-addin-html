@@ -1,32 +1,17 @@
-TEAMPPT — A-2 화면공유 시스템 개발
+화면 공유 진단 기능을 구현해줘. 설계와 구현 계획이 이미 작성돼 있어.
 
-[상황]
-- A-1 데이터 토대 완료 (인제스트·벡터검색·추천 전부 동작)
-- 다음 단계: A-2 실시간 공유엔진
-- PROGRESS-BOARD.md 먼저 읽을 것
+- 스펙: docs/superpowers/specs/2026-06-23-screen-share-diagnosis-design.md
+- 계획: docs/superpowers/plans/2026-06-23-screen-share-diagnosis.md
 
-[A-2 목표]
-- 슬라이드 리더: 현재 슬라이드/전체 덱을 온디맨드로 읽기
-- 화면공유 표시: [슬라이드 N 공유중] indicator
-- 로드맵 위치: A-1(데이터) → **A-2(공유)** → A-3(추천·진단 UX)
+superpowers:executing-plans 스킬로 이 계획을 Task 1부터 순서대로 실행해.
+각 Task의 step(테스트 작성 → 실패 확인 → 구현 → 통과 확인 → 커밋)을 그대로 따라가고,
+Task가 끝날 때마다 멈춰서 결과를 보고해줘.
 
-[병행 작업 — 별도 세션에서]
-1. 데이터 추출 품질 확인 — Supabase 실제 메타데이터 검토
-2. 인제스트 시 에셋 이름 규칙 결정
-3. 기존 표지 에셋 규약 맞춰 재제작 (Placeholder→일반 shape, 배경채우기→도형)
-4. 대표 발표 준비 — 시스템 구조·규약·진행 상황 정리
+빌드는 반드시 CLAUDE.md 규칙대로 MSBuild 관리자 권한(Start-Process -Verb RunAs)으로 하고,
+빌드 후 DLL 타임스탬프(1분 이내) + build.log 오류 0건을 검증해. (cmd 래핑/stdout redirect 금지)
 
-[이전 세션 완료 사항 (06-23)]
-- GhostWindow 크기 정상화 (ExportShapesComposite 방식)
-- 표지 에셋 Placeholder/배경 유실 → PPT COM 근본 제약, 에셋 제작 규약으로 해결 (spec §5 #6·7)
-- 검색 비용 최적화: thinkingBudget 1024→0, 카탈로그 입력 다이어트
+Task 1·2는 xUnit 테스트가 있으니 dotnet test로 검증하고,
+Task 3·4(COM/WPF)는 자동 테스트가 없으니 코드 완결 후 Task 5에서 PowerPoint로 수동 검증해.
 
-[빌드]
-- 관리자 빌드 필수 (COM 등록): CLAUDE.md 빌드 섹션 참고
-- 테스트 전 PPT 완전 종료 필수 (taskkill /f /im POWERPNT.EXE)
-
-[건드리지 말 것]
-- Core/Connect.cs, Globals.cs 수정 금지
-- CoordinateConverter에 폴백 로직 추가 금지
-- ThumbnailGenerator.cs, GhostWindow.cs — 방금 수정 완료, 건드리지 말 것
-- 의존성 추가 금지, 시크릿 평문 금지
+마지막에 PROGRESS-BOARD.md와 PITCH.md를 둘 다 갱신해
+(PITCH는 §4 예정 항목을 §2 완성 기능으로 비전문가 언어로 승격).
