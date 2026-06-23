@@ -130,6 +130,87 @@ namespace TeampptAddin
             return ParseResponse(text, assetList, paletteList, fontList);
         }
 
+        public async Task<SlideDiagnosis> DiagnoseSlideAsync(string pngPath)
+        {
+            var base64 = Convert.ToBase64String(File.ReadAllBytes(pngPath));
+
+            _history.Add(new JObject
+            {
+                ["role"] = "user",
+                ["parts"] = new JArray
+                {
+                    new JObject
+                    {
+                        ["inline_data"] = new JObject
+                        {
+                            ["mime_type"] = "image/png",
+                            ["data"] = base64
+                        }
+                    },
+                    new JObject { ["text"] = "이 슬라이드를 개선점 중심으로 진단해줘." }
+                }
+            });
+
+            while (_history.Count > MaxHistoryTurns * 2)
+                _history.RemoveAt(0);
+
+            var requestBody = new JObject
+            {
+                ["contents"] = new JArray(_history.ToArray()),
+                ["systemInstruction"] = new JObject
+                {
+                    ["parts"] = new JArray { new JObject { ["text"] = SlideDiagnosisSchema.BuildSystemPrompt() } }
+                },
+                ["generationConfig"] = new JObject
+                {
+                    ["temperature"] = 0.6,
+                    ["responseMimeType"] = "application/json",
+                    ["responseSchema"] = SlideDiagnosisSchema.BuildResponseSchema(),
+                    ["thinkingConfig"] = new JObject { ["thinkingBudget"] = 0 }
+                }
+            };
+
+            var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={_apiKey}";
+            var bodyString = requestBody.ToString(Formatting.None);
+
+            const int maxAttempts = 3;
+            HttpResponseMessage response = null;
+            string body = null;
+
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                var content = new StringContent(bodyString, Encoding.UTF8, "application/json");
+                Http.DefaultRequestHeaders.Authorization = null;
+                response = await Http.PostAsync(url, content).ConfigureAwait(false);
+                body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                Logger.Log($"[Diagnose] attempt {attempt}: HTTP {(int)response.StatusCode}");
+                if (response.IsSuccessStatusCode) break;
+
+                var status = (int)response.StatusCode;
+                bool transient = status == 503 || status == 429 || status == 500;
+                if (transient && attempt < maxAttempts)
+                {
+                    await Task.Delay(500 * (1 << (attempt - 1))).ConfigureAwait(false);
+                    continue;
+                }
+                throw new HttpRequestException($"Gemini 진단 API 오류 ({status}): {body}");
+            }
+
+            var root = JObject.Parse(body);
+            LogTokenUsage(root);
+            var text = root["candidates"]?[0]?["content"]?["parts"]?[0]?["text"]?.ToString();
+            if (string.IsNullOrEmpty(text))
+                throw new InvalidOperationException("Gemini 진단 응답에 텍스트가 없습니다.");
+
+            _history.Add(new JObject
+            {
+                ["role"] = "model",
+                ["parts"] = new JArray { new JObject { ["text"] = text } }
+            });
+
+            return SlideDiagnosisParser.Parse(text);
+        }
+
         private void LogTokenUsage(JObject root)
         {
             var usage = root["usageMetadata"];

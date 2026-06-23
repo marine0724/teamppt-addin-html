@@ -44,5 +44,8 @@ namespace TeampptAddin
 
             return await _selector.RecommendAsync(userIntent, candidates, palettes, fonts).ConfigureAwait(false);
         }
+
+        public Task<SlideDiagnosis> DiagnoseSlideAsync(string pngPath)
+            => _selector.DiagnoseSlideAsync(pngPath);
     }
 }
