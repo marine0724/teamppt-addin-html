@@ -269,6 +269,7 @@ namespace TeampptAddin
 
         private void OnStyleApply(StylePalette palette, StyleFont font)
         {
+            Logger.Log($"[Style] OnStyleApply fired: palette={palette?.Name ?? "NULL"}, font={font?.Name ?? "NULL"}");
             try
             {
                 var slide = (PowerPoint.Slide)Globals.Application.ActiveWindow.View.Slide;
@@ -316,6 +317,7 @@ namespace TeampptAddin
                     var shapes = slide.Shapes.Paste();
                     CoordinateConverter.PositionShapesAtCursor(shapes, screenPos, window);
 
+                    _wpfPanel.SetStyleAnchorByFile(card.PptxPath);
                     _wpfPanel.SetStatus($"✓ {card.Title} 삽입 완료",
                         ThemeResources.StatusSuccess.Color);
                 }

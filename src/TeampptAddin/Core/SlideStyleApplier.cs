@@ -9,6 +9,7 @@ namespace TeampptAddin
     {
         public static void Apply(PowerPoint.Slide slide, StylePalette palette, StyleFont font)
         {
+            Logger.Log($"[StyleApply] palette={palette?.Name ?? "NULL"}, font={font?.Name ?? "NULL"}");
             if (slide == null || palette?.Colors == null) return;
             var c = palette.Colors;
 
@@ -28,6 +29,7 @@ namespace TeampptAddin
             {
                 try
                 {
+                    Logger.Log($"[StyleApply] shape={shape.Name}, type={shape.Type}, protected={IsProtected(shape)}, hasText={shape.HasTextFrame}");
                     if (IsProtected(shape)) continue;
 
                     if (!string.IsNullOrEmpty(c.Main))
@@ -54,11 +56,16 @@ namespace TeampptAddin
                     {
                         var tr = shape.TextFrame.TextRange;
                         int count = tr.Paragraphs().Count;
+                        Logger.Log($"[StyleApply]   textParagraphs={count}, fontToApply={font?.Name ?? "NULL"}");
                         for (int i = 1; i <= count; i++)
                         {
                             var para = tr.Paragraphs(i);
                             if (font != null && !string.IsNullOrEmpty(font.Name))
+                            {
+                                Logger.Log($"[StyleApply]   para[{i}] before={para.Font.Name}, setting={font.Name}");
                                 para.Font.Name = font.Name;
+                                Logger.Log($"[StyleApply]   para[{i}] after={para.Font.Name}");
+                            }
                             if (!string.IsNullOrEmpty(c.Text))
                                 para.Font.Color.RGB = Ole(c.Text);
                         }

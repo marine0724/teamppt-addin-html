@@ -1342,6 +1342,7 @@ namespace TeampptAddin
                 var swatch = BuildPaletteSwatch(palettes[i]);
                 swatch.MouseLeftButtonUp += (s, e) =>
                 {
+                    Logger.Log($"[Style] Palette clicked: idx={idx}, palette={palettes[idx]?.Name ?? "NULL"}, fontNull={_selectedFont == null}");
                     _selectedPalette = palettes[idx];
                     RefreshPaletteSelection(idx);
                     StyleApplyRequested?.Invoke(_selectedPalette, _selectedFont);
@@ -1362,6 +1363,7 @@ namespace TeampptAddin
                 var row = BuildFontRow(fonts[i]);
                 row.MouseLeftButtonUp += (s, e) =>
                 {
+                    Logger.Log($"[Style] Font row clicked: idx={idx}, font={fonts[idx]?.Name ?? "NULL"}, paletteNull={_selectedPalette == null}");
                     _selectedFont = fonts[idx];
                     RefreshFontSelection(idx);
                     StyleApplyRequested?.Invoke(_selectedPalette, _selectedFont);
@@ -1607,6 +1609,7 @@ namespace TeampptAddin
         {
             if (string.IsNullOrEmpty(pathOrFile)) return;
             var key = System.IO.Path.GetFileName(pathOrFile);
+            Logger.Log($"[Style] SetStyleAnchorByFile key={key}, allAssets={_allAssets?.Count ?? -1}");
             _anchorAsset = (_allAssets ?? new List<HeaderAsset>())
                 .FirstOrDefault(a =>
                     string.Equals(System.IO.Path.GetFileName(a.File ?? ""), key,
@@ -1614,6 +1617,7 @@ namespace TeampptAddin
                     || (a.Extra != null && a.Extra.TryGetValue("remote_file", out var rf)
                         && string.Equals(System.IO.Path.GetFileName(rf.ToString()), key,
                             StringComparison.OrdinalIgnoreCase)));
+            Logger.Log($"[Style] anchor={_anchorAsset?.Name ?? "NULL"}, colors={_anchorAsset?.Colors?.Count ?? -1}, styleStack={(_styleStack != null ? "OK" : "NULL")}");
             PopulateStylePanel();
         }
 
