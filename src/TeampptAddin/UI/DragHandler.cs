@@ -90,7 +90,6 @@ namespace TeampptAddin
             try
             {
                 Logger.Log($"BeginDrag: {_title}");
-                ShapeInserter.CopyShapesToClipboard(_pptxPath);
 
                 _ghost = new GhostWindow(_thumb);
                 _ghost.MoveTo(_owner.PointToScreen(_dragStart));
@@ -123,12 +122,11 @@ namespace TeampptAddin
             {
                 try
                 {
-                    var app = Globals.Application;
-                    var window = app.ActiveWindow;
-                    var slide = (PowerPoint.Slide)window.View.Slide;
-                    var shapes = slide.Shapes.Paste();
+                    var shapes = ShapeInserter.InsertToActiveSlide(_pptxPath);
 
-                    CoordinateConverter.PositionShapesAtCursor(shapes, screenPos, window);
+                    if (shapes != null)
+                        CoordinateConverter.PositionShapesAtCursor(
+                            shapes, screenPos, Globals.Application.ActiveWindow);
 
                     _setStatus($"✓ {_title} 삽입 완료", SuccessColor);
                 }

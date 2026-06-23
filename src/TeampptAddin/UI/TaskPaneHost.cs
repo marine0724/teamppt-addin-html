@@ -243,7 +243,6 @@ namespace TeampptAddin
             try
             {
                 Logger.Log($"WPF BeginDrag: {card.Title}");
-                ShapeInserter.CopyShapesToClipboard(card.PptxPath);
 
                 _wpfDragGhost = new GhostWindow(card.DrawingThumbnail);
                 _wpfDragGhost.MoveTo(Cursor.Position);
@@ -311,11 +310,11 @@ namespace TeampptAddin
             {
                 try
                 {
-                    var app = Globals.Application;
-                    var window = app.ActiveWindow;
-                    var slide = (PowerPoint.Slide)window.View.Slide;
-                    var shapes = slide.Shapes.Paste();
-                    CoordinateConverter.PositionShapesAtCursor(shapes, screenPos, window);
+                    var shapes = ShapeInserter.InsertToActiveSlide(card.PptxPath);
+
+                    if (shapes != null)
+                        CoordinateConverter.PositionShapesAtCursor(
+                            shapes, screenPos, Globals.Application.ActiveWindow);
 
                     _wpfPanel.SetStyleAnchorByFile(card.PptxPath);
                     _wpfPanel.SetStatus($"✓ {card.Title} 삽입 완료",
