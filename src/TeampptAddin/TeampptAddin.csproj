@@ -106,6 +106,7 @@
     <Compile Include="Services\MatchQuery.cs" />
     <Compile Include="Services\RecommendationCache.cs" />
     <Compile Include="Services\RemoteAssetCache.cs" />
+    <Compile Include="Services\SlideCaptureService.cs" />
     <Compile Include="Services\SlideDiagnosisSchema.cs" />
     <Compile Include="Services\SlideDiagnosisParser.cs" />
     <Compile Include="Services\VectorRecommendService.cs" />
