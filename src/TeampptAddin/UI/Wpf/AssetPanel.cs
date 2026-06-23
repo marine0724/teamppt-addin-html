@@ -51,6 +51,8 @@ namespace TeampptAddin
         private Border[] _paletteBtns;
         private Border[] _fontBtns;
 
+        private Border _sendBtn;
+
         private TextBlock _statusText;
         private Border _ingestButton;
 
@@ -381,7 +383,8 @@ namespace TeampptAddin
             var lbl = new TextBlock
             {
                 Text = text,
-                FontSize = 12,
+                FontSize = 13,
+                FontWeight = FontWeights.Medium,
                 Foreground = ThemeResources.TextMain,
                 VerticalAlignment = VerticalAlignment.Center
             };
@@ -389,12 +392,12 @@ namespace TeampptAddin
             var chip = new Border
             {
                 Child = lbl,
-                Background = ThemeResources.BgChip,
+                Background = ThemeResources.BgBase,
                 BorderBrush = ThemeResources.BorderCard,
                 BorderThickness = new Thickness(1),
                 CornerRadius = ThemeResources.RadiusChip,
-                Padding = new Thickness(13, 6, 13, 6),
-                Margin = new Thickness(4),
+                Padding = new Thickness(14, 10, 14, 10),
+                Margin = new Thickness(4, 3, 4, 3),
                 Cursor = Cursors.Hand
             };
 
@@ -406,7 +409,7 @@ namespace TeampptAddin
             };
             chip.MouseLeave += (s, e) =>
             {
-                chip.Background = ThemeResources.BgChip;
+                chip.Background = ThemeResources.BgBase;
                 chip.BorderBrush = ThemeResources.BorderCard;
                 lbl.Foreground = ThemeResources.TextMain;
             };
@@ -422,7 +425,7 @@ namespace TeampptAddin
                 Background = ThemeResources.BgSurface,
                 BorderBrush = ThemeResources.BorderBase,
                 BorderThickness = new Thickness(0, 1, 0, 0),
-                Padding = new Thickness(12, 10, 12, 10)
+                Padding = new Thickness(10, 10, 10, 10)
             };
 
             var grid = new Grid();
@@ -447,7 +450,7 @@ namespace TeampptAddin
                 Foreground = ThemeResources.TextDim,
                 AcceptsReturn = true,
                 TextWrapping = TextWrapping.Wrap,
-                MinHeight = 40,
+                MinHeight = 36,
                 MaxHeight = 80,
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
                 VerticalAlignment = VerticalAlignment.Center,
@@ -462,6 +465,7 @@ namespace TeampptAddin
                 _inputBox.Foreground = ThemeResources.TextMain;
                 _hasPlaceholder = false;
                 inputWrap.BorderBrush = ThemeResources.Accent;
+                UpdateSendButtonState();
             };
             _inputBox.LostFocus += (s, e) =>
             {
@@ -470,6 +474,7 @@ namespace TeampptAddin
                 _inputBox.Text = "슬라이드에 뭘 넣고 싶어요?";
                 _inputBox.Foreground = ThemeResources.TextDim;
                 _hasPlaceholder = true;
+                UpdateSendButtonState();
             };
             _inputBox.PreviewKeyDown += async (s, e) =>
             {
@@ -484,31 +489,43 @@ namespace TeampptAddin
             Grid.SetColumn(inputWrap, 0);
             grid.Children.Add(inputWrap);
 
-            var sendBtn = new Border
+            _sendBtn = new Border
             {
-                Background = ThemeResources.Accent,
-                CornerRadius = new CornerRadius(9),
-                Width = 32,
-                Height = 32,
+                Background = ThemeResources.BgChip,
+                CornerRadius = new CornerRadius(12),
+                Width = 36,
+                Height = 36,
                 Margin = new Thickness(8, 0, 0, 0),
-                Cursor = Cursors.Hand,
+                Cursor = Cursors.Arrow,
                 VerticalAlignment = VerticalAlignment.Bottom,
                 Child = new TextBlock
                 {
                     Text = "↑",
-                    FontSize = 16,
+                    FontSize = 18,
                     FontWeight = FontWeights.Bold,
-                    Foreground = Brushes.White,
+                    Foreground = ThemeResources.TextDim,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center
                 }
             };
-            sendBtn.MouseLeftButtonUp += async (s, e) => await SendAiMessageFromInput();
-            Grid.SetColumn(sendBtn, 1);
-            grid.Children.Add(sendBtn);
+            _sendBtn.MouseLeftButtonUp += async (s, e) => await SendAiMessageFromInput();
+            Grid.SetColumn(_sendBtn, 1);
+            grid.Children.Add(_sendBtn);
+
+            _inputBox.TextChanged += (s, e) => UpdateSendButtonState();
 
             bar.Child = grid;
             return bar;
+        }
+
+        private void UpdateSendButtonState()
+        {
+            if (_sendBtn == null) return;
+            bool active = !_hasPlaceholder && !string.IsNullOrWhiteSpace(_inputBox.Text);
+            var lbl = (TextBlock)_sendBtn.Child;
+            _sendBtn.Background = active ? ThemeResources.Accent : ThemeResources.BgChip;
+            lbl.Foreground = active ? Brushes.White : ThemeResources.TextDim;
+            _sendBtn.Cursor = active ? Cursors.Hand : Cursors.Arrow;
         }
 
         // ── AI messaging ─────────────────────────────────────────────
@@ -1252,7 +1269,7 @@ namespace TeampptAddin
                 var lbl = new TextBlock
                 {
                     Text = cat,
-                    FontSize = 11,
+                    FontSize = 12,
                     FontFamily = ThemeResources.FontBase,
                     VerticalAlignment = VerticalAlignment.Center
                 };
@@ -1260,8 +1277,8 @@ namespace TeampptAddin
                 {
                     Child = lbl,
                     CornerRadius = ThemeResources.RadiusChip,
-                    BorderThickness = new Thickness(1),
-                    Padding = new Thickness(10, 4, 10, 4),
+                    BorderThickness = new Thickness(0),
+                    Padding = new Thickness(12, 7, 12, 7),
                     Margin = new Thickness(2, 0, 2, 0),
                     Cursor = Cursors.Hand
                 };
@@ -1310,10 +1327,10 @@ namespace TeampptAddin
                 bool active = _categories[i] == _activeCategory;
                 var chip = _categoryBtns[i];
                 var lbl = (TextBlock)chip.Tag;
-                chip.Background = active ? ThemeResources.BgCategoryActive : Brushes.Transparent;
-                chip.BorderBrush = active ? ThemeResources.AccentBorder : Brushes.Transparent;
-                lbl.Foreground = active ? ThemeResources.TextAccent : ThemeResources.TextSub;
-                lbl.FontWeight = active ? FontWeights.SemiBold : FontWeights.Normal;
+                chip.Background = active ? ThemeResources.Accent : Brushes.Transparent;
+                chip.BorderThickness = new Thickness(0);
+                lbl.Foreground = active ? Brushes.White : ThemeResources.TextSub;
+                lbl.FontWeight = active ? FontWeights.SemiBold : FontWeights.Regular;
             }
         }
 

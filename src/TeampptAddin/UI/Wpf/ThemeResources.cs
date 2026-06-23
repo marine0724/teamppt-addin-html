@@ -50,7 +50,7 @@ namespace TeampptAddin
         public static readonly CornerRadius RadiusCard    = new CornerRadius(13);
         public static readonly CornerRadius RadiusInput   = new CornerRadius(14);
         public static readonly CornerRadius RadiusBadge   = new CornerRadius(5);
-        public static readonly CornerRadius RadiusChip    = new CornerRadius(99);
+        public static readonly CornerRadius RadiusChip    = new CornerRadius(10);
         public static readonly CornerRadius RadiusBubble  = new CornerRadius(14);
 
         public static void ApplyRoundedClip(FrameworkElement element, double radius)
