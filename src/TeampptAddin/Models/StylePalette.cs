@@ -5,6 +5,9 @@ namespace TeampptAddin
 {
     public class PaletteColors
     {
+        [JsonProperty("background")]
+        public string Background { get; set; }
+
         [JsonProperty("main")]
         public string Main { get; set; }
 
