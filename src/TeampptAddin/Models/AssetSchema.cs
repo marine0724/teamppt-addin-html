@@ -27,4 +27,10 @@ namespace TeampptAddin
         [JsonProperty("perSlide")] public bool PerSlide { get; set; }
         [JsonExtensionData] public Dictionary<string, JToken> Extra { get; set; }
     }
+
+    public class AssetCapacity
+    {
+        [JsonProperty("min")] public int Min { get; set; }
+        [JsonProperty("max")] public int Max { get; set; }
+    }
 }

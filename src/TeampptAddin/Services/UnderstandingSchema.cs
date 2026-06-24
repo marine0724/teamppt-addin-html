@@ -21,7 +21,7 @@ namespace TeampptAddin
                     ["kind"] = new JObject
                     {
                         ["type"] = "string",
-                        ["enum"] = new JArray { "layout", "component" }
+                        ["enum"] = new JArray { "slide", "header", "layout", "component" }
                     },
                     ["use_when"] = new JObject { ["type"] = "string" },
                     ["content_fit"] = StrArray(),
@@ -75,6 +75,25 @@ namespace TeampptAddin
                             },
                             ["required"] = new JArray { "role", "family" }
                         }
+                    },
+                    ["capacity"] = new JObject
+                    {
+                        ["type"] = "object",
+                        ["properties"] = new JObject
+                        {
+                            ["min"] = new JObject { ["type"] = "integer" },
+                            ["max"] = new JObject { ["type"] = "integer" }
+                        },
+                        ["required"] = new JArray { "min", "max" }
+                    },
+                    ["material_kinds"] = new JObject
+                    {
+                        ["type"] = "array",
+                        ["items"] = new JObject
+                        {
+                            ["type"] = "string",
+                            ["enum"] = new JArray { "text", "image", "chart", "table", "bullet" }
+                        }
                     }
                 },
                 ["required"] = new JArray
@@ -93,7 +112,9 @@ namespace TeampptAddin
 ""{category}""
 
 ## 판단 규칙
-- kind: 슬라이드 페이지 전체 틀이면 ""layout"", 틀 위에 얹는 부품(그래프/표/다이어그램 등)이면 ""component"".
+- kind: 페이지 통째가 완결된 표지(오픈/엔드)면 ""slide"", 중간 슬라이드의 상단 제목 영역이면 ""header"", 헤더를 제외한 본문 배치 틀이면 ""layout"", 본문 위에 얹는 부품(카드·아이콘블록·그래프·표·다이어그램)이면 ""component"". 우선순위: slide → header → layout → component.
+- capacity: 이 에셋이 담기 좋은 재료 블록 수를 {{min,max}}로 (예: 카드 3개면 {{min:3,max:3}}, 1~2단이면 {{min:1,max:2}}). 통짜 slide나 단일 header는 생략 가능.
+- material_kinds: 담기 좋은 재료 타입 (text/image/chart/table/bullet) 배열.
 - name: 이 에셋을 한눈에 구분할 짧은 한국어 이름 (예: ""우측정렬 연도강조 표지"").
 - use_when: 어떤 상황에서 쓰면 좋은지 한 문장.
 - content_fit: 들어가기 좋은 콘텐츠 종류 2~4개.

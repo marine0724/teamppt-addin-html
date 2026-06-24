@@ -20,6 +20,9 @@ namespace TeampptAddin
         [JsonProperty("colors")] public List<AssetColor> Colors { get; set; }
         [JsonProperty("fonts")] public List<AssetFont> Fonts { get; set; }
         [JsonProperty("slots")] public List<AssetSlot> Slots { get; set; }
+        [JsonProperty("capacity")] public AssetCapacity Capacity { get; set; }
+        [JsonProperty("material_kinds")] public List<string> MaterialKinds { get; set; }
+        [JsonProperty("source_deck")] public string SourceDeck { get; set; }
         [JsonExtensionData] public Dictionary<string, JToken> Extra { get; set; }
     }
 }
