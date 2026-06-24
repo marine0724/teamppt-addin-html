@@ -99,7 +99,8 @@ namespace TeampptAddin
                 ["required"] = new JArray
                 {
                     "name", "kind", "use_when", "content_fit",
-                    "tags", "example_intents", "slots", "colors", "fonts"
+                    "tags", "example_intents", "slots", "colors", "fonts",
+                    "capacity", "material_kinds"
                 }
             };
         }
