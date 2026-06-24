@@ -26,6 +26,21 @@ namespace TeampptAddin.Tests
         }
 
         [Fact]
+        public void BuildArgs_With_Kind_Includes_FilterKind()
+        {
+            var args = MatchQuery.BuildArgs(new float[] { 0.1f }, 5, "header");
+            Assert.Equal("header", (string)args["filter_kind"]);
+            Assert.Equal(5, (int)args["match_count"]);
+        }
+
+        [Fact]
+        public void BuildArgs_Null_Kind_Omits_FilterKind()
+        {
+            var args = MatchQuery.BuildArgs(new float[] { 0.1f }, 5, null);
+            Assert.False(args.ContainsKey("filter_kind"));
+        }
+
+        [Fact]
         public void ParseResults_Empty_Returns_Empty()
         {
             Assert.Empty(MatchQuery.ParseResults("[]"));

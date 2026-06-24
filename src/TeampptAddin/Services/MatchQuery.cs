@@ -8,9 +8,14 @@ namespace TeampptAddin
     public static class MatchQuery
     {
         public static JObject BuildArgs(float[] queryEmbedding, int matchCount)
+            => BuildArgs(queryEmbedding, matchCount, null);
+
+        public static JObject BuildArgs(float[] queryEmbedding, int matchCount, string filterKind)
         {
             var vec = "[" + string.Join(",", queryEmbedding.Select(v => v.ToString(CultureInfo.InvariantCulture))) + "]";
-            return new JObject { ["query_embedding"] = vec, ["match_count"] = matchCount };
+            var o = new JObject { ["query_embedding"] = vec, ["match_count"] = matchCount };
+            if (!string.IsNullOrEmpty(filterKind)) o["filter_kind"] = filterKind;
+            return o;
         }
 
         public static List<HeaderAsset> ParseResults(string rpcJson)
