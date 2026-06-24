@@ -40,17 +40,22 @@ create index on assets using hnsw (embedding vector_cosine_ops);
 
 ## 3. 벡터 검색 함수(RPC)
 - [ ] SQL Editor에서 실행:
+  > **주의:** 기존 2-인자 `match_assets(vector, int)`가 이미 있으면, 인자 목록이 바뀌므로 `create or replace`가 **교체가 아니라 새 오버로드를 추가**한다 → 2-인자 호출이 모호해짐(PostgREST 오류). 아래처럼 먼저 DROP 후 생성한다.
 ```sql
-create or replace function match_assets(query_embedding vector(768), match_count int)
+drop function if exists match_assets(vector, int);
+create or replace function match_assets(
+  query_embedding vector(768), match_count int, filter_kind text default null)
 returns table (
   id uuid, file text, thumb text, name text, category text, kind text,
   scope text, tags text[], use_when text, content_fit text[], metadata jsonb,
-  similarity float
+  source_deck text, similarity float
 ) language sql stable as $$
   select a.id, a.file, a.thumb, a.name, a.category, a.kind,
          a.scope, a.tags, a.use_when, a.content_fit, a.metadata,
+         a.source_deck,
          1 - (a.embedding <=> query_embedding) as similarity
   from assets a
+  where filter_kind is null or a.kind = filter_kind
   order by a.embedding <=> query_embedding
   limit match_count;
 $$;
@@ -98,5 +103,6 @@ create policy "anon_read_assets" on assets for select to anon using (true);
 - [ ] Database → Functions에 `match_assets` 보임.
 - [ ] Storage에 `pptx`, `thumb` 버킷 보임(둘 다 Public).
 - [ ] 위 두 로컬 파일 작성됨(커밋 안 함).
+- [ ] match_assets가 filter_kind 인자 + source_deck 반환을 갖도록 재실행됨.
 
 → 여기까지 되면 A-1b/c(적재) / A-1d(읽기) 개발 실행 가능. **A-1a(이해 어댑터)는 이 셋업 없이도 먼저 진행 가능**(Gemini 키만 필요).
