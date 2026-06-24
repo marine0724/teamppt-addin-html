@@ -1,3 +1,4 @@
+using System.Linq;
 using Newtonsoft.Json.Linq;
 using Xunit;
 
@@ -39,6 +40,22 @@ namespace TeampptAddin.Tests
             var a = SupabaseAssetMapper.Map(JObject.Parse(Row));
             Assert.Equal("pptx/표지_01.pptx", a.Extra["remote_file"].ToString());
             Assert.Equal("thumb/표지_01.png", a.Extra["remote_thumb"].ToString());
+        }
+
+        [Fact]
+        public void Map_Reads_Capacity_MaterialKinds_SourceDeck()
+        {
+            var row = JObject.Parse(@"{
+              ""file"":""pptx/a.pptx"",""thumb"":""thumb/a.png"",""name"":""A"",
+              ""category"":""레이아웃"",""kind"":""layout"",""scope"":""slide"",
+              ""source_deck"":""bundle.pptx"",
+              ""metadata"":{ ""capacity"":{""min"":2,""max"":4}, ""material_kinds"":[""text""] }
+            }");
+            var a = SupabaseAssetMapper.Map(row);
+            Assert.Equal(2, a.Capacity.Min);
+            Assert.Equal(4, a.Capacity.Max);
+            Assert.Equal(new[] { "text" }, a.MaterialKinds.ToArray());
+            Assert.Equal("bundle.pptx", a.SourceDeck);
         }
     }
 }
