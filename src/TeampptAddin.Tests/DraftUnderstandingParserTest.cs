@@ -40,5 +40,43 @@ namespace TeampptAddin.Tests
             var u = DraftUnderstandingParser.Parse(llm, profile);
             Assert.Empty(u.Materials);
         }
+
+        [Fact]
+        public void Parses_Purpose_And_NeededCombination_Body()
+        {
+            var profile = new DraftProfile
+            {
+                Shapes = { new DraftShape { Id = 1, Kind = "text", Text = "기능", CharCount = 2 } }
+            };
+            const string llm = @"{
+              ""materials"":[{""role"":""title"",""type"":""text"",""sourceShapeId"":1,""emphasis"":""heading""}],
+              ""counts"":{""textBlocks"":1,""bullets"":0,""images"":0,""tables"":0,""charts"":0},
+              ""layoutShape"":""x"",""designSummary"":""y"",""dominantColors"":[],
+              ""matchIntent"":""기능 비교"",""slideKind"":""body"",
+              ""purpose"":""3개 핵심 기능을 동등 비교"",
+              ""neededCombination"":{""slide"":0,""header"":1,""layout"":1,""component"":3}
+            }";
+            var u = DraftUnderstandingParser.Parse(llm, profile);
+            Assert.Equal("3개 핵심 기능을 동등 비교", u.Purpose);
+            Assert.Equal(1, u.NeededCombination.Header);
+            Assert.Equal(3, u.NeededCombination.Component);
+            Assert.Equal(0, u.NeededCombination.Slide);
+        }
+
+        [Fact]
+        public void Parses_Cover_NeededCombination_Slide()
+        {
+            var profile = new DraftProfile();
+            const string llm = @"{
+              ""materials"":[],""counts"":{""textBlocks"":0,""bullets"":0,""images"":0,""tables"":0,""charts"":0},
+              ""layoutShape"":"""",""designSummary"":"""",""dominantColors"":[],
+              ""matchIntent"":""표지"",""slideKind"":""cover"",
+              ""purpose"":""오프닝 표지"",
+              ""neededCombination"":{""slide"":1,""header"":0,""layout"":0,""component"":0}
+            }";
+            var u = DraftUnderstandingParser.Parse(llm, profile);
+            Assert.Equal(1, u.NeededCombination.Slide);
+            Assert.Equal("cover", u.SlideKind);
+        }
     }
 }

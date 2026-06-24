@@ -45,6 +45,16 @@ namespace TeampptAddin
         public List<string> DominantColors { get; set; } = new List<string>();
         public string MatchIntent { get; set; } = "";
         public string SlideKind { get; set; } = "";
+        public string Purpose { get; set; } = "";
+        public NeededCombination NeededCombination { get; set; } = new NeededCombination();
+    }
+
+    public class NeededCombination
+    {
+        public int Slide { get; set; }
+        public int Header { get; set; }
+        public int Layout { get; set; }
+        public int Component { get; set; }
     }
 
     public class SlotMapping

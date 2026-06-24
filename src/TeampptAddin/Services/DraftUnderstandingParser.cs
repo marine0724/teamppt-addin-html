@@ -42,7 +42,17 @@ namespace TeampptAddin
                 DesignSummary = o["designSummary"]?.ToString() ?? "",
                 DominantColors = (o["dominantColors"] as JArray)?.Select(t => t.ToString()).ToList() ?? new List<string>(),
                 MatchIntent = o["matchIntent"]?.ToString() ?? "",
-                SlideKind = o["slideKind"]?.ToString() ?? ""
+                SlideKind = o["slideKind"]?.ToString() ?? "",
+                Purpose = o["purpose"]?.ToString() ?? "",
+                NeededCombination = o["neededCombination"] is JObject nc
+                    ? new NeededCombination
+                    {
+                        Slide = nc["slide"]?.Value<int>() ?? 0,
+                        Header = nc["header"]?.Value<int>() ?? 0,
+                        Layout = nc["layout"]?.Value<int>() ?? 0,
+                        Component = nc["component"]?.Value<int>() ?? 0
+                    }
+                    : new NeededCombination()
             };
         }
     }
