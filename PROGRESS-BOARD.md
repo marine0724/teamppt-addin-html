@@ -3,7 +3,7 @@
 > 이 파일 하나만 열어두면 "지금 어디서 뭘 하는지" 보입니다. Claude가 매 세션 함께 유지.
 > **기록용 아카이브가 아니라 "지금 여기" 작업 보드.** 끝난 잎(Task)은 지우고 교체, 숲·나무 단위는 끝날 때까지 유지. (규칙: CLAUDE.md)
 > 계층: **나라 > 대지 > 숲 > 나무 > 잎** (2026-06-22 재정립)
-> 최종 갱신: 2026-06-24 · 현재 작업: **Route B 단일슬라이드 풀변환 — 구현 완료, 실제 PPT 수동 검증 대기**
+> 최종 갱신: 2026-06-24 · 현재 작업: **Route B 재정의 — "에셋 조합 추천" 설계 완료, 새 세션에서 구현 시작 대기**
 
 ---
 
@@ -41,21 +41,50 @@
 
 ---
 
-## 🍃 잎 — 지금 작업: Route B 단일 슬라이드 풀변환
+## 🍃 잎 — 지금 작업: 에셋 조합 추천 (Route B 1단계)
 
-> 미팅 결론(2026-06-24): 실사용자는 에셋 추천을 안 쓴다. **초안 만들고 "이쁘게 해줘"** 가 진짜 워크플로 → 리디자인까지 가야 데모 가능.
-> 설계: [Route B 단일슬라이드 풀변환](docs/superpowers/specs/2026-06-24-route-b-single-slide-redesign-design.md) (확정). **데이터 추출이 생명** — 초안 이해가 재료 종류·양·디자인을 매칭에 맞게 담아야.
+> **방향 전환(2026-06-24):** 직전 "단일 에셋 + 즉시 재료 주입" 구현은 실사용 결과 엉망 → 폐기. 올바른 순서 = **① 추천 → ② 배치(빈 템플릿) → ③ 조립 → ④ 재료 이식.** 이번은 **①추천까지만.**
+> 핵심: 에셋 하나 넣는 게 아니라, 초안의 **재료 종류·양·의도·목적**을 보고 **조합**(헤더+레이아웃+컴포넌트N, 또는 통짜 slide)을 골라 **추천**만. 추천 방식 = **Ⓑ 벡터로 후보 추리고 → LLM이 조합 선택**.
+> 설계: [에셋 조합 추천](docs/superpowers/specs/2026-06-24-asset-combination-recommendation-design.md) (확정). taxonomy = **slide / header / layout / component** (header를 component에서 분리).
 
 | # | 무엇 | 상태 |
 |---|------|------|
-| 1 | **구현 플랜 작성** (writing-plans) | ✅ |
-| 2 | 본문 1장 풀변환 구현 (읽기→이해→매칭→Top2→매핑→비파괴적용) — Task 1~12 코드+빌드+단위테스트(94통과) | ✅ |
-| 3 | **실제 PPT 수동 검증** — 본문 슬라이드 열고 AI탭 "✨ AI 리디자인" → 진행버블 → 시안 2카드 → 선택 → 변환본 남고 **원본 불변** 확인 | 🔵 다음 |
-| 4 | 검증 후 덱 전체로 확장 | ⬜ |
+| 1 | **설계 스펙 작성** (brainstorming) | ✅ |
+| 2 | **구현 플랜 작성** (writing-plans) — 새 세션에서 | 🔵 다음 |
+| 3 | 인제스트 4분류+판단필드 스키마 → 번들 재인제스트 | ⬜ |
+| 4 | 초안 이해 확장(purpose·neededCombination) | ⬜ |
+| 5 | 추천 엔진 Ⓑ(kind별 벡터 후보 → LLM 조합) + UI 종류별 카드 | ⬜ |
+| 6 | 검증 후 다음 스펙(배치 = 빈 템플릿) | ⬜ |
 
-> **브랜치:** `feat/route-b-single-slide-redesign` (커밋 12개). 머지 전 실제 PPT 검증 권장.
-> **수동 검증 포인트:** ① 복제본이 원본 뒤에 생김 ② 에셋 삽입+초안 텍스트가 에셋 자리에 주입(COM 원문) ③ 원본 슬라이드 어떤 경우에도 불변 ④ 비포/애프터 썸네일 레일 ⑤ 좌표·도형 인덱싱(RedesignApplier ④⑤) 실제 확인.
+> **브랜치:** `feat/route-b-single-slide-redesign` (직전 단일에셋 구현 12커밋 보존 — 배치/이식 단계에서 일부 재활용). 새 작업은 새 브랜치 권장.
+> **재활용:** `DraftSlideReader`·`DraftUnderstandingService`(확장)·`DraftMatchService`(kind 필터 추가)·`GeminiAiService.GenerateJsonAsync`.
+> **이번 스펙에선 호출 안 함(배치용):** `RedesignApplier`·`SlotMapper`/`SlotMapSchema`/`SlotMapParser`·`AssetShapeInventory`.
 > **비-UAC 단위테스트 워크플로(메모):** main을 `/p:RegisterForComInterop=false`로 직접 빌드 → 테스트프로젝트를 `/p:BuildProjectReferences=false`로 빌드 → vstest.console 실행. 관리자 빌드는 실제 COM 등록(PPT 로드) 검증 때만.
+
+---
+
+## 🚀 새 세션 실행 프롬프트 (이걸로 시작하면 바로 이어받음)
+
+```
+PROGRESS-BOARD.md와 설계 스펙
+docs/superpowers/specs/2026-06-24-asset-combination-recommendation-design.md
+를 먼저 읽어줘. "에셋 조합 추천" 1단계(추천까지만)를 구현할 차례야.
+
+방향: 직전 "단일 에셋 + 즉시 재료 주입"은 폐기됐고, 이제는 초안의
+재료 종류·양·의도·목적을 보고 에셋 조합(헤더+레이아웃+컴포넌트N,
+또는 cover/end는 통짜 slide)을 추천만 한다. 슬라이드 배치·재료 이식은
+다음 스펙이니 이번엔 하지 마.
+
+순서: writing-plans 스킬로 구현 플랜부터 만들고, 내가 검토한 뒤 진행.
+플랜은 (1) 인제스트 4분류+판단필드 스키마, (2) 번들 재인제스트,
+(3) 초안 이해 확장(purpose·neededCombination), (4) 추천 엔진 Ⓑ
+(kind별 벡터 후보 → LLM 조합 선택), (5) UI 종류별 추천 카드 순서로.
+
+불변 원칙: 사실=COM/벡터, 판단=LLM. LLM은 텍스트 생성 금지.
+이번 스펙은 슬라이드 비파괴 이전(추천만). API 키 문서/커밋 평문 금지.
+빌드·검증은 CLAUDE.md 절차(관리자 MSBuild + DLL 타임스탬프 + 로그 0건),
+순수 로직은 비-UAC 워크플로로 TDD.
+```
 
 > **보류(Route B 이후):** UIUX 프롬프트 수정 · kind 3분류 · Scratch 삽입 · 이미지 미화 · 덱 전체 일괄
 
