@@ -82,6 +82,7 @@
     <Compile Include="Models\IngestModels.cs" />
     <Compile Include="Models\AssetUnderstanding.cs" />
     <Compile Include="Models\DraftModels.cs" />
+    <Compile Include="Models\RecommendationModels.cs" />
     <Compile Include="Services\ColorHsl.cs" />
     <Compile Include="Services\PaletteRoleMapper.cs" />
     <Compile Include="Services\PaletteGenerator.cs" />
@@ -123,6 +124,8 @@
     <Compile Include="Services\SlotMapParser.cs" />
     <Compile Include="Services\SlotMapper.cs" />
     <Compile Include="Services\RedesignService.cs" />
+    <Compile Include="Services\CombinationRecommenderSchema.cs" />
+    <Compile Include="Services\CombinationRecommenderParser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
