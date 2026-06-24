@@ -95,6 +95,7 @@
     <Compile Include="Services\IngestPlanner.cs" />
     <Compile Include="Services\IngestRunner.cs" />
     <Compile Include="Services\UnderstandingSchema.cs" />
+    <Compile Include="Services\DraftUnderstandingSchema.cs" />
     <Compile Include="Services\UnderstandingParser.cs" />
     <Compile Include="Services\EmbedTextBuilder.cs" />
     <Compile Include="Services\AssetUnderstandingService.cs" />
