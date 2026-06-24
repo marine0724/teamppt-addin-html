@@ -117,6 +117,8 @@
     <Compile Include="Services\SlideDiagnosisParser.cs" />
     <Compile Include="Services\VectorRecommendService.cs" />
     <Compile Include="Services\DraftMatchService.cs" />
+    <Compile Include="Services\SlotMapSchema.cs" />
+    <Compile Include="Services\SlotMapParser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
