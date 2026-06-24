@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TEAMPPT — 다운로드 & 설치</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* ── DOWNLOAD HERO ── */
+.dl-hero-inner{max-width:640px;margin:0 auto;text-align:center}
+.dl-btn-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;margin-top:36px}
+.dl-btn{display:inline-flex;align-items:center;gap:12px;background:var(--accent);color:#fff;text-decoration:none;font-weight:800;font-size:17px;padding:18px 40px;border-radius:16px;box-shadow:0 8px 28px rgba(49,130,246,.32);transition:.18s;letter-spacing:-.3px}
+.dl-btn:hover{transform:translateY(-2px);box-shadow:0 14px 36px rgba(49,130,246,.42)}
+.dl-btn svg{flex-shrink:0}
+.ver-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:99px;padding:7px 16px;font-size:13px;font-weight:700;color:rgba(255,255,255,.7)}
+.ver-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0}
+
+/* ── STEP CARDS ── */
+.dl-wrap{max-width:720px;margin:0 auto}
+.step-card{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);padding:28px 30px;box-shadow:var(--shadow-lg);margin-bottom:16px;position:relative}
+.step-card-head{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.step-num{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;font-size:15px;font-weight:800;flex-shrink:0}
+.step-num.green{background:var(--green)}
+.step-num.red{background:#ef4444}
+.step-card-head h3{font-size:18px;font-weight:800;letter-spacing:-.4px;line-height:1.2}
+.step-card-head p{font-size:13px;color:var(--text2);margin-top:2px}
+.step-ol{margin:0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+.step-ol li{display:flex;align-items:flex-start;gap:12px;font-size:14px;color:var(--text2);line-height:1.7}
+.step-ol li::before{content:attr(data-n);display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--bg);border:1.5px solid var(--border);font-size:11px;font-weight:800;color:var(--text);flex-shrink:0;margin-top:2px}
+.step-ol li strong{color:var(--text);font-weight:700}
+code{background:#f0f2f5;border-radius:6px;padding:2px 8px;font-size:12.5px;color:var(--text);font-family:ui-monospace,'SF Mono',monospace;white-space:nowrap}
+.step-notice{display:flex;align-items:flex-start;gap:8px;background:var(--bg);border-radius:var(--r-sm);padding:12px 16px;margin-top:16px;font-size:13px;color:var(--text2);line-height:1.65}
+.step-notice .icon{flex-shrink:0;font-size:15px}
+
+/* ── UPDATE SECTION ── */
+.update-card{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);padding:32px 30px;box-shadow:var(--shadow-lg);margin-bottom:16px}
+.update-header{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.update-header h3{font-size:20px;font-weight:800;letter-spacing:-.5px}
+.update-badge{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:#0a7a50;font-size:11px;font-weight:700;padding:4px 12px;border-radius:99px;letter-spacing:.2px}
+.update-lead{font-size:15px;color:var(--text);font-weight:600;margin-bottom:6px;line-height:1.6}
+.update-lead span{color:var(--accent)}
+.update-sub{font-size:13px;color:var(--text2);margin-bottom:28px;line-height:1.7}
+.update-flow{display:flex;flex-direction:column;gap:0;position:relative}
+.update-flow::before{content:'';position:absolute;left:19px;top:32px;bottom:32px;width:2px;background:linear-gradient(to bottom,var(--accent),var(--green));opacity:.25;border-radius:2px}
+.uf-step{display:flex;align-items:flex-start;gap:16px;padding:12px 0}
+.uf-num{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:var(--white);border:2px solid var(--border);font-size:14px;font-weight:800;color:var(--text);flex-shrink:0;position:relative;z-index:1}
+.uf-num.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.uf-num.final{background:var(--green);border-color:var(--green);color:#fff}
+.uf-body{padding-top:8px}
+.uf-body strong{display:block;font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px}
+.uf-body p{font-size:13px;color:var(--text2);line-height:1.65}
+.uf-banner{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(90deg,rgba(49,130,246,.1),rgba(124,58,237,.08));border:1px solid rgba(49,130,246,.25);border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700;color:var(--accent);margin-top:4px}
+.update-notes{display:flex;flex-direction:column;gap:8px;margin-top:20px;padding-top:20px;border-top:1px solid var(--border)}
+.note-row{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--text2)}
+.note-row .dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;margin-top:6px}
+
+/* ── SYSTEM REQUIREMENTS ── */
+.sys-req{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);padding:24px 30px;box-shadow:var(--shadow);display:flex;gap:32px;flex-wrap:wrap}
+.sys-item{display:flex;align-items:center;gap:10px}
+.sys-icon{font-size:22px;flex-shrink:0}
+.sys-text{font-size:13px;color:var(--text2);line-height:1.5}
+.sys-text strong{display:block;font-size:14px;font-weight:700;color:var(--text);margin-bottom:1px}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="logo">TEAM<span>PPT</span></a>
+  <ul class="nav-links">
+    <li><a href="features.html">기능</a></li>
+    <li><a href="data.html">데이터</a></li>
+    <li><a href="progress.html">진행보드</a></li>
+    <li><a href="pitch.html">피치</a></li>
+    <li><a href="download.html" class="active">다운로드</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="dl-hero-inner">
+    <div class="hero-tag">Download &amp; Install</div>
+    <h1><em>설치하고 시작하기.</em></h1>
+    <p class="hero-sub">최초 1회만 설치하면,<br>이후 업데이트는 자동입니다.</p>
+    <div class="dl-btn-wrap">
+      <a class="dl-btn" href="https://github.com/marine0724/teamppt-addin-html/releases/download/v1.0.0/TeampptAddin-1.0.0.zip">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2v10m0 0l-3-3m3 3l3-3M3 14v2a1 1 0 001 1h12a1 1 0 001-1v-2" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        최신 버전 다운로드
+      </a>
+      <span class="ver-badge"><span class="dot"></span>현재 버전 v1.0.0</span>
+    </div>
+  </div>
+</div>
+
+<!-- INSTALL STEPS -->
+<div class="section-wrap" style="padding-top:60px;padding-bottom:80px">
+ <div class="dl-wrap">
+
+  <div class="section-label" style="margin-bottom:24px">설치 방법</div>
+
+  <!-- STEP 1 -->
+  <div class="step-card">
+    <div class="step-card-head">
+      <span class="step-num">1</span>
+      <div>
+        <h3>설치하기 <span style="font-size:13px;font-weight:500;color:var(--text2);margin-left:4px">— 관리자 권한, 최초 1회만</span></h3>
+      </div>
+    </div>
+    <ol class="step-ol">
+      <li data-n="1">받은 <strong>zip 파일</strong>을 압축 해제합니다. 저장 위치는 아무 데나 OK.</li>
+      <li data-n="2">압축 해제한 폴더에서 <code>install.bat</code>을 찾아 <strong>마우스 우클릭 → 관리자 권한으로 실행</strong>합니다.</li>
+      <li data-n="3">까만 창이 뜨고 "설치 완료"가 표시되면 창을 닫습니다.</li>
+      <li data-n="4"><strong>PowerPoint를 완전히 껐다가 다시 켭니다.</strong></li>
+      <li data-n="5">상단 <strong>홈</strong> 탭 맨 끝에 <strong>TEAMPPT</strong> 버튼이 보이면 성공입니다. 🎉</li>
+    </ol>
+    <div class="step-notice">
+      <span class="icon">⚠️</span>
+      관리자 권한은 COM 프로그램 등록 때문에 이 최초 설치 1회만 필요합니다. 이후 업데이트에는 필요 없습니다.
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="step-card">
+    <div class="step-card-head">
+      <span class="step-num green">2</span>
+      <div>
+        <h3>API 키 넣기 <span style="font-size:13px;font-weight:500;color:var(--text2);margin-left:4px">— 최초 1회, 필수</span></h3>
+        <p>AI 기능을 쓰려면 키 파일이 있어야 합니다. 관리자에게 따로 받으세요.</p>
+      </div>
+    </div>
+    <ol class="step-ol">
+      <li data-n="1">관리자에게서 <code>api-keys.json</code> 파일을 <strong>비공개로</strong> 받습니다.<br><span style="font-size:12px;color:var(--text3)">(보안상 다운로드 zip에는 포함되지 않습니다)</span></li>
+      <li data-n="2">윈도우 탐색기 상단 주소창을 클릭하고, 아래를 그대로 붙여넣은 뒤 <strong>Enter</strong>를 누릅니다.<br><code>%LOCALAPPDATA%\TeampptAddin\app\Assets</code></li>
+      <li data-n="3">열린 폴더 안에 받은 <code>api-keys.json</code> 파일을 복사해 넣습니다.</li>
+      <li data-n="4"><strong>PowerPoint를 재시작</strong>하면 AI 기능이 켜집니다.</li>
+    </ol>
+    <div class="step-notice">
+      <span class="icon">🔒</span>
+      키 파일은 내 PC 안에만 저장됩니다. 업데이트를 해도 직접 넣어둔 키는 그대로 유지됩니다.
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="step-card" style="margin-bottom:48px">
+    <div class="step-card-head">
+      <span class="step-num red">✕</span>
+      <div>
+        <h3>제거하려면</h3>
+      </div>
+    </div>
+    <ol class="step-ol">
+      <li data-n="1">설치할 때 사용했던 폴더에서 <code>uninstall.bat</code>을 찾아 <strong>관리자 권한으로 실행</strong>합니다.</li>
+    </ol>
+  </div>
+
+  <!-- AUTO UPDATE SECTION -->
+  <div class="section-label" style="margin-bottom:24px">자동 업데이트</div>
+
+  <div class="update-card">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+      <h3 style="font-size:20px;font-weight:800;letter-spacing:-.5px">한 번만 설치하면, 그 다음부터는 자동입니다.</h3>
+      <span class="update-badge"><span style="width:6px;height:6px;border-radius:50%;background:var(--green)"></span>자동 업데이트</span>
+    </div>
+    <p style="font-size:14px;color:var(--text2);line-height:1.75;margin-bottom:28px">
+      다시 다운로드할 필요도, 관리자 권한도 필요 없습니다.<br>
+      관리자(개발자)가 새 버전을 올리기만 하면, 모든 팀원에게 아래 과정이 자동으로 진행됩니다.
+    </p>
+
+    <div class="update-flow">
+
+      <div class="uf-step">
+        <span class="uf-num active">1</span>
+        <div class="uf-body">
+          <strong>PowerPoint를 켭니다</strong>
+          <p>TEAMPPT 애드인이 시작되면서 조용히 "새 버전이 있나?" 확인합니다. 내가 하는 작업에는 영향 없습니다.</p>
+        </div>
+      </div>
+
+      <div class="uf-step">
+        <span class="uf-num">2</span>
+        <div class="uf-body">
+          <strong>새 버전 발견 → 백그라운드에서 다운로드</strong>
+          <p>업데이트가 있으면 알아서 미리 받아둡니다. 하던 작업 그대로 계속하면 됩니다.</p>
+        </div>
+      </div>
+
+      <div class="uf-step">
+        <span class="uf-num">3</span>
+        <div class="uf-body">
+          <strong>패널 상단에 배너가 나타납니다</strong>
+          <div class="uf-banner">✨ 업데이트 준비됨 — 지금 적용</div>
+        </div>
+      </div>
+
+      <div class="uf-step">
+        <span class="uf-num">4</span>
+        <div class="uf-body">
+          <strong>버튼을 누르면 PowerPoint가 한 번 재시작됩니다</strong>
+          <p>미루고 싶으면 안 눌러도 됩니다. 강제 적용은 없습니다.</p>
+        </div>
+      </div>
+
+      <div class="uf-step">
+        <span class="uf-num final">✓</span>
+        <div class="uf-body">
+          <strong>최신 버전으로 자동 교체 완료</strong>
+          <p>api-keys.json을 비롯한 개인 설정은 모두 그대로 유지됩니다.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SYSTEM REQUIREMENTS -->
+  <div class="section-label" style="margin-bottom:16px">시스템 요구사항</div>
+
+  <div class="sys-req">
+    <div class="sys-item">
+      <span class="sys-icon">🪟</span>
+      <div class="sys-text">
+        <strong>Windows</strong>
+        macOS · 웹 버전 불가
+      </div>
+    </div>
+    <div class="sys-item">
+      <span class="sys-icon">📊</span>
+      <div class="sys-text">
+        <strong>Microsoft PowerPoint</strong>
+        데스크톱 버전 (Microsoft 365 · 2019 · 2021)
+      </div>
+    </div>
+    <div class="sys-item">
+      <span class="sys-icon">⚙️</span>
+      <div class="sys-text">
+        <strong>.NET Framework 4.8</strong>
+        Windows 10 / 11은 대부분 기본 포함
+      </div>
+    </div>
+  </div>
+
+ </div>
+</div>
+
+<footer>
+  <strong>TEAMPPT</strong> — Vibe Designing
+  <span>업데이트는 PowerPoint 안에서 자동 적용</span>
+</footer>
+
+</body>
+</html>
