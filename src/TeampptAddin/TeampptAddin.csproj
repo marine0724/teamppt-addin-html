@@ -60,6 +60,8 @@
     <Compile Include="Core\SlideImageRenderer.cs" />
     <Compile Include="Core\TextMetrics.cs" />
     <Compile Include="Core\DraftSlideReader.cs" />
+    <Compile Include="Core\AssetShapeInventory.cs" />
+    <Compile Include="Core\RedesignApplier.cs" />
     <Compile Include="UI\TaskPaneHost.cs" />
     <Compile Include="UI\TaskPaneManager.cs" />
     <Compile Include="UI\CardControl.cs" />
@@ -119,6 +121,8 @@
     <Compile Include="Services\DraftMatchService.cs" />
     <Compile Include="Services\SlotMapSchema.cs" />
     <Compile Include="Services\SlotMapParser.cs" />
+    <Compile Include="Services\SlotMapper.cs" />
+    <Compile Include="Services\RedesignService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
