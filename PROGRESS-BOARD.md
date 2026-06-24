@@ -3,7 +3,7 @@
 > 이 파일 하나만 열어두면 "지금 어디서 뭘 하는지" 보입니다. Claude가 매 세션 함께 유지.
 > **기록용 아카이브가 아니라 "지금 여기" 작업 보드.** 끝난 잎(Task)은 지우고 교체, 숲·나무 단위는 끝날 때까지 유지. (규칙: CLAUDE.md)
 > 계층: **나라 > 대지 > 숲 > 나무 > 잎** (2026-06-22 재정립)
-> 최종 갱신: 2026-06-24 · 현재 작업: **Route B 재정의 — "에셋 조합 추천" 설계 완료, 새 세션에서 구현 시작 대기**
+> 최종 갱신: 2026-06-24 · 현재 작업: **에셋 조합 추천 코드 완료(10커밋, 110 tests) — 수동 검증(SQL 재실행 + 재인제스트 + PPT 동작) 대기**
 
 ---
 
@@ -41,25 +41,25 @@
 
 ---
 
-## 🍃 잎 — 지금 작업: 에셋 조합 추천 (Route B 1단계)
+## 🍃 잎 — 지금 작업: 에셋 조합 추천 (Route B 1단계) — 코드 구현 완료, 수동 검증 대기
 
-> **방향 전환(2026-06-24):** 직전 "단일 에셋 + 즉시 재료 주입" 구현은 실사용 결과 엉망 → 폐기. 올바른 순서 = **① 추천 → ② 배치(빈 템플릿) → ③ 조립 → ④ 재료 이식.** 이번은 **①추천까지만.**
-> 핵심: 에셋 하나 넣는 게 아니라, 초안의 **재료 종류·양·의도·목적**을 보고 **조합**(헤더+레이아웃+컴포넌트N, 또는 통짜 slide)을 골라 **추천**만. 추천 방식 = **Ⓑ 벡터로 후보 추리고 → LLM이 조합 선택**.
-> 설계: [에셋 조합 추천](docs/superpowers/specs/2026-06-24-asset-combination-recommendation-design.md) (확정). taxonomy = **slide / header / layout / component** (header를 component에서 분리).
+> **방향 전환(2026-06-24):** 직전 "단일 에셋 + 즉시 재료 주입" 폐기. 올바른 순서 = **① 추천 → ② 배치 → ③ 조립 → ④ 재료 이식.** 이번은 **①추천까지만.**
+> 설계: [에셋 조합 추천](docs/superpowers/specs/2026-06-24-asset-combination-recommendation-design.md) (확정). taxonomy = **slide / header / layout / component**.
 
 | # | 무엇 | 상태 |
 |---|------|------|
-| 1 | **설계 스펙 작성** (brainstorming) | ✅ |
-| 2 | **구현 플랜 작성** (writing-plans) — 새 세션에서 | 🔵 다음 |
-| 3 | 인제스트 4분류+판단필드 스키마 → 번들 재인제스트 | ⬜ |
-| 4 | 초안 이해 확장(purpose·neededCombination) | ⬜ |
-| 5 | 추천 엔진 Ⓑ(kind별 벡터 후보 → LLM 조합) + UI 종류별 카드 | ⬜ |
-| 6 | 검증 후 다음 스펙(배치 = 빈 템플릿) | ⬜ |
+| 1 | 설계 스펙 작성 | ✅ |
+| 2 | 구현 플랜 작성 | ✅ |
+| 3 | 인제스트 4분류+판단필드 스키마 (T1-T3) | ✅ |
+| 4 | 번들 재인제스트 (수동: SQL 재실행 + PPT 재인제스트) | 🔵 사용자 조치 |
+| 5 | 초안 이해 확장 (T5) | ✅ |
+| 6 | 추천 엔진 Ⓑ + 파서 + 후보 풀 + 리커맨더 (T6-T8) | ✅ |
+| 7 | 오케스트레이터 + UI 카드 + 배선 (T9-T10) | ✅ |
+| 8 | PowerPoint 수동 검증 (본문/표지 슬라이드 추천 동작) | 🔵 다음 |
+| 9 | 다음 스펙(배치 = 빈 템플릿) | ⬜ |
 
-> **브랜치:** `feat/route-b-single-slide-redesign` (직전 단일에셋 구현 12커밋 보존 — 배치/이식 단계에서 일부 재활용). 새 작업은 새 브랜치 권장.
-> **재활용:** `DraftSlideReader`·`DraftUnderstandingService`(확장)·`DraftMatchService`(kind 필터 추가)·`GeminiAiService.GenerateJsonAsync`.
-> **이번 스펙에선 호출 안 함(배치용):** `RedesignApplier`·`SlotMapper`/`SlotMapSchema`/`SlotMapParser`·`AssetShapeInventory`.
-> **비-UAC 단위테스트 워크플로(메모):** main을 `/p:RegisterForComInterop=false`로 직접 빌드 → 테스트프로젝트를 `/p:BuildProjectReferences=false`로 빌드 → vstest.console 실행. 관리자 빌드는 실제 COM 등록(PPT 로드) 검증 때만.
+> **브랜치:** `feat/asset-combination-recommendation` (10 commits, 110/110 tests).
+> **수동 조치:** (1) Supabase SQL Editor에서 `docs/SUPABASE-SETUP.md`의 `match_assets` 함수 재실행(DROP + CREATE). (2) PowerPoint에서 번들 재인제스트. (3) AI탭 리디자인 바 클릭 → 추천 카드 동작 확인.
 
 ---
 
