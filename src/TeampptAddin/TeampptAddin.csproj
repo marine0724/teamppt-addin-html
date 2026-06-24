@@ -126,6 +126,7 @@
     <Compile Include="Services\RedesignService.cs" />
     <Compile Include="Services\CombinationRecommenderSchema.cs" />
     <Compile Include="Services\CombinationRecommenderParser.cs" />
+    <Compile Include="Services\CombinationCandidateProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
