@@ -40,7 +40,9 @@ create index on assets using hnsw (embedding vector_cosine_ops);
 
 ## 3. 벡터 검색 함수(RPC)
 - [ ] SQL Editor에서 실행:
+  > **주의:** 기존 2-인자 `match_assets(vector, int)`가 이미 있으면, 인자 목록이 바뀌므로 `create or replace`가 **교체가 아니라 새 오버로드를 추가**한다 → 2-인자 호출이 모호해짐(PostgREST 오류). 아래처럼 먼저 DROP 후 생성한다.
 ```sql
+drop function if exists match_assets(vector, int);
 create or replace function match_assets(
   query_embedding vector(768), match_count int, filter_kind text default null)
 returns table (
