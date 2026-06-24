@@ -53,6 +53,11 @@ namespace TeampptAddin
 
         private Border _sendBtn;
         private Border _shareBar;
+        private Border _redesignBar;
+        private RedesignService _redesign;
+        private List<RedesignPreview> _lastPreviews;
+        private bool _redesignRunning;
+        private bool _redesignCommitted;
 
         private TextBlock _statusText;
         private Border _ingestButton;
@@ -301,6 +306,7 @@ namespace TeampptAddin
 
             var bottom = new StackPanel();
             bottom.Children.Add(BuildShareBar());
+            bottom.Children.Add(BuildRedesignBar());
             bottom.Children.Add(BuildInputBar());
             Grid.SetRow(bottom, 1);
             grid.Children.Add(bottom);
@@ -539,6 +545,188 @@ namespace TeampptAddin
             };
             SetShareBarIdle();
             return _shareBar;
+        }
+
+        // ── Route B: AI 리디자인 (현재 슬라이드 풀변환) ──
+
+        private Border BuildRedesignBar()
+        {
+            _redesignBar = new Border
+            {
+                Background = ThemeResources.BgChip,
+                CornerRadius = new CornerRadius(10),
+                Margin = new Thickness(10, 8, 10, 0),
+                Padding = new Thickness(12, 8, 12, 8),
+                Cursor = Cursors.Hand
+            };
+            var row = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            row.Children.Add(new TextBlock
+            {
+                Text = "✨", FontSize = 13,
+                Margin = new Thickness(0, 0, 6, 0),
+                VerticalAlignment = VerticalAlignment.Center
+            });
+            row.Children.Add(new TextBlock
+            {
+                Text = "AI 리디자인", FontSize = 12, FontWeight = FontWeights.SemiBold,
+                Foreground = ThemeResources.TextAccent, FontFamily = ThemeResources.FontBase,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+            _redesignBar.Child = row;
+            _redesignBar.MouseLeftButtonUp += RedesignBarClick;
+            return _redesignBar;
+        }
+
+        private async void RedesignBarClick(object sender, MouseButtonEventArgs e)
+        {
+            await RunRedesignAsync();
+        }
+
+        private async Task RunRedesignAsync()
+        {
+            if (_redesignRunning) return;
+            if (_redesign == null)
+            {
+                AddAiBubble("리디자인은 Supabase·Gemini 설정이 있어야 동작해요.");
+                return;
+            }
+
+            _redesignRunning = true;
+            _redesignCommitted = false;
+            _redesignBar.IsEnabled = false;
+            _redesignBar.Opacity = 0.6;
+            if (_emptyState != null && _emptyState.Visibility == Visibility.Visible)
+                _emptyState.Visibility = Visibility.Collapsed;
+
+            try
+            {
+                AddAiBubble("현재 슬라이드를 리디자인할게요.");
+                // RedesignService는 COM(STA)을 호출하므로 이 UI 스레드에서 직접 await (ConfigureAwait(false) 미사용).
+                _lastPreviews = await _redesign.RunAsync(msg => Dispatcher.Invoke(() => AddAiBubble(msg)));
+                ShowRedesignCards(_lastPreviews);
+            }
+            catch (Exception ex)
+            {
+                AddAiBubble($"리디자인 중 오류: {ex.Message}");
+                Logger.Log($"[Redesign] 실패: {ex}");
+            }
+            finally
+            {
+                _redesignRunning = false;
+                _redesignBar.IsEnabled = true;
+                _redesignBar.Opacity = 1;
+                _chatScroll.ScrollToBottom();
+            }
+        }
+
+        private void ShowRedesignCards(List<RedesignPreview> previews)
+        {
+            if (previews == null || previews.Count == 0)
+            {
+                AddAiBubble("만들 수 있는 시안이 없어요.");
+                return;
+            }
+
+            AddAiBubble("시안을 골라줘. 선택한 디자인만 남기고 나머지는 정리할게.");
+            _chatStack.Children.Add(new TextBlock
+            {
+                Text = "리디자인 시안",
+                FontSize = 11, FontWeight = FontWeights.SemiBold,
+                Foreground = ThemeResources.TextSub,
+                Margin = new Thickness(12, 8, 0, 2)
+            });
+
+            foreach (var p in previews)
+                _chatStack.Children.Add(BuildRedesignCard(p, previews));
+
+            _chatScroll.ScrollToBottom();
+        }
+
+        private Border BuildRedesignCard(RedesignPreview preview, List<RedesignPreview> all)
+        {
+            var thumb = new Border
+            {
+                Width = 120, Height = 68,
+                Background = ThemeResources.BgThumb,
+                CornerRadius = new CornerRadius(8),
+                ClipToBounds = true,
+                Margin = new Thickness(0, 0, 10, 0)
+            };
+            ThemeResources.ApplyRoundedClip(thumb, 8);
+            var img = LoadBitmapFromFile(preview.ThumbPath);
+            if (img != null)
+                thumb.Child = new Image { Source = img, Stretch = Stretch.Uniform, Margin = new Thickness(2) };
+
+            var nameText = new TextBlock
+            {
+                Text = preview.Asset?.Name ?? preview.Asset?.File ?? "에셋",
+                FontSize = 12, FontWeight = FontWeights.SemiBold,
+                Foreground = ThemeResources.TextMain, FontFamily = ThemeResources.FontBase,
+                TextWrapping = TextWrapping.Wrap
+            };
+            var info = new TextBlock
+            {
+                Text = $"채움 {preview.Mapping?.Mappings.Count ?? 0} · 빈자리 {preview.Mapping?.Empty.Count ?? 0}",
+                FontSize = 10, Foreground = ThemeResources.TextSub,
+                Margin = new Thickness(0, 3, 0, 0)
+            };
+            var textCol = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            textCol.Children.Add(nameText);
+            textCol.Children.Add(info);
+
+            var row = new StackPanel { Orientation = Orientation.Horizontal };
+            row.Children.Add(thumb);
+            row.Children.Add(textCol);
+
+            var card = new Border
+            {
+                Background = ThemeResources.BgChip,
+                CornerRadius = new CornerRadius(10),
+                Margin = new Thickness(12, 4, 12, 4),
+                Padding = new Thickness(8),
+                Cursor = Cursors.Hand,
+                Child = row
+            };
+            card.MouseLeftButtonUp += (s, e) => OnRedesignCardChosen(preview, all);
+            return card;
+        }
+
+        private void OnRedesignCardChosen(RedesignPreview chosen, List<RedesignPreview> all)
+        {
+            if (_redesignCommitted) return;
+            try
+            {
+                _redesign.Commit(chosen, all);
+                _redesignCommitted = true;
+                AddAiBubble($"'{chosen.Asset?.Name ?? chosen.Asset?.File}'(으)로 변환했어요. 원본은 그대로 두고 변환본을 옆에 만들었어요.");
+            }
+            catch (Exception ex)
+            {
+                AddAiBubble($"적용 중 오류: {ex.Message}");
+                Logger.Log($"[Redesign] commit 실패: {ex}");
+            }
+            _chatScroll.ScrollToBottom();
+        }
+
+        private static System.Windows.Media.Imaging.BitmapImage LoadBitmapFromFile(string path)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(path) || !System.IO.File.Exists(path)) return null;
+                var bmp = new System.Windows.Media.Imaging.BitmapImage();
+                bmp.BeginInit();
+                bmp.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+                bmp.CreateOptions = System.Windows.Media.Imaging.BitmapCreateOptions.IgnoreImageCache;
+                bmp.UriSource = new Uri(path);
+                bmp.EndInit();
+                bmp.Freeze();
+                return bmp;
+            }
+            catch { return null; }
         }
 
         private void SetShareBarIdle()
@@ -2238,11 +2426,12 @@ namespace TeampptAddin
             return new StyleConfig { Palettes = palettes, Fonts = fonts };
         }
 
-        public void InitAi(IAiService aiService, StyleConfig styles, RemoteAssetCache remoteCache = null)
+        public void InitAi(IAiService aiService, StyleConfig styles, RemoteAssetCache remoteCache = null, RedesignService redesign = null)
         {
             _aiService = aiService;
             _styleConfig = styles;
             _remoteCache = remoteCache;
+            _redesign = redesign;
             PopulateStylePanel();
         }
 
