@@ -192,10 +192,12 @@ namespace TeampptAddin
             }
 
             RedesignService redesign = null;
+            RecommendationService recommend = null;
             if (!string.IsNullOrEmpty(supaUrl) && !string.IsNullOrEmpty(supaAnon) && !string.IsNullOrEmpty(gemini))
             {
                 ai = new VectorRecommendService(supaUrl, supaAnon, gemini);
                 redesign = new RedesignService(supaUrl, supaAnon, gemini);
+                recommend = new RecommendationService(supaUrl, supaAnon, gemini);
                 Logger.Log("[AI] VectorRecommendService (Supabase 벡터검색) 사용");
             }
             else
@@ -205,7 +207,7 @@ namespace TeampptAddin
                 Logger.Log("[AI] Supabase 설정 없음 → 로컬 AI 사용");
             }
 
-            _wpfPanel.InitAi(ai, styles, _remoteCache, redesign);
+            _wpfPanel.InitAi(ai, styles, _remoteCache, redesign, recommend);
 
             if (_supaClient != null)
             {

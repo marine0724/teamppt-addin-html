@@ -55,6 +55,7 @@ namespace TeampptAddin
         private Border _shareBar;
         private Border _redesignBar;
         private RedesignService _redesign;
+        private RecommendationService _recommend;
         private List<RedesignPreview> _lastPreviews;
         private bool _redesignRunning;
         private bool _redesignCommitted;
@@ -583,7 +584,7 @@ namespace TeampptAddin
 
         private async void RedesignBarClick(object sender, MouseButtonEventArgs e)
         {
-            await RunRedesignAsync();
+            await RunRecommendationAsync();
         }
 
         private async Task RunRedesignAsync()
@@ -621,6 +622,138 @@ namespace TeampptAddin
                 _redesignBar.Opacity = 1;
                 _chatScroll.ScrollToBottom();
             }
+        }
+
+        private async Task RunRecommendationAsync()
+        {
+            if (_redesignRunning) return;
+            if (_recommend == null)
+            {
+                AddAiBubble("추천은 Supabase·Gemini 설정이 있어야 동작해요.");
+                return;
+            }
+
+            _redesignRunning = true;
+            _redesignBar.IsEnabled = false;
+            _redesignBar.Opacity = 0.6;
+            if (_emptyState != null && _emptyState.Visibility == Visibility.Visible)
+                _emptyState.Visibility = Visibility.Collapsed;
+
+            try
+            {
+                AddAiBubble("현재 초안에 어울리는 에셋 조합을 찾아볼게요.");
+                var rec = await _recommend.RunAsync(msg => Dispatcher.Invoke(() => AddAiBubble(msg)));
+                ShowRecommendation(rec);
+            }
+            catch (Exception ex)
+            {
+                AddAiBubble($"추천 중 오류: {ex.Message}");
+                Logger.Log($"[Reco] 실패: {ex}");
+            }
+            finally
+            {
+                _redesignRunning = false;
+                _redesignBar.IsEnabled = true;
+                _redesignBar.Opacity = 1;
+                _chatScroll.ScrollToBottom();
+            }
+        }
+
+        private void ShowRecommendation(CombinationRecommendation rec)
+        {
+            if (rec == null) { AddAiBubble("추천 결과가 없어요."); return; }
+
+            AddAiBubble(string.IsNullOrEmpty(rec.Purpose)
+                ? "추천 조합이에요."
+                : $"초안 분석: \"{rec.Purpose}\" ({rec.SlideKind})");
+
+            _chatStack.Children.Add(new TextBlock
+            {
+                Text = "추천 조합",
+                FontSize = 11, FontWeight = FontWeights.SemiBold,
+                Foreground = ThemeResources.TextSub,
+                Margin = new Thickness(12, 8, 0, 2)
+            });
+
+            if (rec.Slide != null)
+                _chatStack.Children.Add(BuildRecoCard("표지", rec.Slide));
+            if (rec.Header != null)
+                _chatStack.Children.Add(BuildRecoCard("헤더", rec.Header));
+            if (rec.Layout != null)
+                _chatStack.Children.Add(BuildRecoCard("레이아웃", rec.Layout));
+            for (int i = 0; i < rec.Components.Count; i++)
+                _chatStack.Children.Add(BuildRecoCard($"컴포넌트 {i + 1}", rec.Components[i]));
+
+            if (rec.Unmet != null && rec.Unmet.Count > 0)
+                _chatStack.Children.Add(new TextBlock
+                {
+                    Text = $"미충족: {string.Join(", ", rec.Unmet)} (적합한 에셋 없음)",
+                    FontSize = 10, Foreground = ThemeResources.TextSub,
+                    Margin = new Thickness(14, 4, 12, 2)
+                });
+
+            _chatStack.Children.Add(BuildPlaceArrangeButton());
+            _chatScroll.ScrollToBottom();
+        }
+
+        private Border BuildRecoCard(string slotLabel, RecommendedSlot slot)
+        {
+            var label = new TextBlock
+            {
+                Text = slotLabel,
+                FontSize = 10, FontWeight = FontWeights.SemiBold,
+                Foreground = ThemeResources.TextSub,
+                Width = 64, VerticalAlignment = VerticalAlignment.Center
+            };
+            var name = new TextBlock
+            {
+                Text = slot.Asset?.Name ?? slot.Asset?.File ?? "에셋",
+                FontSize = 12, FontWeight = FontWeights.SemiBold,
+                Foreground = ThemeResources.TextMain, FontFamily = ThemeResources.FontBase,
+                TextWrapping = TextWrapping.Wrap
+            };
+            var note = new TextBlock
+            {
+                Text = $"{slot.FitNote}  ·  {(int)(slot.Confidence * 100)}%",
+                FontSize = 10, Foreground = ThemeResources.TextSub,
+                Margin = new Thickness(0, 2, 0, 0)
+            };
+            var textCol = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            textCol.Children.Add(name);
+            textCol.Children.Add(note);
+
+            var row = new StackPanel { Orientation = Orientation.Horizontal };
+            row.Children.Add(label);
+            row.Children.Add(textCol);
+
+            return new Border
+            {
+                Background = ThemeResources.BgChip,
+                CornerRadius = new CornerRadius(10),
+                Margin = new Thickness(12, 4, 12, 4),
+                Padding = new Thickness(10, 8, 10, 8),
+                Child = row
+            };
+        }
+
+        private Border BuildPlaceArrangeButton()
+        {
+            return new Border
+            {
+                Background = ThemeResources.BgChip,
+                CornerRadius = new CornerRadius(10),
+                Margin = new Thickness(12, 8, 12, 8),
+                Padding = new Thickness(12, 8, 12, 8),
+                Opacity = 0.5,
+                Cursor = Cursors.Arrow,
+                Child = new TextBlock
+                {
+                    Text = "이 조합으로 배치 ▶ (다음 단계)",
+                    FontSize = 12, FontWeight = FontWeights.SemiBold,
+                    Foreground = ThemeResources.TextSub, FontFamily = ThemeResources.FontBase,
+                    HorizontalAlignment = HorizontalAlignment.Center
+                }
+            };
         }
 
         private void ShowRedesignCards(List<RedesignPreview> previews)
@@ -2426,12 +2559,13 @@ namespace TeampptAddin
             return new StyleConfig { Palettes = palettes, Fonts = fonts };
         }
 
-        public void InitAi(IAiService aiService, StyleConfig styles, RemoteAssetCache remoteCache = null, RedesignService redesign = null)
+        public void InitAi(IAiService aiService, StyleConfig styles, RemoteAssetCache remoteCache = null, RedesignService redesign = null, RecommendationService recommend = null)
         {
             _aiService = aiService;
             _styleConfig = styles;
             _remoteCache = remoteCache;
             _redesign = redesign;
+            _recommend = recommend;
             PopulateStylePanel();
         }
 
