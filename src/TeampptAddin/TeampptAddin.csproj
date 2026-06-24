@@ -59,6 +59,7 @@
     <Compile Include="Core\SlideSplitter.cs" />
     <Compile Include="Core\SlideImageRenderer.cs" />
     <Compile Include="Core\TextMetrics.cs" />
+    <Compile Include="Core\DraftSlideReader.cs" />
     <Compile Include="UI\TaskPaneHost.cs" />
     <Compile Include="UI\TaskPaneManager.cs" />
     <Compile Include="UI\CardControl.cs" />
@@ -97,6 +98,7 @@
     <Compile Include="Services\UnderstandingSchema.cs" />
     <Compile Include="Services\DraftUnderstandingSchema.cs" />
     <Compile Include="Services\DraftUnderstandingParser.cs" />
+    <Compile Include="Services\DraftUnderstandingService.cs" />
     <Compile Include="Services\UnderstandingParser.cs" />
     <Compile Include="Services\EmbedTextBuilder.cs" />
     <Compile Include="Services\AssetUnderstandingService.cs" />
@@ -114,6 +116,7 @@
     <Compile Include="Services\SlideDiagnosisSchema.cs" />
     <Compile Include="Services\SlideDiagnosisParser.cs" />
     <Compile Include="Services\VectorRecommendService.cs" />
+    <Compile Include="Services\DraftMatchService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
