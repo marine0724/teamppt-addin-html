@@ -56,6 +56,7 @@ namespace TeampptAddin
         private Border _redesignBar;
         private RedesignService _redesign;
         private RecommendationService _recommend;
+        private CombinationRecommendation _lastRecommendation;
         private List<RedesignPreview> _lastPreviews;
         private bool _redesignRunning;
         private bool _redesignCommitted;
@@ -776,6 +777,7 @@ namespace TeampptAddin
         private void ShowRecommendation(CombinationRecommendation rec)
         {
             if (rec == null) { AddAiBubble("추천 결과가 없어요."); return; }
+            _lastRecommendation = rec;
 
             AddAiBubble(string.IsNullOrEmpty(rec.Purpose)
                 ? "추천 조합이에요."
@@ -852,22 +854,112 @@ namespace TeampptAddin
 
         private Border BuildPlaceArrangeButton()
         {
-            return new Border
+            var border = new Border
             {
                 Background = ThemeResources.BgChip,
                 CornerRadius = new CornerRadius(10),
                 Margin = new Thickness(12, 8, 12, 8),
                 Padding = new Thickness(12, 8, 12, 8),
-                Opacity = 0.5,
-                Cursor = Cursors.Arrow,
+                Cursor = Cursors.Hand,
                 Child = new TextBlock
                 {
-                    Text = "이 조합으로 배치 ▶ (다음 단계)",
+                    Text = "이 조합으로 배치 ▶",
                     FontSize = 12, FontWeight = FontWeights.SemiBold,
-                    Foreground = ThemeResources.TextSub, FontFamily = ThemeResources.FontBase,
+                    Foreground = new SolidColorBrush(Color.FromRgb(96, 165, 250)),
+                    FontFamily = ThemeResources.FontBase,
                     HorizontalAlignment = HorizontalAlignment.Center
                 }
             };
+            border.MouseLeftButtonUp += async (s, e) => await PlaceRecommendationAsync();
+            return border;
+        }
+
+        private async Task PlaceRecommendationAsync()
+        {
+            var rec = _lastRecommendation;
+            if (rec == null || _remoteCache == null) return;
+            if (_redesignRunning) return;
+            _redesignRunning = true;
+
+            try
+            {
+                AddAiBubble("에셋 다운로드 중…");
+
+                var slots = new List<RecommendedSlot>();
+                if (rec.Slide != null) slots.Add(rec.Slide);
+                if (rec.Header != null) slots.Add(rec.Header);
+                if (rec.Layout != null) slots.Add(rec.Layout);
+                slots.AddRange(rec.Components);
+
+                if (slots.Count == 0)
+                {
+                    AddAiBubble("배치할 에셋이 없어요.");
+                    return;
+                }
+
+                var localPaths = new List<string>();
+                foreach (var slot in slots)
+                {
+                    var remotePath = slot.Asset.Extra != null && slot.Asset.Extra.ContainsKey("remote_file")
+                        ? slot.Asset.Extra["remote_file"].ToString()
+                        : slot.Asset.File;
+                    var path = await _remoteCache.GetPptxAsync(remotePath);
+                    localPaths.Add(path);
+                    Logger.Log($"[Place] 다운로드 완료: {remotePath} → {path}");
+                }
+
+                AddAiBubble("새 슬라이드에 배치 중…");
+                Dispatcher.Invoke(() => PlaceOnNewSlide(localPaths));
+                AddAiBubble("배치 완료! 새 슬라이드를 확인해보세요.");
+            }
+            catch (Exception ex)
+            {
+                AddAiBubble($"배치 중 오류: {ex.Message}");
+                Logger.Log($"[Place] 실패: {ex}");
+            }
+            finally
+            {
+                _redesignRunning = false;
+                _chatScroll.ScrollToBottom();
+            }
+        }
+
+        private void PlaceOnNewSlide(List<string> pptxPaths)
+        {
+            var app = Globals.Application;
+            if (app == null) return;
+            var pres = app.ActivePresentation;
+            var currentSlide = (Microsoft.Office.Interop.PowerPoint.Slide)app.ActiveWindow.View.Slide;
+            int insertAfter = currentSlide.SlideIndex;
+
+            app.StartNewUndoEntry();
+
+            var layout = currentSlide.CustomLayout;
+            var newSlide = pres.Slides.AddSlide(insertAfter + 1, layout);
+
+            while (newSlide.Shapes.Count > 0)
+                newSlide.Shapes[1].Delete();
+
+            foreach (var pptxPath in pptxPaths)
+            {
+                int tempIdx = pres.Slides.Count;
+                pres.Slides.InsertFromFile(pptxPath, tempIdx, 1, 1);
+                var tempSlide = pres.Slides[tempIdx + 1];
+
+                int count = tempSlide.Shapes.Count;
+                if (count > 0)
+                {
+                    var indices = new int[count];
+                    for (int i = 0; i < count; i++)
+                        indices[i] = i + 1;
+                    tempSlide.Shapes.Range(indices).Copy();
+                    newSlide.Shapes.Paste();
+                }
+                tempSlide.Delete();
+            }
+
+            app.ActiveWindow.View.GotoSlide(newSlide.SlideIndex);
+            Logger.Log($"[Place] 새 슬라이드 {newSlide.SlideIndex} 생성, 에셋 {pptxPaths.Count}개 배치");
         }
 
         private void ShowRedesignCards(List<RedesignPreview> previews)

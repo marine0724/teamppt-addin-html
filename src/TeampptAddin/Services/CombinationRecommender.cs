@@ -22,12 +22,16 @@ namespace TeampptAddin
             if (candidatesByKind.ContainsKey("slide"))
                 return PickSlideOnly(u, candidatesByKind["slide"]);
 
+            var userText = BuildUserText(u, candidatesByKind);
+            Logger.Log("[Reco] userText↓\r\n" + userText);
+
             var json = await _gemini.GenerateJsonAsync(
                 CombinationRecommenderSchema.BuildSystemPrompt(),
-                BuildUserText(u, candidatesByKind),
+                userText,
                 null,
                 CombinationRecommenderSchema.BuildResponseSchema()).ConfigureAwait(false);
 
+            Logger.Log("[Reco] raw↓ " + json);
             var rec = CombinationRecommenderParser.Parse(json, candidatesByKind);
             rec.Purpose = u.Purpose;
             rec.SlideKind = u.SlideKind;
