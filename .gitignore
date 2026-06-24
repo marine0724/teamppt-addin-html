@@ -25,8 +25,12 @@ packages/
 assets/layout_test_asset.pptx
 assets/header family.pptx
 
+# Release 배포 zip (GitHub Releases에 업로드 — git 히스토리에 바이너리 미적재)
+dist/
+
 # Build / verification logs
 build.log
+build-release.log
 build-result.log
 build-task*.log
 test-build.log

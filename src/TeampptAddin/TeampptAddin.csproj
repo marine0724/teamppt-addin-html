@@ -129,11 +129,15 @@
     <Compile Include="Services\CombinationRecommenderParser.cs" />
     <Compile Include="Services\CombinationCandidateProvider.cs" />
     <Compile Include="Services\RecommendationService.cs" />
+    <Compile Include="Services\UpdateService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="install.bat" />
     <None Include="uninstall.bat" />
+    <Content Include="updater.bat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Views\Styles\Theme.xaml" />

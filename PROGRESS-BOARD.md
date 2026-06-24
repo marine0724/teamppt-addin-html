@@ -88,10 +88,15 @@ docs/superpowers/specs/2026-06-24-asset-combination-recommendation-design.md
 
 ## 🐛 버그 / 📋 요구사항 (다음 세션)
 
-| # | 종류 | 내용 |
-|---|------|------|
-| B1 | 버그 | 인제스트 실패 후 재시도 시 애니메이션(검사 진행) 안 뜸 + 실제 진행 여부 불명확 |
-| R1 | 요구 | 팀원 배포: 다운로드 방법 + 업데이트 반영 방식 + 기존 HTML 사이트에 다운로드 페이지 통합 |
+| # | 종류 | 내용 | 상태 |
+|---|------|------|------|
+| B1 | 버그 | 인제스트 재시도 시 애니메이션 안 뜸 → `ResumeIngestAsync`에서 `_ingestLastIndex=-1` 리셋 누락이 원인. 수정+빌드 완료(로그 0건). | ✅ |
+| R1 | 요구 | 팀원 자동 배포. 설계: [auto-update spec](docs/superpowers/specs/2026-06-24-auto-update.md). **핵심: 업데이트엔 UAC 불필요**(GUID·경로 고정→파일 덮어쓰기만). 흐름=시작 시 version.json 확인→zip(Releases) staging→재시작 시 updater.bat 스왑. | 🔵 진행 중 |
+
+> **R1 진행 상황 (2026-06-24) — 코드 전부 완료, 빌드 0건:**
+> - ✅ 설계 스펙 · AssemblyVersion 체계 · `UpdateService.cs` · `updater.bat` · `docs/version.json` · `docs/download.html` · Connect.cs 시작 트리거 · **패널 상단 업데이트 배너(마커 폴링 방식)** · **install/uninstall.bat 고정경로(`%LOCALAPPDATA%\TeampptAddin\app\`) 재작성**
+> - ✅ Pages 주소 확인됨(`marine0724.github.io/teamppt-addin-html/`) → ManifestUrl 정확. Release 빌드 0건. **키 제외 릴리스 zip 생성**: `dist/TeampptAddin-1.0.0.zip`(801KB, api-keys.json 제외, README+install/uninstall 동봉). 키 전달=비공개 별도(팀원이 `%LOCALAPPDATA%\TeampptAddin\app\Assets\`에 1회 배치, updater가 안 지움).
+> - ⬜ **다음(외부 작업):** ① 코드+docs 커밋·푸시(Pages에 download.html·version.json 반영). ② GitHub Releases에 `v1.0.0` 생성하고 `dist/TeampptAddin-1.0.0.zip` 업로드(gh 미인증 → 수동 또는 `gh auth login`). ③ 팀원에게 api-keys.json 비공개 전달. ④ end-to-end: AssemblyVersion↑→Release빌드→zip→새 Release→version.json 갱신→PPT 재시작 시 배너→"지금 적용" 자동교체 확인.
 
 > **보류(Route B 이후):** UIUX 프롬프트 수정 · kind 3분류 · Scratch 삽입 · 이미지 미화 · 덱 전체 일괄
 

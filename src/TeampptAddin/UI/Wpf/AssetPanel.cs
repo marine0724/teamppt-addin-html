@@ -102,6 +102,10 @@ namespace TeampptAddin
             DockPanel.SetDock(header, Dock.Top);
             root.Children.Add(header);
 
+            _updateBannerHost = new Border { Visibility = Visibility.Collapsed };
+            DockPanel.SetDock(_updateBannerHost, Dock.Top);
+            root.Children.Add(_updateBannerHost);
+
             var statusBar = BuildStatusBar();
             DockPanel.SetDock(statusBar, Dock.Bottom);
             root.Children.Add(statusBar);
@@ -117,6 +121,116 @@ namespace TeampptAddin
 
             Content = root;
             SwitchTab(0);
+
+            StartUpdateWatch();
+        }
+
+        // ── 자동 업데이트 배너 ─────────────────────────────────────────
+        // UpdateService(백그라운드)가 새 버전을 staging에 받아두면 마커 파일을 남긴다.
+        // 패널은 그 마커를 감시(폴링)하다 발견하면 상단 배너를 띄운다. (이벤트 배선 없이 디커플링)
+
+        private Border _updateBannerHost;
+        private DispatcherTimer _updateWatchTimer;
+        private bool _updateBannerShown;
+
+        private void StartUpdateWatch()
+        {
+            // 시작 직후 한 번, 이후 주기적으로 마커 확인(백그라운드 다운로드가 늦게 끝나는 경우 대비).
+            TryShowUpdateBanner();
+            if (_updateBannerShown) return;
+
+            _updateWatchTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(8) };
+            _updateWatchTimer.Tick += (s, e) => TryShowUpdateBanner();
+            _updateWatchTimer.Start();
+        }
+
+        private void TryShowUpdateBanner()
+        {
+            if (_updateBannerShown) return;
+            try
+            {
+                if (!System.IO.File.Exists(UpdateService.MarkerPath)) return;
+                var marker = Newtonsoft.Json.Linq.JObject.Parse(
+                    System.IO.File.ReadAllText(UpdateService.MarkerPath));
+                var version = (string)marker["version"] ?? "";
+                var notes = (string)marker["notes"] ?? "";
+
+                _updateBannerShown = true;
+                if (_updateWatchTimer != null) { _updateWatchTimer.Stop(); _updateWatchTimer = null; }
+                ShowUpdateBanner(version, notes);
+            }
+            catch (Exception ex) { Logger.Log($"[Update] 배너 표시 실패: {ex.Message}"); }
+        }
+
+        private void ShowUpdateBanner(string version, string notes)
+        {
+            var textCol = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            textCol.Children.Add(new TextBlock
+            {
+                Text = $"✨ 업데이트 v{version} 준비됨",
+                FontSize = 12, FontWeight = FontWeights.SemiBold,
+                Foreground = Brushes.White, FontFamily = ThemeResources.FontBase
+            });
+            if (!string.IsNullOrEmpty(notes))
+                textCol.Children.Add(new TextBlock
+                {
+                    Text = notes,
+                    FontSize = 10, Foreground = new SolidColorBrush(Color.FromArgb(200, 255, 255, 255)),
+                    FontFamily = ThemeResources.FontBase,
+                    TextTrimming = TextTrimming.CharacterEllipsis,
+                    Margin = new Thickness(0, 1, 0, 0)
+                });
+
+            var applyBtn = new Border
+            {
+                Background = new SolidColorBrush(Color.FromArgb(60, 255, 255, 255)),
+                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(12, 5, 12, 5),
+                VerticalAlignment = VerticalAlignment.Center,
+                Cursor = Cursors.Hand,
+                Child = new TextBlock
+                {
+                    Text = "지금 적용 ▶",
+                    FontSize = 11, FontWeight = FontWeights.SemiBold,
+                    Foreground = Brushes.White, FontFamily = ThemeResources.FontBase
+                }
+            };
+            applyBtn.MouseEnter += (s, e) => applyBtn.Opacity = 0.8;
+            applyBtn.MouseLeave += (s, e) => applyBtn.Opacity = 1;
+            applyBtn.MouseLeftButtonUp += (s, e) => ApplyUpdate();
+
+            var grid = new Grid();
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            Grid.SetColumn(textCol, 0);
+            Grid.SetColumn(applyBtn, 1);
+            grid.Children.Add(textCol);
+            grid.Children.Add(applyBtn);
+
+            _updateBannerHost.Background = ThemeResources.Accent;
+            _updateBannerHost.Padding = new Thickness(14, 10, 12, 10);
+            _updateBannerHost.Child = grid;
+            _updateBannerHost.Visibility = Visibility.Visible;
+        }
+
+        private void ApplyUpdate()
+        {
+            var confirm = System.Windows.MessageBox.Show(
+                "업데이트를 적용하려면 PowerPoint가 재시작됩니다.\n저장하지 않은 작업이 있으면 먼저 저장하세요.\n\n계속할까요?",
+                "TEAMPPT 업데이트",
+                System.Windows.MessageBoxButton.OKCancel,
+                System.Windows.MessageBoxImage.Information);
+            if (confirm != System.Windows.MessageBoxResult.OK) return;
+
+            if (!UpdateService.LaunchUpdater())
+            {
+                AddAiBubble("업데이트 적용을 시작하지 못했어요. 잠시 후 다시 시도하거나 수동으로 재설치해주세요.");
+                return;
+            }
+
+            // updater.bat이 PowerPoint 종료를 기다렸다 파일을 교체하고 재실행한다.
+            try { Globals.Application?.Quit(); }
+            catch (Exception ex) { Logger.Log($"[Update] PowerPoint 종료 실패: {ex.Message}"); }
         }
 
         // ══════════════════════════════════════════════════════════════
@@ -2660,6 +2774,7 @@ namespace TeampptAddin
             ((TextBlock)_ingestButton.Child).Text = "실행 중...";
 
             _ingestCurrentContainer.Children.Clear();
+            _ingestLastIndex = -1;
             SetIngestStage("재시도 중");
             _ingestProgressText.Foreground = ThemeResources.TextSub;
 
