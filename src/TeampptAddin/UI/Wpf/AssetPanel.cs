@@ -810,8 +810,38 @@ namespace TeampptAddin
                     Margin = new Thickness(14, 4, 12, 2)
                 });
 
+            _chatStack.Children.Add(BuildTracePanel());
             _chatStack.Children.Add(BuildPlaceArrangeButton());
             _chatScroll.ScrollToBottom();
+        }
+
+        private UIElement BuildTracePanel()
+        {
+            var lines = _lastRecoResult?.Trace?.ToReadableLines() ?? new List<string>();
+            var body = new StackPanel { Margin = new Thickness(14, 2, 12, 2), Visibility = Visibility.Collapsed };
+            foreach (var l in lines)
+                body.Children.Add(new TextBlock
+                {
+                    Text = l, FontSize = 10, Foreground = ThemeResources.TextSub,
+                    TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 1, 0, 1)
+                });
+
+            var header = new TextBlock
+            {
+                Text = "\U0001f50d 판단 과정 (펼치기)", FontSize = 10, FontWeight = FontWeights.SemiBold,
+                Foreground = ThemeResources.TextSub, Cursor = Cursors.Hand,
+                Margin = new Thickness(14, 6, 12, 0)
+            };
+            header.MouseLeftButtonUp += (s, e) =>
+            {
+                body.Visibility = body.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+                header.Text = body.Visibility == Visibility.Visible ? "\U0001f50d 판단 과정 (접기)" : "\U0001f50d 판단 과정 (펼치기)";
+            };
+
+            var wrap = new StackPanel();
+            wrap.Children.Add(header);
+            wrap.Children.Add(body);
+            return wrap;
         }
 
         private Border BuildRecoCard(string slotLabel, RecommendedSlot slot)
