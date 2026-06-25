@@ -24,6 +24,13 @@ namespace TeampptAddin.Tests
         }
 
         [Fact]
+        public void Parses_New_Bottleneck_Categories()
+        {
+            var c = DesignCritiqueParser.Parse(@"{""score"":70,""bottleneck"":""에셋부족""}");
+            Assert.Equal("에셋부족", c.Bottleneck);
+        }
+
+        [Fact]
         public void Defaults_When_Fields_Missing()
         {
             var c = DesignCritiqueParser.Parse(@"{""score"":50}");
