@@ -25,10 +25,10 @@ namespace TeampptAddin
             var userText = BuildUserText(u, candidatesByKind);
             Logger.Log("[Reco] userText↓\r\n" + userText);
 
+            var thumbs = CollectThumbs(candidatesByKind, 3);
             var json = await _gemini.GenerateJsonAsync(
                 CombinationRecommenderSchema.BuildSystemPrompt(),
-                userText,
-                (string)null,
+                userText, thumbs,
                 CombinationRecommenderSchema.BuildResponseSchema()).ConfigureAwait(false);
 
             Logger.Log("[Reco] raw↓ " + json);
@@ -47,6 +47,16 @@ namespace TeampptAddin
             return rec;
         }
 
+        public static List<string> CollectThumbs(Dictionary<string, List<HeaderAsset>> pool, int thumbTopK)
+        {
+            var paths = new List<string>();
+            foreach (var kind in pool.Keys)
+                foreach (var a in pool[kind].Take(thumbTopK))
+                    if (a.Extra != null && a.Extra.TryGetValue("local_thumb", out var lt) && !string.IsNullOrEmpty(lt?.ToString()))
+                        paths.Add(lt.ToString());
+            return paths;
+        }
+
         public static string BuildUserText(DraftUnderstanding u, Dictionary<string, List<HeaderAsset>> pool)
         {
             var sb = new StringBuilder();
@@ -55,15 +65,20 @@ namespace TeampptAddin
             sb.AppendLine($"매칭 의도(matchIntent): {u.MatchIntent}");
             sb.AppendLine($"필요 조합: header {nc.Header}, layout {nc.Layout}, component {nc.Component}");
             sb.AppendLine($"재료 개수: {string.Join(", ", u.Counts.Select(kv => $"{kv.Key}:{kv.Value}"))}");
+            int thumbIdx = 1;
             foreach (var kind in pool.Keys)
             {
                 sb.AppendLine($"\n[{kind} 후보]");
+                int i = 0;
                 foreach (var a in pool[kind])
                 {
                     var cap = a.Capacity != null ? $" cap={a.Capacity.Min}-{a.Capacity.Max}" : "";
                     var mk = a.MaterialKinds != null && a.MaterialKinds.Count > 0
                         ? " mk=" + string.Join("/", a.MaterialKinds) : "";
-                    sb.AppendLine($"- file={a.File} name={a.Name} deck={a.SourceDeck}{cap}{mk} :: {a.UseWhen}");
+                    var thumbTag = (i < 3 && a.Extra != null && a.Extra.ContainsKey("local_thumb"))
+                        ? $"[썸네일 {thumbIdx++}] " : "";
+                    sb.AppendLine($"- {thumbTag}file={a.File} name={a.Name} deck={a.SourceDeck}{cap}{mk} :: {a.UseWhen}");
+                    i++;
                 }
             }
             return sb.ToString();

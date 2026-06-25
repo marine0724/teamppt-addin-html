@@ -19,8 +19,9 @@ namespace TeampptAddin
         {
             _gemini = new GeminiAiService(geminiKey);
             _understand = new DraftUnderstandingService(_gemini);
+            var supa = new SupabaseClient(supabaseUrl, anonKey);
             _candidates = new CombinationCandidateProvider(
-                new EmbeddingService(geminiKey), new SupabaseClient(supabaseUrl, anonKey));
+                new EmbeddingService(geminiKey), supa, new RemoteAssetCache(supabaseUrl, anonKey));
             _recommender = new CombinationRecommender(_gemini);
         }
 

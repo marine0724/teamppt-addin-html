@@ -13,10 +13,11 @@ namespace TeampptAddin
     {
         private readonly EmbeddingService _embed;
         private readonly SupabaseClient _supa;
+        private readonly RemoteAssetCache _thumbs;
         private readonly RecommendationCache _cache = new RecommendationCache();
 
-        public CombinationCandidateProvider(EmbeddingService embed, SupabaseClient supa)
-        { _embed = embed; _supa = supa; }
+        public CombinationCandidateProvider(EmbeddingService embed, SupabaseClient supa, RemoteAssetCache thumbs)
+        { _embed = embed; _supa = supa; _thumbs = thumbs; }
 
         public static List<string> NeededKinds(NeededCombination nc)
         {
@@ -58,6 +59,14 @@ namespace TeampptAddin
                     result[kind] = list;
                     all.AddRange(list);
                     Logger.Log($"[Combo] kind={kind} 후보 {list.Count}개");
+                    foreach (var a in list)
+                    {
+                        if (a.Extra != null && a.Extra.TryGetValue("remote_thumb", out var rt) && _thumbs != null)
+                        {
+                            try { a.Extra["local_thumb"] = await _thumbs.GetThumbAsync(rt.ToString()).ConfigureAwait(false); }
+                            catch (Exception tex) { Logger.Log($"[Combo] 썸네일 실패 {a.File}: {tex.Message}"); }
+                        }
+                    }
                 }
                 if (all.Count > 0) _cache.Save(all);
                 return result;
