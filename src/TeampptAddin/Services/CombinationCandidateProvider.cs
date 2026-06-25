@@ -61,7 +61,12 @@ namespace TeampptAddin
                     result[kind] = list;
                     all.AddRange(list);
                     Logger.Log($"[Combo] kind={kind} 후보 {list.Count}개");
-                    LastRetrieveLines.Add($"{kind} {list.Count}개");
+                    var sims = list
+                        .Where(a => a.Extra != null && a.Extra.ContainsKey("similarity"))
+                        .Select(a => (double)a.Extra["similarity"])
+                        .ToList();
+                    var simText = sims.Count > 0 ? $" (유사도 {sims.Max():F2}~{sims.Min():F2})" : "";
+                    LastRetrieveLines.Add($"{kind} {list.Count}개{simText}");
                     foreach (var a in list)
                     {
                         if (a.Extra != null && a.Extra.TryGetValue("remote_thumb", out var rt) && _thumbs != null)

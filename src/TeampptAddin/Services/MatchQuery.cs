@@ -26,7 +26,10 @@ namespace TeampptAddin
             {
                 var sim = row["similarity"]?.Value<double>() ?? 0;
                 Logger.Log($"[Match] {row["name"]} sim={sim:F3}");
-                result.Add(SupabaseAssetMapper.Map(row));
+                var asset = SupabaseAssetMapper.Map(row);
+                if (asset.Extra == null) asset.Extra = new Dictionary<string, JToken>();
+                asset.Extra["similarity"] = sim;
+                result.Add(asset);
             }
             return result;
         }
