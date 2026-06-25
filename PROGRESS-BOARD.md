@@ -3,7 +3,7 @@
 > 이 파일 하나만 열어두면 "지금 어디서 뭘 하는지" 보입니다. Claude가 매 세션 함께 유지.
 > **기록용 아카이브가 아니라 "지금 여기" 작업 보드.** 끝난 잎(Task)은 지우고 교체, 숲·나무 단위는 끝날 때까지 유지. (규칙: CLAUDE.md)
 > 계층: **나라 > 대지 > 숲 > 나무 > 잎** (2026-06-22 재정립)
-> 최종 갱신: 2026-06-25 · 현재 작업: **판단 파이프라인(관찰가능성+깐깐한 검수자) 설계·플랜 확정 → Sonnet 구현 대기.** 추천→배치 동작 확인 완료. B1·R1 완료.
+> 최종 갱신: 2026-06-25 · 현재 작업: **판단 파이프라인 구현 중 — Task 1~3 완료·커밋, 다음 Task 4부터.** 추천→배치 동작 확인 완료. B1·R1 완료. **🔴 배포 버그 발견·수정·재릴리스 완료(install.bat robocopy, 아래 R2).**
 
 ---
 
@@ -51,12 +51,14 @@
 |---|------|------|
 | 1 | 설계 스펙 작성 | ✅ |
 | 2 | 구현 플랜 + 실행프롬프트 작성 | ✅ |
-| 3 | Task1 Trace/Critique 모델 (TDD) | ⬜ |
-| 4 | Task2-3 이해·구성 reasoning (TDD) | ⬜ |
-| 5 | Task4-5 Gemini 다중이미지 + 구성기 멀티모달화 | ⬜ |
+| 3 | Task1 Trace/Critique 모델 (TDD) | ✅ 647c10f |
+| 4 | Task2-3 이해·구성 reasoning (TDD) | ✅ b18e691·c36113b |
+| 5 | Task4-5 Gemini 다중이미지 + 구성기 멀티모달화 | ◀ 다음 |
 | 6 | Task6-7 검수자 루브릭·파서·서비스 | ⬜ |
 | 7 | Task8 RecommendationService Trace 조립 | ⬜ |
 | 8 | Task9-10 Trace 패널 UI + 검수 버튼 | ⬜ |
+
+> **빌드/테스트 절차(이번 세션 확립):** 새 .cs는 `TeampptAddin.csproj`의 `<Compile Include>`에 **수동 등록 필수**(old-style csproj). 단위테스트 = 관리자 MSBuild 솔루션 빌드(`/p:RegisterForComInterop=false`) → `dotnet test --no-build -p:BuildProjectReferences=false --filter`. (플랜의 "dotnet test 1순위"는 단독으론 NuGet 참조 못 풀어 실패.)
 
 > **브랜치:** `feat/asset-combination-recommendation`. **구현은 Sonnet** — `실행프롬프트.md` 붙여넣어 시작.
 > **추천→배치 동작 확인됨(2026-06-25):** "이 조합으로 배치" → 새 슬라이드에 header+layout shapes 합체 성공. 버그 2건 해결: ① 인제스트 503 재시도 중복적재(42행=35+7, kind는 깨끗 — 추후 중복정리), ② Storage 다운로드 400(`asset.File` 파일명 대신 `Extra["remote_file"]` 사용으로 수정).
@@ -92,6 +94,7 @@ PowerPoint 수동 검증 단계야. B1·R1(자동배포)은 끝났어.
 |---|------|------|------|
 | B1 | 버그 | 인제스트 재시도 시 애니메이션 안 뜸 → `ResumeIngestAsync`에서 `_ingestLastIndex=-1` 리셋 누락이 원인. 수정+빌드 완료(로그 0건). | ✅ |
 | R1 | 요구 | 팀원 자동 배포. 설계: [auto-update spec](docs/superpowers/specs/2026-06-24-auto-update.md). **핵심: 업데이트엔 UAC 불필요**(GUID·경로 고정→파일 덮어쓰기만). | ✅ 배포 완료 |
+| R2 | 버그 | **install.bat robocopy 신규설치 0개 복사** — `%~dp0`가 `\`로 끝나 `robocopy "C:\path\"`의 `\"`가 따옴표 이스케이프→source 깨짐→0개(exit 0 조용한 실패)→이후 RegAsm이 "RegAsm 실패" 오해 유발. 개발은 register-addin.ps1(직접등록)이라 미발견. **수정+재릴리스 완료**(c78a73c). | ✅ |
 
 > **R1 완료 (2026-06-24):**
 > - ✅ 코드 전부(`UpdateService`·`updater.bat`·패널 배너·고정경로 install/uninstall) + `docs/download.html`·`version.json` (main 반영, Pages 라이브).
@@ -100,6 +103,13 @@ PowerPoint 수동 검증 단계야. B1·R1(자동배포)은 끝났어.
 > - ⬜ **남은 외부 작업(코딩 아님):** ① 팀원에게 `api-keys.json` 비공개 전달 + `%LOCALAPPDATA%\TeampptAddin\app\Assets\`에 배치 안내. ② 자동 업데이트 실측: 버전↑→새 Release→version.json 갱신→PPT 재시작 시 배너→"지금 적용" 교체 확인.
 >
 > **다음 릴리스 절차:** AssemblyInfo 버전↑ → Release 빌드 → `scripts/package-release.ps1` → 출력되는 `gh release create` 실행 + `docs/version.json` 갱신·푸시.
+
+> **R2 완료 (2026-06-25) — 배포/설치 경로 전체 검수:**
+> - ✅ **install.bat robocopy 버그 수정**(트레일링 백슬래시 제거 + robocopy 8+ 실패 시 중단). 시뮬레이션으로 0개→17개 복사 확인.
+> - ✅ **v1.0.0 자산 교체 재업로드** (install.bat 픽스 + pdb 제거 반영). 다운로드 SHA=gh digest=로컬 `c674b311…` 일치 확인. version.json은 1.0.0 유지(변경 불필요).
+> - ✅ **검수 통과 항목:** zip 다운로드 작동·Windows Expand-Archive 백슬래시 경로 정상 추출·Pages(version.json/download.html 200, 링크·안내 정확)·자동업데이트 매니페스트 URL 작동(UpdateService "⚠확인필요" 주석 해소)·**api-keys.json 없이도 애드인 정상 로드**(OnConnection 키 안읽음, 패널 lazy, 아이콘 try/catch)·updater.bat robocopy 경로 안전.
+> - ⚠ **환경 caveat(코드 아님):** 다운로드 .bat은 SmartScreen/MOTW 경고 가능 / RegAsm Framework64라 **64비트 Office 가정**(32비트 PPT면 별도 처리 필요).
+> - ⬜ **남은 외부 작업:** ① 팀원에게 `api-keys.json` 비공개 전달 + `%LOCALAPPDATA%\TeampptAddin\app\Assets\` 배치. ② 다른 PC에서 install.bat 실제 1회 검증(코드 시뮬레이션은 통과, 실기기 미검증).
 
 > **보류(Route B 이후):** UIUX 프롬프트 수정 · kind 3분류 · Scratch 삽입 · 이미지 미화 · 덱 전체 일괄
 
