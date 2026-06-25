@@ -20,7 +20,7 @@ namespace TeampptAddin
                 "초안 재료:\n" + JsonConvert.SerializeObject(u.Materials) +
                 "\n\n에셋 도형:\n" + JsonConvert.SerializeObject(assetShapes);
             var json = await _gemini.GenerateJsonAsync(
-                SlotMapSchema.BuildSystemPrompt(), userText, null,
+                SlotMapSchema.BuildSystemPrompt(), userText, (string)null,
                 SlotMapSchema.BuildResponseSchema(), 0.2).ConfigureAwait(false);
             return SlotMapParser.Parse(json,
                 u.Materials.Select(m => m.SourceShapeId),

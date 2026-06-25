@@ -211,18 +211,23 @@ namespace TeampptAddin
             return SlideDiagnosisParser.Parse(text);
         }
 
-        /// <summary>
-        /// 재사용 가능한 1회성 멀티모달 JSON 호출. history 미사용.
-        /// responseSchema로 구조화 응답을 강제하고, thinkingBudget=0으로 저가 호출.
-        /// 503/429/500은 백오프 재시도.
-        /// </summary>
-        public async Task<string> GenerateJsonAsync(string systemPrompt, string userText, string pngPathOrNull, JObject responseSchema, double temperature = 0.4)
+        public Task<string> GenerateJsonAsync(string systemPrompt, string userText, string pngPathOrNull, JObject responseSchema, double temperature = 0.4)
+        {
+            var imgs = pngPathOrNull == null ? new string[0] : new[] { pngPathOrNull };
+            return GenerateJsonAsync(systemPrompt, userText, imgs, responseSchema, temperature);
+        }
+
+        public async Task<string> GenerateJsonAsync(string systemPrompt, string userText, IEnumerable<string> pngPaths, JObject responseSchema, double temperature = 0.4)
         {
             var parts = new JArray();
-            if (pngPathOrNull != null)
-                parts.Add(new JObject { ["inline_data"] = new JObject {
-                    ["mime_type"] = "image/png",
-                    ["data"] = Convert.ToBase64String(File.ReadAllBytes(pngPathOrNull)) } });
+            if (pngPaths != null)
+                foreach (var p in pngPaths)
+                {
+                    if (string.IsNullOrEmpty(p) || !File.Exists(p)) continue;
+                    parts.Add(new JObject { ["inline_data"] = new JObject {
+                        ["mime_type"] = "image/png",
+                        ["data"] = Convert.ToBase64String(File.ReadAllBytes(p)) } });
+                }
             parts.Add(new JObject { ["text"] = userText });
 
             var requestBody = new JObject

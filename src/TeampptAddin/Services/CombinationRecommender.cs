@@ -28,7 +28,7 @@ namespace TeampptAddin
             var json = await _gemini.GenerateJsonAsync(
                 CombinationRecommenderSchema.BuildSystemPrompt(),
                 userText,
-                null,
+                (string)null,
                 CombinationRecommenderSchema.BuildResponseSchema()).ConfigureAwait(false);
 
             Logger.Log("[Reco] raw↓ " + json);
