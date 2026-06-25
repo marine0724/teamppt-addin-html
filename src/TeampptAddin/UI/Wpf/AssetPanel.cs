@@ -2876,8 +2876,10 @@ namespace TeampptAddin
 
                 StopIngestAnimations();
                 var totalFiles = Directory.GetFiles(_retryOutputDir, "*.png").Length;
-                ShowIngestComplete(count + _retryStartFrom, totalFiles);
-                SetStatus($"인제스트 완료: {count + _retryStartFrom}개", ThemeResources.StatusSuccess.Color);
+                // count는 UploadDirectoryAsync가 반환하는 "유효 파일 총합"(startFrom 무관).
+                // _retryStartFrom을 더하면 이중계산되어 62/35처럼 초과 표시됨.
+                ShowIngestComplete(count, totalFiles);
+                SetStatus($"인제스트 완료: {count}개", ThemeResources.StatusSuccess.Color);
             }
             catch (Exception ex)
             {
