@@ -759,7 +759,9 @@ namespace TeampptAddin
             try
             {
                 AddAiBubble("현재 초안에 어울리는 에셋 조합을 찾아볼게요.");
-                var result = await _recommend.RunAsync(msg => Dispatcher.Invoke(() => AddAiBubble(msg)));
+                var result = await _recommend.RunAsync(
+                    msg => Dispatcher.Invoke(() => AddAiBubble(msg)),
+                    voice => Dispatcher.Invoke(() => AddAiBubble(voice)));
                 _lastRecoResult = result;
                 ShowRecommendation(result.Recommendation);
             }
@@ -988,7 +990,8 @@ namespace TeampptAddin
             {
                 AddAiBubble("실무 디자이너가 검수 중…");
                 var c = await _recommend.CritiqueAsync(_lastResultPng, _lastRecoResult);
-                AddAiBubble($"검수 결과: {c.Score}점 — {c.Verdict}\n병목: {c.Bottleneck} · {c.Suggestion}");
+                AddAiBubble($"검수 결과: {c.Score}점 — {c.Verdict}\n병목: {c.Bottleneck} · {c.Suggestion}"
+                    + (string.IsNullOrEmpty(c.Reasoning) ? "" : $"\n{c.Reasoning}"));
                 Dispatcher.Invoke(() => _chatStack.Children.Add(BuildTracePanel()));
             }
             catch (Exception ex)
