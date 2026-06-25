@@ -132,6 +132,7 @@
     <Compile Include="Services\CombinationCandidateProvider.cs" />
     <Compile Include="Services\DesignCritiqueParser.cs" />
     <Compile Include="Services\DesignCritiqueSchema.cs" />
+    <Compile Include="Services\DesignCritiqueService.cs" />
     <Compile Include="Services\RecommendationService.cs" />
     <Compile Include="Services\UpdateService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
