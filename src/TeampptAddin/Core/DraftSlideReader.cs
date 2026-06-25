@@ -5,8 +5,8 @@ using PowerPoint = Microsoft.Office.Interop.PowerPoint;
 namespace TeampptAddin
 {
     /// <summary>
-    /// 현재 활성 슬라이드를 COM으로 읽어 DraftProfile(정확한 텍스트·위치·타입·메트릭, shapeId 부여)을 만든다.
-    /// 사실(텍스트·개수·도형)의 출처. LLM 판단은 DraftUnderstandingService에서.
+    /// 슬라이드를 COM으로 읽어 DraftProfile(정확한 텍스트·위치·타입·메트릭, shapeId)을 만든다.
+    /// 사실의 출처. LLM 판단은 DraftUnderstandingService/DeckStructureService에서.
     /// </summary>
     public static class DraftSlideReader
     {
@@ -22,11 +22,17 @@ namespace TeampptAddin
             if (slide == null) return null;
 
             var pres = win.Presentation;
+            return ReadSlide(slide, pres.PageSetup.SlideWidth, pres.PageSetup.SlideHeight);
+        }
+
+        /// <summary>주어진 슬라이드 1장을 DraftProfile로 읽는다(현재슬라이드/파일 공용).</summary>
+        public static DraftProfile ReadSlide(PowerPoint.Slide slide, float slideW, float slideH)
+        {
             var profile = new DraftProfile
             {
                 SlideIndex = slide.SlideIndex,
-                SlideWidth = pres.PageSetup.SlideWidth,
-                SlideHeight = pres.PageSetup.SlideHeight
+                SlideWidth = slideW,
+                SlideHeight = slideH
             };
 
             int id = 1;

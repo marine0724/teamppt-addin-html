@@ -60,6 +60,7 @@
     <Compile Include="Core\SlideImageRenderer.cs" />
     <Compile Include="Core\TextMetrics.cs" />
     <Compile Include="Core\DraftSlideReader.cs" />
+    <Compile Include="Core\DeckFileReader.cs" />
     <Compile Include="Core\AssetShapeInventory.cs" />
     <Compile Include="Core\RedesignApplier.cs" />
     <Compile Include="UI\TaskPaneHost.cs" />
