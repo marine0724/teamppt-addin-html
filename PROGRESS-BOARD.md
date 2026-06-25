@@ -3,10 +3,10 @@
 > 이 파일 하나만 열어두면 "지금 어디서 뭘 하는지" 보입니다. Claude가 매 세션 함께 유지.
 > **기록용 아카이브가 아니라 "지금 여기" 작업 보드.** 끝난 잎(Task)은 지우고 교체, 숲·나무 단위는 끝날 때까지 유지. (규칙: CLAUDE.md)
 > 계층: **나라 > 대지 > 숲 > 나무 > 잎** (2026-06-22 재정립)
-> 최종 갱신: 2026-06-25 · 현재 작업: **독백+병목진단 Task 1~5 구현·커밋 완료. Task 6(PPT 수동검증) 대기.** B1·R1·R2 완료.
+> 최종 갱신: 2026-06-25 · 현재 작업: **리디자인 Phase 0(두 유사도 분리) Task 1~4 구현·리뷰 완료(READY TO MERGE). PPT 수동검증 대기.** 독백+병목진단·B1·R1·R2 완료.
 
 ### ▶ 다음 작업
-**Task 6: PPT 수동 검증.** PowerPoint 재시작 → 본문 슬라이드에서 "AI 리디자인" → 추천 → 배치 → "🔍 디자이너 검수 받기". 체크: ① 한국어 독백 버블 실시간 ② 유사도 표시 ③ 존대말·약점 솔직 ④ 병목 4분류 ⑤ debug.log 한국어 reasoning.
+**PPT 수동 검증 (독백+병목진단 + 리디자인 Phase 0 두 점수, 한 번에).** PowerPoint 재시작 → 본문 슬라이드 "AI 리디자인" → 추천 → 배치 → "🔍 디자이너 검수 받기". 체크: ① 한국어 독백 버블 실시간 ② **재료적합 / 디자인·컨셉 두 점수 표시**(버블+trace 패널) ③ 존대말·약점 솔직 ④ 병목 4분류 ⑤ debug.log 한국어 reasoning. → 통과 시 **리디자인 Phase 1**(파일 진입+덱 구조 분석)로.
 
 ---
 
@@ -44,19 +44,25 @@
 
 ---
 
-## 🍃 잎 — 지금 작업: 단계별 독백 + 병목 진단 정밀화 — **Task 1~5 구현 완료, PPT 수동 검증 대기**
+## 🌲 나무 — 새 방향: **리디자인 (초안 파일 통째 → 덱 전체)** · 잎 = Phase 0 완료
 
-> **왜:** 판단 파이프라인(Task 1~10) 코드 완료·빌드 성공. 그러나 reasoning이 영어·대충이고, 진단이 "구체적으로 뭐가 병목인지" 못 짚음. 목표 = 추천 한 번 독백만 보고 기능/데이터추출/에셋부족/에셋품질 중 뭔지 바로 읽히게. **기능 문제가 사라질 때까지.**
-> 설계: [독백+병목진단](docs/superpowers/specs/2026-06-25-step-narration-bottleneck-diagnosis-design.md) · 플랜: [구현 플랜](docs/superpowers/plans/2026-06-25-step-narration-bottleneck-diagnosis.md) · 실행: [실행프롬프트.md](실행프롬프트.md)
+> **왜:** 실사용 워크플로 = "초안 만들어 두고 더 이쁘게". 단일 슬라이드 추천을 **파일 진입 + 덱 전체**로 일반화. 디자인-온리(내용 불변).
+> 설계: [덱 리디자인 스펙](docs/superpowers/specs/2026-06-25-route-b-deck-redesign-design.md) · Phase 0 플랜: [두 유사도 분리](docs/superpowers/plans/2026-06-25-redesign-phase0-dual-similarity.md)
+> 하이브리드 데모 스코프: 임팩트 큰 곳(구조박스·박스별추천·두 유사도·조립덱)은 진짜 / overflow·표·완벽합성은 검증 위주.
+
+**Phase 로드맵:** `0 두 유사도 분리 ✅` → `1 파일진입+덱구조분석` → `2 컨셉3` → `3 박스별 덱추천` → `4 빈 템플릿 조립` → `5 재료이식(본문1~2장)`
+
+### 🍃 잎 — Phase 0: 두 유사도 분리(재료적합/디자인·컨셉) — **Task 1~4 구현·리뷰 완료, PPT 수동검증 대기**
 
 | # | 무엇 | 상태 |
 |---|------|------|
-| 1 | 검색 유사도 Extra·trace 노출 (TDD) | ✅ |
-| 2 | thinkingBudget 파라미터화 + 상향(768/2048) | ✅ |
-| 3 | 이해·구성 reasoning 한국어 재작성 | ✅ |
-| 4 | 검수 병목 4분류 + trace요약 입력 (TDD) | ✅ |
-| 5 | 실시간 버블 독백 배선 | ✅ |
-| 6 | PPT 수동 검증 (판단 파이프라인 + 독백 통합) | ◀ 다음 |
+| 1 | designConcept = 6차원 합 (모델+파서, TDD) | ✅ b29fd84 |
+| 2 | MaterialFitScorer 재료적합 계산(유사도+capacity, TDD) | ✅ be10db8 |
+| 3 | materialFit 검수 입력·결과 배선 | ✅ c5676a6 |
+| 4 | 검수 결과에 두 점수 노출 (trace+버블) | ✅ 437d924 |
+| — | PPT 수동검증 (두 점수 표시 확인) | ◀ 다음(사용자) |
+
+> 최종 리뷰(opus): **READY TO MERGE**. materialFit=계산값(LLM 아님) 불변이 end-to-end 검증됨. 123/123 테스트 통과. 미세지적은 deferred(`.superpowers/sdd/progress.md` 원장).
 
 > **빌드/테스트 절차(이번 세션 확립):** 새 .cs는 `TeampptAddin.csproj`의 `<Compile Include>`에 **수동 등록 필수**(old-style csproj). 단위테스트 = 관리자 MSBuild 솔루션 빌드(`/p:RegisterForComInterop=false`) → `dotnet test --no-build -p:BuildProjectReferences=false --filter`. (플랜의 "dotnet test 1순위"는 단독으론 NuGet 참조 못 풀어 실패.)
 
