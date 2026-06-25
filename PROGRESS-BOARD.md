@@ -3,7 +3,7 @@
 > 이 파일 하나만 열어두면 "지금 어디서 뭘 하는지" 보입니다. Claude가 매 세션 함께 유지.
 > **기록용 아카이브가 아니라 "지금 여기" 작업 보드.** 끝난 잎(Task)은 지우고 교체, 숲·나무 단위는 끝날 때까지 유지. (규칙: CLAUDE.md)
 > 계층: **나라 > 대지 > 숲 > 나무 > 잎** (2026-06-22 재정립)
-> 최종 갱신: 2026-06-25 · 현재 작업: **판단 파이프라인 Task 4~10 코드 완료·빌드 성공, PPT 수동 검증 대기.** 추천→배치 동작 확인 완료. B1·R1 완료. R2 완료.
+> 최종 갱신: 2026-06-25 · 현재 작업: **판단 파이프라인 코드 전체 완료(Task 1~10). 후속 "독백+병목진단" 설계·플랜 확정, 구현 대기.** B1·R1·R2 완료.
 
 ### ▶ 다음 세션 시작점
 **단계별 독백 + 병목 진단 정밀화** (Sonnet 실행). reasoning 한국어 독백 버블 + 검색 유사도 노출 + 검수 병목 4분류. `실행프롬프트.md` 붙여넣어 Task 1부터. PPT 수동검증은 이 플랜 Task 6에서 직전 판단 파이프라인과 함께. 브랜치 `feat/asset-combination-recommendation`.
@@ -45,23 +45,19 @@
 
 ---
 
-## 🍃 잎 — 지금 작업: 판단 파이프라인 (관찰가능성 + 깐깐한 검수자) — **코드 완료, PPT 수동 검증 대기**
+## 🍃 잎 — 지금 작업: 단계별 독백 + 병목 진단 정밀화 — **설계·플랜 확정, 구현 대기**
 
-> **왜:** 구성기가 *장님*(텍스트만 봄, 썸네일 X)이라 "예쁨" 판단 불가 + 판단 근거 안 보임. 목표 = **asset-bound 임계점**(로직은 다 건강한데 에셋만 부족한 상태 재현 = 0→1 끝).
-> 설계: [판단 파이프라인](docs/superpowers/specs/2026-06-25-judgment-pipeline-observability-critic-design.md) · 플랜: [구현 플랜](docs/superpowers/plans/2026-06-25-judgment-pipeline-observability-critic.md) · 실행: [실행프롬프트.md](실행프롬프트.md)
-> 파이프라인: ① 이해(멀티모달) → ② 검색(벡터) → ③ 구성(멀티모달, **썸네일 봄**) → ④ 배치(COM) → ⑤ 검수(렌더+루브릭, 온디맨드, 병목진단). 모든 LLM 단계 reasoning → Trace → "🔍 판단 과정" 패널.
+> **왜:** 판단 파이프라인(Task 1~10) 코드 완료·빌드 성공. 그러나 reasoning이 영어·대충이고, 진단이 "구체적으로 뭐가 병목인지" 못 짚음. 목표 = 추천 한 번 독백만 보고 기능/데이터추출/에셋부족/에셋품질 중 뭔지 바로 읽히게. **기능 문제가 사라질 때까지.**
+> 설계: [독백+병목진단](docs/superpowers/specs/2026-06-25-step-narration-bottleneck-diagnosis-design.md) · 플랜: [구현 플랜](docs/superpowers/plans/2026-06-25-step-narration-bottleneck-diagnosis.md) · 실행: [실행프롬프트.md](실행프롬프트.md)
 
 | # | 무엇 | 상태 |
 |---|------|------|
-| 1 | 설계 스펙 작성 | ✅ |
-| 2 | 구현 플랜 + 실행프롬프트 작성 | ✅ |
-| 3 | Task1 Trace/Critique 모델 (TDD) | ✅ 647c10f |
-| 4 | Task2-3 이해·구성 reasoning (TDD) | ✅ b18e691·c36113b |
-| 5 | Task4-5 Gemini 다중이미지 + 구성기 멀티모달화 | ✅ ae1b7b1·9538a2f |
-| 6 | Task6-7 검수자 루브릭·파서·서비스 | ✅ eac187c·48486a4 |
-| 7 | Task8 RecommendationService Trace 조립 | ✅ 7c79da3 |
-| 8 | Task9-10 Trace 패널 UI + 검수 버튼 | ✅ f9a200e·dcf35ec |
-| 9 | **PPT 수동 검증** | ◀ 다음 |
+| 1 | 검색 유사도 Extra·trace 노출 (TDD) | ◀ 다음 |
+| 2 | thinkingBudget 파라미터화 + 상향(768/2048) | ⬜ |
+| 3 | 이해·구성 reasoning 한국어 재작성 | ⬜ |
+| 4 | 검수 병목 4분류 + trace요약 입력 (TDD) | ⬜ |
+| 5 | 실시간 버블 독백 배선 | ⬜ |
+| 6 | PPT 수동 검증 (판단 파이프라인 + 독백 통합) | ⬜ |
 
 > **빌드/테스트 절차(이번 세션 확립):** 새 .cs는 `TeampptAddin.csproj`의 `<Compile Include>`에 **수동 등록 필수**(old-style csproj). 단위테스트 = 관리자 MSBuild 솔루션 빌드(`/p:RegisterForComInterop=false`) → `dotnet test --no-build -p:BuildProjectReferences=false --filter`. (플랜의 "dotnet test 1순위"는 단독으론 NuGet 참조 못 풀어 실패.)
 
@@ -74,21 +70,9 @@
 ## 🚀 새 세션 실행 프롬프트 (이걸로 시작하면 바로 이어받음)
 
 ```
-PROGRESS-BOARD.md를 먼저 읽어줘. 판단 파이프라인 구현 중이야.
-Task 1~3(Trace/Critique 모델 + 이해·구성 reasoning) 완료·커밋됨.
-
-지금 할 일: Task 4-5 (Gemini 다중이미지 입력 + 구성기 멀티모달화).
-실행프롬프트.md를 읽고 Task 4부터 시작해줘.
+PROGRESS-BOARD.md를 먼저 읽어줘. 단계별 독백 + 병목 진단 정밀화 구현이야.
+실행프롬프트.md를 읽고 Task 1부터 시작해줘.
 브랜치: feat/asset-combination-recommendation.
-
-빌드 주의: 새 .cs는 TeampptAddin.csproj의 <Compile Include>에 수동 등록
-필수(old-style csproj). 단위테스트 = 관리자 MSBuild 솔루션 빌드
-(/p:RegisterForComInterop=false) → dotnet test --no-build
--p:BuildProjectReferences=false --filter.
-
-불변 원칙: 사실=COM/벡터, 판단=LLM(텍스트 생성 금지). API 키 문서/커밋
-평문 금지. 빌드·검증은 CLAUDE.md 절차(관리자 MSBuild + DLL 타임스탬프 +
-로그 0건), 순수 로직은 비-UAC 워크플로로 TDD.
 ```
 
 ## 🐛 버그 / 📋 요구사항 (다음 세션)
