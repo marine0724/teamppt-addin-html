@@ -23,7 +23,7 @@ namespace TeampptAddin
 
             var json = await _gemini.GenerateJsonAsync(
                 DesignCritiqueSchema.BuildSystemPrompt(), userText, imgs,
-                DesignCritiqueSchema.BuildResponseSchema()).ConfigureAwait(false);
+                DesignCritiqueSchema.BuildResponseSchema(), thinkingBudget: 2048).ConfigureAwait(false);
             Logger.Log("[Critique] raw↓ " + json);
             return DesignCritiqueParser.Parse(json);
         }

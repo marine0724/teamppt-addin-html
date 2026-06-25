@@ -211,13 +211,13 @@ namespace TeampptAddin
             return SlideDiagnosisParser.Parse(text);
         }
 
-        public Task<string> GenerateJsonAsync(string systemPrompt, string userText, string pngPathOrNull, JObject responseSchema, double temperature = 0.4)
+        public Task<string> GenerateJsonAsync(string systemPrompt, string userText, string pngPathOrNull, JObject responseSchema, double temperature = 0.4, int thinkingBudget = 0)
         {
             var imgs = pngPathOrNull == null ? new string[0] : new[] { pngPathOrNull };
-            return GenerateJsonAsync(systemPrompt, userText, imgs, responseSchema, temperature);
+            return GenerateJsonAsync(systemPrompt, userText, imgs, responseSchema, temperature, thinkingBudget);
         }
 
-        public async Task<string> GenerateJsonAsync(string systemPrompt, string userText, IEnumerable<string> pngPaths, JObject responseSchema, double temperature = 0.4)
+        public async Task<string> GenerateJsonAsync(string systemPrompt, string userText, IEnumerable<string> pngPaths, JObject responseSchema, double temperature = 0.4, int thinkingBudget = 0)
         {
             var parts = new JArray();
             if (pngPaths != null)
@@ -239,7 +239,7 @@ namespace TeampptAddin
                     ["temperature"] = temperature,
                     ["responseMimeType"] = "application/json",
                     ["responseSchema"] = responseSchema,
-                    ["thinkingConfig"] = new JObject { ["thinkingBudget"] = 0 }
+                    ["thinkingConfig"] = new JObject { ["thinkingBudget"] = thinkingBudget }
                 }
             };
 

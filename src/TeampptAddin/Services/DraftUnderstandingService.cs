@@ -18,7 +18,7 @@ namespace TeampptAddin
             var json = await _gemini.GenerateJsonAsync(
                 DraftUnderstandingSchema.BuildSystemPrompt(),
                 userText, pngPath,
-                DraftUnderstandingSchema.BuildResponseSchema()).ConfigureAwait(false);
+                DraftUnderstandingSchema.BuildResponseSchema(), thinkingBudget: 768).ConfigureAwait(false);
             return DraftUnderstandingParser.Parse(json, profile);
         }
     }
