@@ -60,8 +60,10 @@ namespace TeampptAddin
         public async Task<DesignCritique> CritiqueAsync(string resultPng, RecommendationResult prior)
         {
             var critic = new DesignCritiqueService(_gemini);
+            var materialFit = MaterialFitScorer.Score(prior.Recommendation, prior.Understanding);
             var c = await critic.CritiqueAsync(
-                resultPng, prior.DraftPngPath, prior.Understanding, prior.Recommendation, prior.Trace.RetrieveLines);
+                resultPng, prior.DraftPngPath, prior.Understanding, prior.Recommendation,
+                prior.Trace.RetrieveLines, materialFit);
             prior.Trace.Critique = c;
             foreach (var line in prior.Trace.ToReadableLines()) Logger.Log("[Trace] " + line);
             return c;
