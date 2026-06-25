@@ -18,6 +18,10 @@ set BIN=%SRC%bin\Release
 if not exist "%BIN%\TeampptAddin.dll" set BIN=%SRC%bin\Debug
 if not exist "%BIN%\TeampptAddin.dll" set BIN=%SRC%
 
+rem 트레일링 백슬래시 제거: robocopy "C:\path\" 는 \" 가 따옴표를 이스케이프해
+rem 인자가 깨지고 0개 복사된다(exit 0이라 조용히 실패). %~dp0는 항상 \로 끝나므로 필수.
+if "%BIN:~-1%"=="\" set BIN=%BIN:~0,-1%
+
 if not exist "%BIN%\TeampptAddin.dll" (
     echo [오류] TeampptAddin.dll을 찾을 수 없습니다.
     pause
@@ -28,6 +32,11 @@ echo.
 echo [1/3] 설치 폴더로 복사: %APP%
 if not exist "%APP%" mkdir "%APP%"
 robocopy "%BIN%" "%APP%" /E /R:3 /W:1 >nul
+if %ERRORLEVEL% GEQ 8 (
+    echo [오류] 파일 복사 실패. robocopy 코드 %ERRORLEVEL%
+    pause
+    exit /b 1
+)
 rem updater.bat은 빌드 산출물에 포함됨(Content). 누락 시 스크립트 폴더에서 보강.
 if not exist "%APP%\updater.bat" if exist "%SRC%updater.bat" copy /Y "%SRC%updater.bat" "%APP%\updater.bat" >nul
 
