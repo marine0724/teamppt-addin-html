@@ -38,5 +38,22 @@ namespace TeampptAddin.Tests
             Assert.Equal("", c.Bottleneck);
             Assert.NotNull(c.DimensionScores);
         }
+
+        [Fact]
+        public void DesignConcept_Is_Sum_Of_Dimension_Scores()
+        {
+            const string json = @"{
+              ""score"": 80,
+              ""dimensionScores"": {""정렬"":18,""여백"":12,""위계"":16,""색"":12,""타이포"":8,""의도부합"":16},
+              ""verdict"": ""실무급"",
+              ""bottleneck"": ""에셋품질"",
+              ""suggestion"": ""대비 강화"",
+              ""reasoning"": ""괜찮습니다""
+            }";
+            var c = DesignCritiqueParser.Parse(json);
+            Assert.Equal(82, c.DesignConcept);   // 18+12+16+12+8+16
+            Assert.Equal(0, c.MaterialFit);      // 파서는 0; 서비스가 Task 3에서 주입
+            Assert.Equal("에셋품질", c.Bottleneck);
+        }
     }
 }

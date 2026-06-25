@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Newtonsoft.Json.Linq;
 
 namespace TeampptAddin
@@ -19,6 +20,7 @@ namespace TeampptAddin
             if (o["dimensionScores"] is JObject dim)
                 foreach (var p in dim.Properties())
                     c.DimensionScores[p.Name] = p.Value?.Value<int>() ?? 0;
+            c.DesignConcept = c.DimensionScores.Values.Sum();
             return c;
         }
     }
