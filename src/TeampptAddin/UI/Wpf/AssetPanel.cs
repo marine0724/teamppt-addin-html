@@ -58,6 +58,7 @@ namespace TeampptAddin
         private RecommendationService _recommend;
         private CombinationRecommendation _lastRecommendation;
         private RecommendationResult _lastRecoResult;
+        private string _lastResultPng;
         private List<RedesignPreview> _lastPreviews;
         private bool _redesignRunning;
         private bool _redesignCommitted;
@@ -943,6 +944,10 @@ namespace TeampptAddin
                 AddAiBubble("새 슬라이드에 배치 중…");
                 Dispatcher.Invoke(() => PlaceOnNewSlide(localPaths));
                 AddAiBubble("배치 완료! 새 슬라이드를 확인해보세요.");
+
+                var resultPng = SlideCaptureService.CaptureCurrentSlide()?.PngPath;
+                _lastResultPng = resultPng;
+                Dispatcher.Invoke(() => _chatStack.Children.Add(BuildCritiqueButton()));
             }
             catch (Exception ex)
             {
@@ -954,6 +959,44 @@ namespace TeampptAddin
                 _redesignRunning = false;
                 _chatScroll.ScrollToBottom();
             }
+        }
+
+        private Border BuildCritiqueButton()
+        {
+            var border = new Border
+            {
+                Background = ThemeResources.BgChip, CornerRadius = new CornerRadius(10),
+                Margin = new Thickness(12, 4, 12, 8), Padding = new Thickness(12, 8, 12, 8),
+                Cursor = Cursors.Hand,
+                Child = new TextBlock
+                {
+                    Text = "\U0001f50d 디자이너 검수 받기", FontSize = 12, FontWeight = FontWeights.SemiBold,
+                    Foreground = new SolidColorBrush(Color.FromRgb(96, 165, 250)),
+                    FontFamily = ThemeResources.FontBase, HorizontalAlignment = HorizontalAlignment.Center
+                }
+            };
+            border.MouseLeftButtonUp += async (s, e) => await RunCritiqueAsync();
+            return border;
+        }
+
+        private async Task RunCritiqueAsync()
+        {
+            if (_recommend == null || _lastRecoResult == null || string.IsNullOrEmpty(_lastResultPng)) return;
+            if (_redesignRunning) return;
+            _redesignRunning = true;
+            try
+            {
+                AddAiBubble("실무 디자이너가 검수 중…");
+                var c = await _recommend.CritiqueAsync(_lastResultPng, _lastRecoResult);
+                AddAiBubble($"검수 결과: {c.Score}점 — {c.Verdict}\n병목: {c.Bottleneck} · {c.Suggestion}");
+                Dispatcher.Invoke(() => _chatStack.Children.Add(BuildTracePanel()));
+            }
+            catch (Exception ex)
+            {
+                AddAiBubble($"검수 중 오류: {ex.Message}");
+                Logger.Log($"[Critique] 실패: {ex}");
+            }
+            finally { _redesignRunning = false; _chatScroll.ScrollToBottom(); }
         }
 
         private void PlaceOnNewSlide(List<string> pptxPaths)
