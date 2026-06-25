@@ -57,6 +57,7 @@ namespace TeampptAddin
         private RedesignService _redesign;
         private RecommendationService _recommend;
         private CombinationRecommendation _lastRecommendation;
+        private RecommendationResult _lastRecoResult;
         private List<RedesignPreview> _lastPreviews;
         private bool _redesignRunning;
         private bool _redesignCommitted;
@@ -757,8 +758,9 @@ namespace TeampptAddin
             try
             {
                 AddAiBubble("현재 초안에 어울리는 에셋 조합을 찾아볼게요.");
-                var rec = await _recommend.RunAsync(msg => Dispatcher.Invoke(() => AddAiBubble(msg)));
-                ShowRecommendation(rec);
+                var result = await _recommend.RunAsync(msg => Dispatcher.Invoke(() => AddAiBubble(msg)));
+                _lastRecoResult = result;
+                ShowRecommendation(result.Recommendation);
             }
             catch (Exception ex)
             {

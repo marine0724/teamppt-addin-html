@@ -15,6 +15,7 @@ namespace TeampptAddin
         private readonly SupabaseClient _supa;
         private readonly RemoteAssetCache _thumbs;
         private readonly RecommendationCache _cache = new RecommendationCache();
+        public List<string> LastRetrieveLines { get; } = new List<string>();
 
         public CombinationCandidateProvider(EmbeddingService embed, SupabaseClient supa, RemoteAssetCache thumbs)
         { _embed = embed; _supa = supa; _thumbs = thumbs; }
@@ -48,6 +49,7 @@ namespace TeampptAddin
 
             try
             {
+                LastRetrieveLines.Clear();
                 var vector = await _embed.EmbedAsync(query).ConfigureAwait(false);
                 var result = new Dictionary<string, List<HeaderAsset>>();
                 var all = new List<HeaderAsset>();
@@ -59,6 +61,7 @@ namespace TeampptAddin
                     result[kind] = list;
                     all.AddRange(list);
                     Logger.Log($"[Combo] kind={kind} 후보 {list.Count}개");
+                    LastRetrieveLines.Add($"{kind} {list.Count}개");
                     foreach (var a in list)
                     {
                         if (a.Extra != null && a.Extra.TryGetValue("remote_thumb", out var rt) && _thumbs != null)

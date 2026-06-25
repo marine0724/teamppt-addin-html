@@ -1,13 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace TeampptAddin
 {
-    /// <summary>
-    /// 에셋 조합 추천 오케스트레이터(추천까지만 — 슬라이드 비파괴).
-    /// 읽기(COM 사실) → 이해(LLM) → kind별 벡터 후보 → LLM 조합 선택 → 추천 반환.
-    /// 슬라이드를 배치·수정하지 않는다(배치는 다음 스펙).
-    /// </summary>
     public class RecommendationService
     {
         private readonly GeminiAiService _gemini;
@@ -25,7 +21,7 @@ namespace TeampptAddin
             _recommender = new CombinationRecommender(_gemini);
         }
 
-        public async Task<CombinationRecommendation> RunAsync(Action<string> progress)
+        public async Task<RecommendationResult> RunAsync(Action<string> progress)
         {
             progress("초안 읽는 중…");
             var profile = DraftSlideReader.ReadCurrentSlide();
@@ -41,7 +37,29 @@ namespace TeampptAddin
 
             progress("조합 고르는 중…");
             var rec = await _recommender.RecommendAsync(u, pool);
-            return rec;
+
+            var trace = new RecommendationTrace
+            {
+                UnderstandReasoning = u.Reasoning,
+                RetrieveLines = _candidates.LastRetrieveLines,
+                ComposeReasoning = rec.Reasoning,
+                Unmet = rec.Unmet
+            };
+            foreach (var line in trace.ToReadableLines()) Logger.Log("[Trace] " + line);
+
+            return new RecommendationResult
+            {
+                Recommendation = rec, Trace = trace, DraftPngPath = png, Understanding = u
+            };
+        }
+
+        public async Task<DesignCritique> CritiqueAsync(string resultPng, RecommendationResult prior)
+        {
+            var critic = new DesignCritiqueService(_gemini);
+            var c = await critic.CritiqueAsync(resultPng, prior.DraftPngPath, prior.Understanding, prior.Recommendation);
+            prior.Trace.Critique = c;
+            foreach (var line in prior.Trace.ToReadableLines()) Logger.Log("[Trace] " + line);
+            return c;
         }
     }
 }

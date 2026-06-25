@@ -9,6 +9,14 @@ namespace TeampptAddin
         public double Confidence { get; set; }
     }
 
+    public class RecommendationResult
+    {
+        public CombinationRecommendation Recommendation { get; set; }
+        public RecommendationTrace Trace { get; set; }
+        public string DraftPngPath { get; set; }
+        public DraftUnderstanding Understanding { get; set; }
+    }
+
     public class CombinationRecommendation
     {
         public string Purpose { get; set; } = "";
