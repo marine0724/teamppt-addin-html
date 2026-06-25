@@ -79,7 +79,7 @@ namespace TeampptAddin
 - slideKind: cover/toc/body/section/end 중 하나.
 - purpose: 이 슬라이드의 의도·목적 한 문장 (예: '3개 핵심 기능을 동등 비교').
 - neededCombination: 필요한 에셋 조합 수. cover/end면 {slide:1, header:0, layout:0, component:0}. body/section이면 {slide:0, header:1, layout:1, component:N} — N은 본문 부품 수(카드·블록 개수, counts·materials 기준). 슬롯 채우기가 아니라 '몇 종류·몇 개가 필요한가' 판단만.
-- reasoning: 위 판단(특히 slideKind·neededCombination)을 *왜* 그렇게 내렸는지 한두 문장. 근거가 보이게.
+- reasoning: **반드시 한국어 존대말**로, 이 초안을 어떻게 읽었는지 담백한 전문가 톤 1~2문장. slideKind·neededCombination 판단 근거를 밝히고, **추출(counts/materials)에서 애매했거나 자신 없던 부분이 있으면 솔직히** 말해라. '문제없음' 식의 무난한 답 금지.
 모르면 지어내지 말고 보수적으로.";
         }
     }
