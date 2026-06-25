@@ -47,6 +47,7 @@ namespace TeampptAddin
         public string SlideKind { get; set; } = "";
         public string Purpose { get; set; } = "";
         public NeededCombination NeededCombination { get; set; } = new NeededCombination();
+        public string Reasoning { get; set; } = "";
     }
 
     public class NeededCombination

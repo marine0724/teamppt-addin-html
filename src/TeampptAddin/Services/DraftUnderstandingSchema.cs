@@ -45,6 +45,7 @@ namespace TeampptAddin
                     ["matchIntent"] = Str(),
                     ["slideKind"] = new JObject { ["type"] = "string", ["enum"] = new JArray { "cover", "toc", "body", "section", "end" } },
                     ["purpose"] = Str(),
+                    ["reasoning"] = Str(),
                     ["neededCombination"] = new JObject
                     {
                         ["type"] = "object",
@@ -56,7 +57,7 @@ namespace TeampptAddin
                         ["required"] = new JArray { "slide", "header", "layout", "component" }
                     }
                 },
-                ["required"] = new JArray { "materials", "counts", "layoutShape", "designSummary", "dominantColors", "matchIntent", "slideKind", "purpose", "neededCombination" }
+                ["required"] = new JArray { "materials", "counts", "layoutShape", "designSummary", "dominantColors", "matchIntent", "slideKind", "purpose", "reasoning", "neededCombination" }
             };
         }
 
@@ -78,6 +79,7 @@ namespace TeampptAddin
 - slideKind: cover/toc/body/section/end 중 하나.
 - purpose: 이 슬라이드의 의도·목적 한 문장 (예: '3개 핵심 기능을 동등 비교').
 - neededCombination: 필요한 에셋 조합 수. cover/end면 {slide:1, header:0, layout:0, component:0}. body/section이면 {slide:0, header:1, layout:1, component:N} — N은 본문 부품 수(카드·블록 개수, counts·materials 기준). 슬롯 채우기가 아니라 '몇 종류·몇 개가 필요한가' 판단만.
+- reasoning: 위 판단(특히 slideKind·neededCombination)을 *왜* 그렇게 내렸는지 한두 문장. 근거가 보이게.
 모르면 지어내지 말고 보수적으로.";
         }
     }

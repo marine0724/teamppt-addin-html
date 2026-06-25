@@ -44,6 +44,7 @@ namespace TeampptAddin
                 MatchIntent = o["matchIntent"]?.ToString() ?? "",
                 SlideKind = o["slideKind"]?.ToString() ?? "",
                 Purpose = o["purpose"]?.ToString() ?? "",
+                Reasoning = o["reasoning"]?.ToString() ?? "",
                 NeededCombination = o["neededCombination"] is JObject nc
                     ? new NeededCombination
                     {
