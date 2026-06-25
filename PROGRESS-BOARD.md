@@ -5,6 +5,9 @@
 > 계층: **나라 > 대지 > 숲 > 나무 > 잎** (2026-06-22 재정립)
 > 최종 갱신: 2026-06-25 · 현재 작업: **판단 파이프라인 구현 중 — Task 1~3 완료·커밋, 다음 Task 4부터.** 추천→배치 동작 확인 완료. B1·R1 완료. **🔴 배포 버그 발견·수정·재릴리스 완료(install.bat robocopy, 아래 R2).**
 
+### ▶ 다음 세션 시작점
+**판단 파이프라인 Task 4-5** (Gemini 다중이미지 입력 + 구성기 멀티모달화). `실행프롬프트.md`를 읽고 Task 4부터 시작. 브랜치 `feat/asset-combination-recommendation`.
+
 ---
 
 ## 🌍 나라 — 제품 정체성: **바이브 디자이닝**
@@ -69,19 +72,17 @@
 ## 🚀 새 세션 실행 프롬프트 (이걸로 시작하면 바로 이어받음)
 
 ```
-PROGRESS-BOARD.md를 먼저 읽어줘. "에셋 조합 추천"(Route B 1단계)은 코드
-구현이 끝났고(브랜치 feat/asset-combination-recommendation), 지금은
-PowerPoint 수동 검증 단계야. B1·R1(자동배포)은 끝났어.
+PROGRESS-BOARD.md를 먼저 읽어줘. 판단 파이프라인 구현 중이야.
+Task 1~3(Trace/Critique 모델 + 이해·구성 reasoning) 완료·커밋됨.
 
-내가 직접 검증할 것 (도와줘):
-1) Supabase SQL Editor에서 docs/SUPABASE-SETUP.md의 match_assets 재실행
-   (기존 2-인자 오버로드 DROP 후 CREATE)
-2) PowerPoint에서 인제스트 버튼으로 번들 재인제스트 (4분류 스키마 반영)
-3) 본문/표지 슬라이드에서 "AI 리디자인" 바 클릭 → 추천 조합 카드 확인
+지금 할 일: Task 4-5 (Gemini 다중이미지 입력 + 구성기 멀티모달화).
+실행프롬프트.md를 읽고 Task 4부터 시작해줘.
+브랜치: feat/asset-combination-recommendation.
 
-검증이 깨지면 systematic-debugging으로 원인부터. 통과하면 다음 두 갈래 중
-선택: (A) 다음 스펙 "② 배치 = 빈 템플릿 조립" 설계 착수, 또는
-(B) 통짜 리디자인(RunRedesignAsync, 현재 버튼 미연결) 테스트용 배선.
+빌드 주의: 새 .cs는 TeampptAddin.csproj의 <Compile Include>에 수동 등록
+필수(old-style csproj). 단위테스트 = 관리자 MSBuild 솔루션 빌드
+(/p:RegisterForComInterop=false) → dotnet test --no-build
+-p:BuildProjectReferences=false --filter.
 
 불변 원칙: 사실=COM/벡터, 판단=LLM(텍스트 생성 금지). API 키 문서/커밋
 평문 금지. 빌드·검증은 CLAUDE.md 절차(관리자 MSBuild + DLL 타임스탬프 +
