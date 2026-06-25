@@ -21,6 +21,7 @@ namespace TeampptAddin
             }
 
             rec.Unmet = (o["unmet"] as JArray)?.Select(t => t.ToString()).ToList() ?? new List<string>();
+            rec.Reasoning = o["reasoning"]?.ToString() ?? "";
             return rec;
         }
 

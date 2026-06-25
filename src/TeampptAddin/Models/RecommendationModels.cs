@@ -18,5 +18,6 @@ namespace TeampptAddin
         public RecommendedSlot Layout { get; set; }                         // body/section
         public List<RecommendedSlot> Components { get; set; } = new List<RecommendedSlot>();
         public List<string> Unmet { get; set; } = new List<string>();       // 미충족 종류명
+        public string Reasoning { get; set; } = "";
     }
 }

@@ -26,9 +26,10 @@ namespace TeampptAddin
                     ["header"] = Pick(),
                     ["layout"] = Pick(),
                     ["components"] = new JObject { ["type"] = "array", ["items"] = Pick() },
-                    ["unmet"] = new JObject { ["type"] = "array", ["items"] = new JObject { ["type"] = "string" } }
+                    ["unmet"] = new JObject { ["type"] = "array", ["items"] = new JObject { ["type"] = "string" } },
+                    ["reasoning"] = new JObject { ["type"] = "string" }
                 },
-                ["required"] = new JArray { "components", "unmet" }
+                ["required"] = new JArray { "components", "unmet", "reasoning" }
             };
         }
 
@@ -42,7 +43,8 @@ namespace TeampptAddin
 - 우선순위: 재료 양(capacity)·종류(material_kinds) 적합 > 같은 source_deck(일관성) 선호.
 - 적합한 후보가 없으면 해당 종류는 비워 두고(null/빈 배열) unmet 배열에 종류명을 넣는다. 욱여넣기 금지.
 - fitNote는 왜 골랐는지 짧게(한 문장). 텍스트 내용을 생성하지 마라.
-- confidence는 0~1.";
+- confidence는 0~1.
+- reasoning: 이 조합을 고른 이유와, 특정 종류를 미충족 처리했다면 *왜* 그런지 한두 문장.";
         }
     }
 }

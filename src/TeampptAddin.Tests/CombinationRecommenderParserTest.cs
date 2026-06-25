@@ -23,7 +23,8 @@ namespace TeampptAddin.Tests
               ""header"":{""file"":""h1.pptx"",""fitNote"":""제목"",""confidence"":0.88},
               ""layout"":{""file"":""l1.pptx"",""fitNote"":""3단"",""confidence"":0.82},
               ""components"":[{""file"":""c1.pptx"",""fitNote"":""카드"",""confidence"":0.79}],
-              ""unmet"":[]
+              ""unmet"":[],
+              ""reasoning"":""본문 항목 나열이라 좌측번호 레이아웃 선택""
             }";
             var r = CombinationRecommenderParser.Parse(llm, Pool());
             Assert.Equal("헤더1", r.Header.Asset.Name);
@@ -31,6 +32,7 @@ namespace TeampptAddin.Tests
             Assert.Equal("레이아웃1", r.Layout.Asset.Name);
             Assert.Single(r.Components);
             Assert.Equal("카드", r.Components[0].Asset.Name);
+            Assert.Equal("본문 항목 나열이라 좌측번호 레이아웃 선택", r.Reasoning);
         }
 
         [Fact]
