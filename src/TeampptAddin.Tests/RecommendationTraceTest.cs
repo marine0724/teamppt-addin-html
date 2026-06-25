@@ -17,7 +17,8 @@ namespace TeampptAddin.Tests
                 Unmet = new List<string> { "component" },
                 Critique = new DesignCritique
                 {
-                    Score = 78, Verdict = "여백 답답", Bottleneck = "에셋",
+                    Score = 78, MaterialFit = 78, DesignConcept = 65,
+                    Verdict = "여백 답답", Bottleneck = "에셋",
                     Suggestion = "차트 외 컴포넌트 확보", Reasoning = "위계는 좋음"
                 }
             };
@@ -27,8 +28,23 @@ namespace TeampptAddin.Tests
             Assert.Contains("본문, 비전 설명형", text);
             Assert.Contains("header 5(sim 0.70~0.72)", text);
             Assert.Contains("component", text);
-            Assert.Contains("78", text);
+            Assert.Contains("재료적합 78", text);
+            Assert.Contains("디자인·컨셉 65", text);
             Assert.Contains("에셋", text);
+        }
+
+        [Fact]
+        public void Critique_Line_Shows_Both_Scores()
+        {
+            var trace = new RecommendationTrace
+            {
+                Critique = new DesignCritique
+                {
+                    MaterialFit = 81, DesignConcept = 72, Verdict = "평범", Bottleneck = "에셋품질", Suggestion = "대비 강화"
+                }
+            };
+            var lines = trace.ToReadableLines();
+            Assert.Contains(lines, l => l.Contains("재료적합 81") && l.Contains("디자인·컨셉 72"));
         }
 
         [Fact]

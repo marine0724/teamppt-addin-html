@@ -23,7 +23,7 @@ namespace TeampptAddin
                 lines.Add("   미충족: " + string.Join(", ", Unmet));
             if (Critique != null)
             {
-                lines.Add($"⑤ 검수: {Critique.Score}점 — {Critique.Verdict}");
+                lines.Add($"⑤ 검수: 재료적합 {Critique.MaterialFit} / 디자인·컨셉 {Critique.DesignConcept} — {Critique.Verdict}");
                 if (!string.IsNullOrEmpty(Critique.Bottleneck))
                     lines.Add("   병목: " + Critique.Bottleneck + " · " + Critique.Suggestion);
             }

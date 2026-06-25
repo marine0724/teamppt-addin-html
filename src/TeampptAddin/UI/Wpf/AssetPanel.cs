@@ -990,7 +990,8 @@ namespace TeampptAddin
             {
                 AddAiBubble("실무 디자이너가 검수 중…");
                 var c = await _recommend.CritiqueAsync(_lastResultPng, _lastRecoResult);
-                AddAiBubble($"검수 결과: {c.Score}점 — {c.Verdict}\n병목: {c.Bottleneck} · {c.Suggestion}"
+                AddAiBubble($"검수 결과 — 재료적합 {c.MaterialFit} / 디자인·컨셉 {c.DesignConcept}\n" +
+                            $"{c.Verdict}\n병목: {c.Bottleneck} · {c.Suggestion}"
                     + (string.IsNullOrEmpty(c.Reasoning) ? "" : $"\n{c.Reasoning}"));
                 Dispatcher.Invoke(() => _chatStack.Children.Add(BuildTracePanel()));
             }
