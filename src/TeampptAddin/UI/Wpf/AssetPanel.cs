@@ -56,6 +56,8 @@ namespace TeampptAddin
         private Border _redesignBar;
         private RedesignService _redesign;
         private RecommendationService _recommend;
+        private DeckStructureService _deckStructure;
+        private bool _deckRunning;
         private CombinationRecommendation _lastRecommendation;
         private RecommendationResult _lastRecoResult;
         private string _lastResultPng;
@@ -425,6 +427,7 @@ namespace TeampptAddin
             var bottom = new StackPanel();
             bottom.Children.Add(BuildShareBar());
             bottom.Children.Add(BuildRedesignBar());
+            bottom.Children.Add(BuildDeckRedesignBar());
             bottom.Children.Add(BuildInputBar());
             Grid.SetRow(bottom, 1);
             grid.Children.Add(bottom);
@@ -697,6 +700,91 @@ namespace TeampptAddin
             _redesignBar.Child = row;
             _redesignBar.MouseLeftButtonUp += RedesignBarClick;
             return _redesignBar;
+        }
+
+        // ── Route C: 덱 리디자인 (초안 파일 전체 구조 분석) ──
+
+        private Border BuildDeckRedesignBar()
+        {
+            var bar = new Border
+            {
+                Background = ThemeResources.BgChip,
+                CornerRadius = new CornerRadius(10),
+                Margin = new Thickness(10, 8, 10, 0),
+                Padding = new Thickness(12, 8, 12, 8),
+                Cursor = Cursors.Hand
+            };
+            var row = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
+            row.Children.Add(new TextBlock { Text = "\U0001F4C2", FontSize = 13, Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center });
+            row.Children.Add(new TextBlock
+            {
+                Text = "리디자인 (초안 파일)", FontSize = 12, FontWeight = FontWeights.SemiBold,
+                Foreground = ThemeResources.TextAccent, FontFamily = ThemeResources.FontBase,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+            bar.Child = row;
+            bar.MouseLeftButtonUp += async (s, e) => await RunDeckRedesignAsync();
+            return bar;
+        }
+
+        private async Task RunDeckRedesignAsync()
+        {
+            if (_deckRunning) return;
+            if (_deckStructure == null) { AddAiBubble("리디자인은 Gemini 설정이 있어야 동작해요."); return; }
+
+            var dlg = new System.Windows.Forms.OpenFileDialog
+            {
+                Filter = "PowerPoint 초안 (*.pptx)|*.pptx",
+                Title = "리디자인할 초안 파일 선택"
+            };
+            if (dlg.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+
+            _deckRunning = true;
+            if (_emptyState != null && _emptyState.Visibility == Visibility.Visible)
+                _emptyState.Visibility = Visibility.Collapsed;
+            try
+            {
+                AddAiBubble("초안을 읽고 있어요…");
+                var profiles = DeckFileReader.ReadFile(dlg.FileName);   // COM, STA — UI 스레드에서 동기 호출
+                if (profiles.Count == 0) { AddAiBubble("슬라이드를 읽지 못했어요. 파일을 확인해주세요."); return; }
+
+                AddAiBubble($"{profiles.Count}장을 분석하고 있어요…");
+                var structure = await _deckStructure.AnalyzeAsync(profiles);   // STA 유지 — ConfigureAwait(false) 금지
+                _chatStack.Children.Add(BuildStructureBox(structure));
+                _chatScroll.ScrollToBottom();
+            }
+            catch (Exception ex)
+            {
+                AddAiBubble($"구조 분석 중 오류: {ex.Message}");
+                Logger.Log($"[DeckRedesign] 실패: {ex}");
+            }
+            finally { _deckRunning = false; }
+        }
+
+        private Border BuildStructureBox(DeckStructure structure)
+        {
+            var panel = new StackPanel();
+            panel.Children.Add(new TextBlock
+            {
+                Text = "초안 구조", FontSize = 12, FontWeight = FontWeights.Bold,
+                Foreground = ThemeResources.TextAccent, FontFamily = ThemeResources.FontBase,
+                Margin = new Thickness(0, 0, 0, 6)
+            });
+            foreach (var line in DeckStructureFormatter.ToSummaryLines(structure))
+                panel.Children.Add(new TextBlock
+                {
+                    Text = line, FontSize = 12, FontFamily = ThemeResources.FontBase,
+                    Foreground = ThemeResources.TextMain, TextWrapping = TextWrapping.Wrap,
+                    Margin = new Thickness(0, 1, 0, 1)
+                });
+            return new Border
+            {
+                Background = ThemeResources.BgChip,
+                CornerRadius = new CornerRadius(10),
+                Margin = new Thickness(10, 8, 10, 0),
+                Padding = new Thickness(14, 10, 14, 10),
+                Child = panel
+            };
         }
 
         private async void RedesignBarClick(object sender, MouseButtonEventArgs e)
@@ -2844,13 +2932,14 @@ namespace TeampptAddin
             return new StyleConfig { Palettes = palettes, Fonts = fonts };
         }
 
-        public void InitAi(IAiService aiService, StyleConfig styles, RemoteAssetCache remoteCache = null, RedesignService redesign = null, RecommendationService recommend = null)
+        public void InitAi(IAiService aiService, StyleConfig styles, RemoteAssetCache remoteCache = null, RedesignService redesign = null, RecommendationService recommend = null, DeckStructureService deckStructure = null)
         {
             _aiService = aiService;
             _styleConfig = styles;
             _remoteCache = remoteCache;
             _redesign = redesign;
             _recommend = recommend;
+            _deckStructure = deckStructure;
             PopulateStylePanel();
         }
 
