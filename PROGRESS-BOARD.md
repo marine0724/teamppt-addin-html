@@ -3,11 +3,10 @@
 > 이 파일 하나만 열어두면 "지금 어디서 뭘 하는지" 보입니다. Claude가 매 세션 함께 유지.
 > **기록용 아카이브가 아니라 "지금 여기" 작업 보드.** 끝난 잎(Task)은 지우고 교체, 숲·나무 단위는 끝날 때까지 유지. (규칙: CLAUDE.md)
 > 계층: **나라 > 대지 > 숲 > 나무 > 잎** (2026-06-22 재정립)
-> 최종 갱신: 2026-06-25 · 현재 작업: **판단 파이프라인 코드 전체 완료(Task 1~10). 후속 "독백+병목진단" 설계·플랜 확정, 구현 대기.** B1·R1·R2 완료.
+> 최종 갱신: 2026-06-25 · 현재 작업: **독백+병목진단 Task 1~5 구현·커밋 완료. Task 6(PPT 수동검증) 대기.** B1·R1·R2 완료.
 
-### ▶ 다음 세션 시작점
-**단계별 독백 + 병목 진단 정밀화** (Sonnet 실행). reasoning 한국어 독백 버블 + 검색 유사도 노출 + 검수 병목 4분류. `실행프롬프트.md` 붙여넣어 Task 1부터. PPT 수동검증은 이 플랜 Task 6에서 직전 판단 파이프라인과 함께. 브랜치 `feat/asset-combination-recommendation`.
-> 설계: [독백+병목진단](docs/superpowers/specs/2026-06-25-step-narration-bottleneck-diagnosis-design.md) · 플랜: [구현 플랜](docs/superpowers/plans/2026-06-25-step-narration-bottleneck-diagnosis.md)
+### ▶ 다음 작업
+**Task 6: PPT 수동 검증.** PowerPoint 재시작 → 본문 슬라이드에서 "AI 리디자인" → 추천 → 배치 → "🔍 디자이너 검수 받기". 체크: ① 한국어 독백 버블 실시간 ② 유사도 표시 ③ 존대말·약점 솔직 ④ 병목 4분류 ⑤ debug.log 한국어 reasoning.
 
 ---
 
@@ -45,19 +44,19 @@
 
 ---
 
-## 🍃 잎 — 지금 작업: 단계별 독백 + 병목 진단 정밀화 — **설계·플랜 확정, 구현 대기**
+## 🍃 잎 — 지금 작업: 단계별 독백 + 병목 진단 정밀화 — **Task 1~5 구현 완료, PPT 수동 검증 대기**
 
 > **왜:** 판단 파이프라인(Task 1~10) 코드 완료·빌드 성공. 그러나 reasoning이 영어·대충이고, 진단이 "구체적으로 뭐가 병목인지" 못 짚음. 목표 = 추천 한 번 독백만 보고 기능/데이터추출/에셋부족/에셋품질 중 뭔지 바로 읽히게. **기능 문제가 사라질 때까지.**
 > 설계: [독백+병목진단](docs/superpowers/specs/2026-06-25-step-narration-bottleneck-diagnosis-design.md) · 플랜: [구현 플랜](docs/superpowers/plans/2026-06-25-step-narration-bottleneck-diagnosis.md) · 실행: [실행프롬프트.md](실행프롬프트.md)
 
 | # | 무엇 | 상태 |
 |---|------|------|
-| 1 | 검색 유사도 Extra·trace 노출 (TDD) | ◀ 다음 |
-| 2 | thinkingBudget 파라미터화 + 상향(768/2048) | ⬜ |
-| 3 | 이해·구성 reasoning 한국어 재작성 | ⬜ |
-| 4 | 검수 병목 4분류 + trace요약 입력 (TDD) | ⬜ |
-| 5 | 실시간 버블 독백 배선 | ⬜ |
-| 6 | PPT 수동 검증 (판단 파이프라인 + 독백 통합) | ⬜ |
+| 1 | 검색 유사도 Extra·trace 노출 (TDD) | ✅ |
+| 2 | thinkingBudget 파라미터화 + 상향(768/2048) | ✅ |
+| 3 | 이해·구성 reasoning 한국어 재작성 | ✅ |
+| 4 | 검수 병목 4분류 + trace요약 입력 (TDD) | ✅ |
+| 5 | 실시간 버블 독백 배선 | ✅ |
+| 6 | PPT 수동 검증 (판단 파이프라인 + 독백 통합) | ◀ 다음 |
 
 > **빌드/테스트 절차(이번 세션 확립):** 새 .cs는 `TeampptAddin.csproj`의 `<Compile Include>`에 **수동 등록 필수**(old-style csproj). 단위테스트 = 관리자 MSBuild 솔루션 빌드(`/p:RegisterForComInterop=false`) → `dotnet test --no-build -p:BuildProjectReferences=false --filter`. (플랜의 "dotnet test 1순위"는 단독으론 NuGet 참조 못 풀어 실패.)
 
@@ -70,8 +69,10 @@
 ## 🚀 새 세션 실행 프롬프트 (이걸로 시작하면 바로 이어받음)
 
 ```
-PROGRESS-BOARD.md를 먼저 읽어줘. 단계별 독백 + 병목 진단 정밀화 구현이야.
-실행프롬프트.md를 읽고 Task 1부터 시작해줘.
+PROGRESS-BOARD.md를 먼저 읽어줘.
+독백+병목진단 Task 1~5 코드 완료·커밋됨. Task 6(PPT 수동검증)을 해야 해.
+PowerPoint 재시작 후 "AI 리디자인" → 추천 → 배치 → 검수 흐름에서:
+① 한국어 독백 버블 ② 유사도 표시 ③ 병목 4분류 ④ debug.log reasoning 확인.
 브랜치: feat/asset-combination-recommendation.
 ```
 

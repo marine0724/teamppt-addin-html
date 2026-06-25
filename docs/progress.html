@@ -28,7 +28,7 @@
 
 <div class="abar">
   <span class="atag atag-dev">진행보드</span>
-  <span class="abar-text">지금 여기 · PROGRESS-BOARD.md 기준 · 최종 갱신 2026-06-24</span>
+  <span class="abar-text">지금 여기 · PROGRESS-BOARD.md 기준 · 최종 갱신 2026-06-25</span>
 </div>
 
 <div class="section-wrap">
@@ -58,63 +58,53 @@
   <div style="background:var(--hero);border-radius:var(--r);padding:28px 32px;margin-bottom:14px;position:relative;overflow:hidden">
     <div style="position:absolute;inset:0;background:radial-gradient(ellipse 60% 80% at 100% 50%,rgba(49,130,246,.15),transparent 70%);pointer-events:none"></div>
     <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#7eb8ff;margin-bottom:12px">현재 상태</div>
-    <div style="font-size:20px;font-weight:800;color:#fff;letter-spacing:-.5px;margin-bottom:8px">에셋 조합 추천 — 코드 완료, 수동 검증 대기</div>
+    <div style="font-size:20px;font-weight:800;color:#fff;letter-spacing:-.5px;margin-bottom:8px">독백 + 병목 진단 정밀화</div>
     <div style="font-size:14px;color:rgba(255,255,255,.6);line-height:1.75;margin-bottom:16px">
-      10커밋 · 110 tests · 추천 엔진 + UI 카드 + 오케스트레이터 구현 완료.<br>
-      수동 검증 절차: ① Supabase SQL 재실행 → ② PPT 재인제스트 → ③ AI 리디자인 버튼으로 추천 카드 동작 확인.
+      판단 파이프라인 코드 전체 완료(Task 1~10). 이제 reasoning을 한국어 독백으로 실시간 버블에 흘리고,<br>
+      검색 유사도·검수 병목 4분류로 "기능 문제가 사라질 때까지" 가리는 진단 계기판 구현.
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <span style="background:rgba(49,130,246,.25);border:1px solid rgba(49,130,246,.4);color:#7eb8ff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:6px">feat/asset-combination-recommendation</span>
-      <span style="background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.3);color:#34d399;font-size:11px;font-weight:700;padding:4px 12px;border-radius:6px">🔵 수동 검증 대기</span>
+      <span style="background:rgba(49,130,246,.25);border:1px solid rgba(49,130,246,.4);color:#7eb8ff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:6px">🔵 독백+병목진단 Task 1 대기</span>
     </div>
   </div>
 
-  <!-- 수동 검증 절차 안내 -->
-  <div style="background:var(--white);border:1.5px solid #fde68a;border-radius:var(--r);padding:20px 24px;margin-bottom:20px;box-shadow:var(--shadow)">
-    <div style="font-size:12px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:12px">⚠ 사용자 조치 필요 — 수동 검증 3단계</div>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <div style="display:flex;align-items:flex-start;gap:12px;font-size:13px;color:var(--text2)">
-        <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#fde68a;color:#92400e;font-size:11px;font-weight:800;flex-shrink:0;margin-top:1px">1</span>
-        Supabase SQL Editor에서 <code style="background:#f0f2f5;padding:2px 7px;border-radius:5px;font-size:12px">match_assets</code> 재실행 (기존 2-인자 오버로드 DROP 후 CREATE — <code style="background:#f0f2f5;padding:2px 7px;border-radius:5px;font-size:12px">docs/SUPABASE-SETUP.md</code> 참고)
-      </div>
-      <div style="display:flex;align-items:flex-start;gap:12px;font-size:13px;color:var(--text2)">
-        <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#fde68a;color:#92400e;font-size:11px;font-weight:800;flex-shrink:0;margin-top:1px">2</span>
-        PowerPoint에서 인제스트 버튼으로 번들 <strong style="color:var(--text)">재인제스트</strong> (4분류 스키마 반영)
-      </div>
-      <div style="display:flex;align-items:flex-start;gap:12px;font-size:13px;color:var(--text2)">
-        <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#fde68a;color:#92400e;font-size:11px;font-weight:800;flex-shrink:0;margin-top:1px">3</span>
-        본문·표지 슬라이드 각각에서 "AI 리디자인" 바 클릭 → 추천 조합 카드 정상 표시 확인
-      </div>
-    </div>
-  </div>
-
-  <!-- Task 큐 -->
-  <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin:28px 0 12px">Task 큐</div>
+  <!-- Task 큐 — 판단 파이프라인 -->
+  <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin:28px 0 12px">독백 + 병목 진단 Task 큐</div>
   <div style="display:flex;flex-direction:column;gap:10px">
 
     <div style="background:var(--white);border-radius:var(--r-sm);padding:18px 22px;border:1.5px solid var(--accent);display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:16px;box-shadow:var(--shadow)">
       <div style="font-size:13px;font-weight:800;color:var(--accent)">#1</div>
       <div>
-        <div style="font-size:14px;font-weight:700;margin-bottom:3px">PowerPoint 수동 검증</div>
-        <div style="font-size:12px;color:var(--text2)">본문/표지 슬라이드에서 에셋 조합 추천 카드 동작 확인</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:3px">검색 유사도 trace 노출</div>
+        <div style="font-size:12px;color:var(--text2)">버리던 similarity를 Extra에 살려 "에셋 부족(양)" 신호 가시화 (TDD)</div>
       </div>
-      <span style="font-size:11px;font-weight:700;background:var(--accent);color:#fff;padding:4px 12px;border-radius:99px;white-space:nowrap">지금 여기</span>
+      <span style="font-size:11px;font-weight:700;background:var(--accent);color:#fff;padding:4px 12px;border-radius:99px;white-space:nowrap">다음</span>
     </div>
 
     <div style="background:var(--white);border-radius:var(--r-sm);padding:18px 22px;border:1px solid var(--border);display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:16px;box-shadow:var(--shadow)">
-      <div style="font-size:13px;font-weight:800;color:var(--text3)">#2</div>
+      <div style="font-size:13px;font-weight:800;color:var(--text3)">#2-3</div>
       <div>
-        <div style="font-size:14px;font-weight:700;margin-bottom:3px">다음 스펙 — 배치 (빈 템플릿)</div>
-        <div style="font-size:12px;color:var(--text2)">추천 조합을 빈 템플릿으로 슬라이드에 배치하는 실행 엔진</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:3px">thinkingBudget 상향 + 프롬프트 한국어 재작성</div>
+        <div style="font-size:12px;color:var(--text2)">이해·구성 768, 검수 2048 + reasoning 한국어 존대말·약점 솔직</div>
       </div>
-      <span style="font-size:11px;font-weight:700;background:var(--accent-light);color:var(--accent);padding:4px 12px;border-radius:99px;white-space:nowrap">다음</span>
+      <span style="font-size:11px;font-weight:700;background:var(--accent-light);color:var(--accent);padding:4px 12px;border-radius:99px;white-space:nowrap">대기</span>
+    </div>
+
+    <div style="background:var(--white);border-radius:var(--r-sm);padding:18px 22px;border:1px solid var(--border);display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:16px;box-shadow:var(--shadow)">
+      <div style="font-size:13px;font-weight:800;color:var(--text3)">#4-5</div>
+      <div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:3px">검수 병목 4분류 + 실시간 버블 독백</div>
+        <div style="font-size:12px;color:var(--text2)">기능/데이터추출/에셋부족/에셋품질 + 단계별 reasoning 채팅 버블</div>
+      </div>
+      <span style="font-size:11px;font-weight:700;background:var(--accent-light);color:var(--accent);padding:4px 12px;border-radius:99px;white-space:nowrap">대기</span>
     </div>
 
     <div style="background:var(--white);border-radius:var(--r-sm);padding:18px 22px;border:1px solid var(--border);display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:16px;box-shadow:var(--shadow);opacity:.75">
-      <div style="font-size:13px;font-weight:800;color:var(--text3)">#3</div>
+      <div style="font-size:13px;font-weight:800;color:var(--text3)">#6</div>
       <div>
-        <div style="font-size:14px;font-weight:700;margin-bottom:3px">자동 업데이트 배포 완성 (R1)</div>
-        <div style="font-size:12px;color:var(--text2)">코드 완료. 커밋·푸시 → GitHub Release v1.0.0 생성 → version.json 갱신 → end-to-end 검증</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:3px">PPT 수동 검증 (판단 파이프라인 + 독백 통합)</div>
+        <div style="font-size:12px;color:var(--text2)">한국어 독백 버블 · 유사도 표시 · 병목 4분류 · debug.log 확인</div>
       </div>
       <span style="font-size:11px;font-weight:700;background:var(--bg);color:var(--text3);padding:4px 12px;border-radius:99px;white-space:nowrap;border:1px solid var(--border)">대기</span>
     </div>
@@ -127,6 +117,22 @@
 
     <div style="background:var(--green-light);border-radius:var(--r-sm);padding:14px 22px;border:1px solid #a7f3d0;display:flex;justify-content:space-between;align-items:center">
       <div>
+        <span style="font-size:13px;font-weight:700;color:#065f46">판단 파이프라인 전체 (Task 1~10)</span>
+        <span style="font-size:12px;color:#0a7a50;margin-left:10px">Trace·reasoning·멀티모달 구성기·루브릭 검수자·판단 과정 패널·검수 버튼</span>
+      </div>
+      <span style="font-size:11px;font-weight:700;color:#065f46;white-space:nowrap">✓ 완료</span>
+    </div>
+
+    <div style="background:var(--green-light);border-radius:var(--r-sm);padding:14px 22px;border:1px solid #a7f3d0;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <span style="font-size:13px;font-weight:700;color:#065f46">배포 install.bat 버그 수정 (R2)</span>
+        <span style="font-size:12px;color:#0a7a50;margin-left:10px">robocopy 트레일링 백슬래시 → 신규 설치 0개 복사 차단. v1.0.0 자산 재업로드</span>
+      </div>
+      <span style="font-size:11px;font-weight:700;color:#065f46;white-space:nowrap">✓ 완료</span>
+    </div>
+
+    <div style="background:var(--green-light);border-radius:var(--r-sm);padding:14px 22px;border:1px solid #a7f3d0;display:flex;justify-content:space-between;align-items:center">
+      <div>
         <span style="font-size:13px;font-weight:700;color:#065f46">에셋 조합 추천 구현 (Route B 1단계)</span>
         <span style="font-size:12px;color:#0a7a50;margin-left:10px">4분류 스키마 · 초안 이해 · 추천 엔진 · UI 카드 (10커밋, 110 tests)</span>
       </div>
@@ -135,10 +141,10 @@
 
     <div style="background:var(--green-light);border-radius:var(--r-sm);padding:14px 22px;border:1px solid #a7f3d0;display:flex;justify-content:space-between;align-items:center">
       <div>
-        <span style="font-size:13px;font-weight:700;color:#065f46">자동 업데이트 코드 (R1)</span>
-        <span style="font-size:12px;color:#0a7a50;margin-left:10px">UpdateService · updater.bat · 배너 폴링 · install/uninstall 고정경로 재작성 · dist zip 801KB</span>
+        <span style="font-size:13px;font-weight:700;color:#065f46">자동 업데이트 + 배포 (R1)</span>
+        <span style="font-size:12px;color:#0a7a50;margin-left:10px">UpdateService · updater.bat · install/uninstall · GitHub Release v1.0.0 · 팀원 배포</span>
       </div>
-      <span style="font-size:11px;font-weight:700;color:#065f46;white-space:nowrap">✓ 코드 완료</span>
+      <span style="font-size:11px;font-weight:700;color:#065f46;white-space:nowrap">✓ 완료</span>
     </div>
 
     <div style="background:var(--green-light);border-radius:var(--r-sm);padding:14px 22px;border:1px solid #a7f3d0;display:flex;justify-content:space-between;align-items:center">
