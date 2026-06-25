@@ -83,6 +83,8 @@
     <Compile Include="Models\AssetUnderstanding.cs" />
     <Compile Include="Models\DraftModels.cs" />
     <Compile Include="Models\RecommendationModels.cs" />
+    <Compile Include="Models\RecommendationTrace.cs" />
+    <Compile Include="Models\DesignCritique.cs" />
     <Compile Include="Services\ColorHsl.cs" />
     <Compile Include="Services\PaletteRoleMapper.cs" />
     <Compile Include="Services\PaletteGenerator.cs" />
