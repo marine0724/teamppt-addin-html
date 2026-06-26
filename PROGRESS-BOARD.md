@@ -1,14 +1,14 @@
 # 🗺️ TEAMPPT 개발 진행 보드
 
-> **▶ 다음 세션 시작점:** Phase 1 완료(커밋·푸시·검증✅). 다음 = **리디자인 Phase 2(컨셉3)** — 플랜 없음, brainstorming → writing-plans로 플랜부터 작성 후 subagent-driven 실행. (데모 임박 시엔 Phase 1 선택 폴리시 2건을 먼저 처리해도 됨.) 시작은 `실행프롬프트.md`.
+> **▶ 다음 세션 시작점:** **리디자인 Phase 2(컨셉3)** — 플랜 작성·커밋 완료(`9fb9fe0`). subagent-driven으로 **Task 1(ConceptSuggester 로직, TDD)부터 실행 대기**. (데모 임박 시엔 Phase 1 선택 폴리시 2건을 먼저 처리해도 됨.) 플랜: [Phase 2](docs/superpowers/plans/2026-06-26-redesign-phase2-consulting-concept.md).
 
 > 이 파일 하나만 열어두면 "지금 어디서 뭘 하는지" 보입니다. Claude가 매 세션 함께 유지.
 > **기록용 아카이브가 아니라 "지금 여기" 작업 보드.** 끝난 잎(Task)은 지우고 교체, 숲·나무 단위는 끝날 때까지 유지. (규칙: CLAUDE.md)
 > 계층: **나라 > 대지 > 숲 > 나무 > 잎** (2026-06-22 재정립)
-> 최종 갱신: 2026-06-26 · 현재 작업: **리디자인 Phase 1 완료 ✅ (Task 1~3, 최종 리뷰 READY TO MERGE, PPT 수동검증 ✅ 구조박스 정상).** 다음 = Phase 2(컨셉3). 독백+병목진단·B1·R1·R2 완료.
+> 최종 갱신: 2026-06-26 · 현재 작업: **리디자인 Phase 2(컨셉3) 플랜 작성·커밋 완료 (`9fb9fe0`, Task 1·2 분해 — ConceptSuggester 로직 / 칩질문·컨셉카드 UI). 실행 대기.** Phase 1 완료 ✅. 독백+병목진단·B1·R1·R2 완료.
 
 ### ▶ 다음 작업
-**리디자인 Phase 2 (컨셉3)** 진입 — 플랜 작성부터. (또는 데모 전 Phase 1 선택 폴리시 처리: ① 실패 시 _emptyState 복원 ② 실행 중 덱 바 dim.)
+**리디자인 Phase 2 (컨셉3)** 실행 — 플랜 작성·커밋 완료(`9fb9fe0`). subagent-driven으로 **Task 1(ConceptSuggester 로직)부터**. (또는 데모 전 Phase 1 선택 폴리시 처리: ① 실패 시 _emptyState 복원 ② 실행 중 덱 바 dim.)
 
 ---
 
@@ -53,9 +53,9 @@ Phase: 0 두유사도 ──▶ 1 파일진입+덱구조 ──▶ 2 컨셉3 ─
 > **왜:** 구조박스(hero ①)와 박스별 추천(hero ②) 사이의 다리. "어디 쓰나/어떤 느낌" 답 + 구조요약 → LLM이 컨셉 3개 생성 → 선택. 선택 컨셉은 D2로 가볍게 (a) 검색 쿼리 styleTags 가중 (b) unlocked 색/폰트 ConceptResolver override. 깊은 컨셉 엔진은 후순위.
 > 설계: 스펙 "Phase 2 — 컨설팅 컨셉(Step 3)" 절. 신규 = ConceptSuggester(LLM 생성) + 질문/컨셉 카드 UI. 재사용 = DesignConcept 모델·ConceptResolver(적용).
 
-### 🍃 잎 — Phase 2 Task — **플랜 미작성** (다음 세션: brainstorming → writing-plans 먼저)
+### 🍃 잎 — Phase 2 Task — **플랜 작성·커밋 완료 (`9fb9fe0`), 실행 대기**
 
-> 아직 Task 분해 전. `실행프롬프트.md` 붙여넣어 플랜부터 작성 후 subagent-driven 실행. (Phase 1 비차단 폴리시 2건은 데모 임박 시 먼저 처리 가능: ① 실패 시 _emptyState 복원 ② 실행 중 덱 바 dim.)
+> 플랜: [Phase 2 컨설팅 컨셉](docs/superpowers/plans/2026-06-26-redesign-phase2-consulting-concept.md). **Task 1** ConceptSuggester 로직(schema+parser+service, TDD) → **Task 2** 칩 질문 → 컨셉 3카드 → 선택·저장·확정 배너 UI(빌드+수동). 스코프 결정(브레인스토밍): 질문=느낌·용도 칩 / 컨셉 카드 단일선택 / D2는 **저장+확정 배너까지**(실제 검색가중·색폰트 override는 소비자 Phase 3). subagent-driven으로 Task 1부터. (Phase 1 비차단 폴리시 2건은 데모 임박 시 먼저 처리 가능: ① 실패 시 _emptyState 복원 ② 실행 중 덱 바 dim.)
 
 > **빌드/테스트 절차(이번 세션 확립):** 새 .cs는 `TeampptAddin.csproj`의 `<Compile Include>`에 **수동 등록 필수**(old-style csproj). 단위테스트 = 관리자 MSBuild 솔루션 빌드(`/p:RegisterForComInterop=false`) → `dotnet test --no-build -p:BuildProjectReferences=false --filter`. (플랜의 "dotnet test 1순위"는 단독으론 NuGet 참조 못 풀어 실패.)
 
