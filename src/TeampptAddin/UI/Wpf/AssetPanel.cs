@@ -57,6 +57,12 @@ namespace TeampptAddin
         private RedesignService _redesign;
         private RecommendationService _recommend;
         private DeckStructureService _deckStructure;
+        private ConceptSuggester _conceptSuggester;
+        private DeckStructure _lastStructure;
+        private string _selFeeling;
+        private string _selUsage;
+        private DesignConcept _selectedConcept;
+        private bool _conceptRunning;
         private bool _deckRunning;
         private CombinationRecommendation _lastRecommendation;
         private RecommendationResult _lastRecoResult;
@@ -751,6 +757,10 @@ namespace TeampptAddin
                 AddAiBubble($"{profiles.Count}장을 분석하고 있어요…");
                 var structure = await _deckStructure.AnalyzeAsync(profiles);   // STA 유지 — ConfigureAwait(false) 금지
                 _chatStack.Children.Add(BuildStructureBox(structure));
+                _lastStructure = structure;
+                _selFeeling = null; _selUsage = null; _selectedConcept = null;
+                if (_conceptSuggester != null)
+                    _chatStack.Children.Add(BuildConceptQuestionCard());
                 _chatScroll.ScrollToBottom();
             }
             catch (Exception ex)
@@ -784,6 +794,286 @@ namespace TeampptAddin
                 Margin = new Thickness(10, 8, 10, 0),
                 Padding = new Thickness(14, 10, 14, 10),
                 Child = panel
+            };
+        }
+
+        private static readonly string[] FeelingChips = { "신뢰감", "혁신적", "미니멀", "활기찬", "따뜻한", "고급스러운" };
+        private static readonly string[] UsageChips = { "투자유치(IR)", "회사소개", "제품소개", "사내보고", "교육·강의" };
+
+        private Border BuildConceptQuestionCard()
+        {
+            var panel = new StackPanel();
+            panel.Children.Add(new TextBlock
+            {
+                Text = "어떤 방향으로 만들까요?", FontSize = 12, FontWeight = FontWeights.Bold,
+                Foreground = ThemeResources.TextAccent, FontFamily = ThemeResources.FontBase,
+                Margin = new Thickness(0, 0, 0, 8)
+            });
+
+            panel.Children.Add(ConceptSectionLabel("느낌"));
+            var feelingWrap = new WrapPanel { Margin = new Thickness(0, 2, 0, 8) };
+            var feelingChips = new List<Border>();
+            foreach (var f in FeelingChips)
+            {
+                var captured = f;
+                var chip = BuildConceptChip(f);
+                chip.MouseLeftButtonUp += (s, e) =>
+                {
+                    _selFeeling = captured;
+                    foreach (var c in feelingChips) StyleConceptChip(c, c == chip);
+                };
+                feelingChips.Add(chip);
+                feelingWrap.Children.Add(chip);
+            }
+            panel.Children.Add(feelingWrap);
+
+            panel.Children.Add(ConceptSectionLabel("용도"));
+            var usageWrap = new WrapPanel { Margin = new Thickness(0, 2, 0, 8) };
+            var usageChips = new List<Border>();
+            foreach (var u in UsageChips)
+            {
+                var captured = u;
+                var chip = BuildConceptChip(u);
+                chip.MouseLeftButtonUp += (s, e) =>
+                {
+                    _selUsage = captured;
+                    foreach (var c in usageChips) StyleConceptChip(c, c == chip);
+                };
+                usageChips.Add(chip);
+                usageWrap.Children.Add(chip);
+            }
+            panel.Children.Add(usageWrap);
+
+            var makeBtn = new Border
+            {
+                Background = ThemeResources.Accent,
+                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(12, 7, 12, 7),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Cursor = Cursors.Hand,
+                Margin = new Thickness(0, 2, 0, 0),
+                Child = new TextBlock
+                {
+                    Text = "컨셉 만들기", FontSize = 12, FontWeight = FontWeights.SemiBold,
+                    Foreground = Brushes.White, FontFamily = ThemeResources.FontBase
+                }
+            };
+            makeBtn.MouseLeftButtonUp += async (s, e) => await RunConceptSuggestAsync();
+            panel.Children.Add(makeBtn);
+
+            return WrapConceptCard(panel);
+        }
+
+        private TextBlock ConceptSectionLabel(string t) => new TextBlock
+        {
+            Text = t, FontSize = 11, FontWeight = FontWeights.SemiBold,
+            Foreground = ThemeResources.TextSub, FontFamily = ThemeResources.FontBase,
+            Margin = new Thickness(0, 2, 0, 2)
+        };
+
+        private Border BuildConceptChip(string text)
+        {
+            return new Border
+            {
+                Background = ThemeResources.BgChip,
+                BorderBrush = ThemeResources.BorderCard,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(14),
+                Padding = new Thickness(11, 5, 11, 5),
+                Margin = new Thickness(0, 0, 6, 6),
+                Cursor = Cursors.Hand,
+                Child = new TextBlock
+                {
+                    Text = text, FontSize = 12, FontFamily = ThemeResources.FontBase,
+                    Foreground = ThemeResources.TextMain
+                }
+            };
+        }
+
+        private void StyleConceptChip(Border chip, bool selected)
+        {
+            chip.Background = selected ? ThemeResources.BgCategoryActive : ThemeResources.BgChip;
+            chip.BorderBrush = selected ? ThemeResources.Accent : ThemeResources.BorderCard;
+            var tb = (TextBlock)chip.Child;
+            tb.Foreground = selected ? ThemeResources.TextAccent : ThemeResources.TextMain;
+            tb.FontWeight = selected ? FontWeights.SemiBold : FontWeights.Normal;
+        }
+
+        private Border WrapConceptCard(UIElement child) => new Border
+        {
+            Background = ThemeResources.BgCard,
+            BorderBrush = ThemeResources.BorderCard,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(10),
+            Margin = new Thickness(10, 8, 10, 0),
+            Padding = new Thickness(14, 12, 14, 12),
+            Child = child
+        };
+
+        private static SolidColorBrush ConceptSwatch(string hex)
+        {
+            try { return BrushFromHex(hex); }
+            catch { return BrushFromHex("#CCCCCC"); }   // LLM 불량 HEX 가드(기존 BrushFromHex 재사용)
+        }
+
+        private async Task RunConceptSuggestAsync()
+        {
+            if (_conceptRunning) return;
+            if (_conceptSuggester == null || _lastStructure == null)
+            {
+                AddAiBubble("컨셉 추천은 Gemini 설정과 구조 분석이 먼저 필요해요.");
+                return;
+            }
+            if (string.IsNullOrEmpty(_selFeeling) || string.IsNullOrEmpty(_selUsage))
+            {
+                AddAiBubble("느낌과 용도를 하나씩 골라주세요.");
+                return;
+            }
+
+            _conceptRunning = true;
+            try
+            {
+                AddAiBubble($"'{_selUsage} · {_selFeeling}' 방향으로 컨셉 3개를 만들고 있어요…");
+                var concepts = await _conceptSuggester.SuggestAsync(_lastStructure, _selUsage, _selFeeling); // STA 유지
+                if (concepts.Count == 0) { AddAiBubble("컨셉을 만들지 못했어요. 다시 시도해주세요."); return; }
+                _chatStack.Children.Add(BuildConceptCards(concepts));
+                _chatScroll.ScrollToBottom();
+            }
+            catch (Exception ex)
+            {
+                AddAiBubble($"컨셉 생성 중 오류: {ex.Message}");
+                Logger.Log($"[ConceptSuggest] 실패: {ex}");
+            }
+            finally { _conceptRunning = false; }
+        }
+
+        private Border BuildConceptCards(List<DesignConcept> concepts)
+        {
+            var outer = new StackPanel();
+            outer.Children.Add(new TextBlock
+            {
+                Text = "컨셉 3안 — 하나를 고르세요", FontSize = 12, FontWeight = FontWeights.Bold,
+                Foreground = ThemeResources.TextAccent, FontFamily = ThemeResources.FontBase,
+                Margin = new Thickness(0, 0, 0, 6)
+            });
+
+            var cardRefs = new List<Border>();
+            foreach (var concept in concepts)
+            {
+                var captured = concept;
+                var card = BuildOneConceptCard(concept);
+                card.MouseLeftButtonUp += (s, e) => OnConceptSelected(captured, card, cardRefs);
+                cardRefs.Add(card);
+                outer.Children.Add(card);
+            }
+            return WrapConceptCard(outer);
+        }
+
+        private Border BuildOneConceptCard(DesignConcept concept)
+        {
+            var p = new StackPanel();
+            p.Children.Add(new TextBlock
+            {
+                Text = concept.Name, FontSize = 13, FontWeight = FontWeights.Bold,
+                Foreground = ThemeResources.TextMain, FontFamily = ThemeResources.FontBase
+            });
+
+            if (concept.StyleTags != null && concept.StyleTags.Count > 0)
+            {
+                var tags = new WrapPanel { Margin = new Thickness(0, 4, 0, 4) };
+                foreach (var t in concept.StyleTags)
+                    tags.Children.Add(new Border
+                    {
+                        Background = ThemeResources.BgBadge, CornerRadius = new CornerRadius(8),
+                        Padding = new Thickness(7, 2, 7, 2), Margin = new Thickness(0, 0, 4, 4),
+                        Child = new TextBlock { Text = t, FontSize = 10, Foreground = ThemeResources.TextAccent, FontFamily = ThemeResources.FontBase }
+                    });
+                p.Children.Add(tags);
+            }
+
+            var sw = new WrapPanel { Margin = new Thickness(0, 2, 0, 4) };
+            if (concept.Colors != null)
+                foreach (var kv in concept.Colors)
+                    sw.Children.Add(new Border
+                    {
+                        Width = 22, Height = 22, CornerRadius = new CornerRadius(5),
+                        Margin = new Thickness(0, 0, 5, 0),
+                        BorderBrush = ThemeResources.BorderCard, BorderThickness = new Thickness(1),
+                        Background = ConceptSwatch(kv.Value)
+                    });
+            p.Children.Add(sw);
+
+            if (concept.Fonts != null && concept.Fonts.Count > 0)
+                p.Children.Add(new TextBlock
+                {
+                    Text = "글꼴 · " + string.Join(" / ", concept.Fonts.Values),
+                    FontSize = 11, Foreground = ThemeResources.TextSub, FontFamily = ThemeResources.FontBase,
+                    Margin = new Thickness(0, 2, 0, 0)
+                });
+
+            return new Border
+            {
+                Background = ThemeResources.BgCard,
+                BorderBrush = ThemeResources.BorderCard,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(9),
+                Padding = new Thickness(12, 10, 12, 10),
+                Margin = new Thickness(0, 0, 0, 7),
+                Cursor = Cursors.Hand,
+                Child = p
+            };
+        }
+
+        private void OnConceptSelected(DesignConcept concept, Border selectedCard, List<Border> allCards)
+        {
+            _selectedConcept = concept;
+            foreach (var c in allCards)
+            {
+                bool sel = c == selectedCard;
+                c.BorderBrush = sel ? ThemeResources.Accent : ThemeResources.BorderCard;
+                c.BorderThickness = new Thickness(sel ? 2 : 1);
+                c.Background = sel ? ThemeResources.BgCardHover : ThemeResources.BgCard;
+            }
+            _chatStack.Children.Add(BuildConceptConfirmBanner(concept));
+            _chatScroll.ScrollToBottom();
+            Logger.Log($"[ConceptSuggest] 선택: {concept.Id} {concept.Name}");
+        }
+
+        private Border BuildConceptConfirmBanner(DesignConcept concept)
+        {
+            var p = new StackPanel();
+            p.Children.Add(new TextBlock
+            {
+                Text = $"✓ '{concept.Name}' 방향으로 진행할게요",
+                FontSize = 12, FontWeight = FontWeights.SemiBold,
+                Foreground = ThemeResources.TextAccent, FontFamily = ThemeResources.FontBase,
+                TextWrapping = TextWrapping.Wrap
+            });
+            var sw = new WrapPanel { Margin = new Thickness(0, 6, 0, 0) };
+            if (concept.Colors != null)
+                foreach (var kv in concept.Colors)
+                    sw.Children.Add(new Border
+                    {
+                        Width = 20, Height = 20, CornerRadius = new CornerRadius(4),
+                        Margin = new Thickness(0, 0, 5, 0),
+                        BorderBrush = ThemeResources.BorderCard, BorderThickness = new Thickness(1),
+                        Background = ConceptSwatch(kv.Value)
+                    });
+            p.Children.Add(sw);
+            if (concept.Fonts != null && concept.Fonts.Count > 0)
+                p.Children.Add(new TextBlock
+                {
+                    Text = "글꼴 · " + string.Join(" / ", concept.Fonts.Values),
+                    FontSize = 11, Foreground = ThemeResources.TextSub, FontFamily = ThemeResources.FontBase,
+                    Margin = new Thickness(0, 4, 0, 0)
+                });
+            return new Border
+            {
+                Background = ThemeResources.BgCategoryActive,
+                CornerRadius = new CornerRadius(10),
+                Margin = new Thickness(10, 8, 10, 0),
+                Padding = new Thickness(14, 10, 14, 10),
+                Child = p
             };
         }
 
@@ -2932,7 +3222,7 @@ namespace TeampptAddin
             return new StyleConfig { Palettes = palettes, Fonts = fonts };
         }
 
-        public void InitAi(IAiService aiService, StyleConfig styles, RemoteAssetCache remoteCache = null, RedesignService redesign = null, RecommendationService recommend = null, DeckStructureService deckStructure = null)
+        public void InitAi(IAiService aiService, StyleConfig styles, RemoteAssetCache remoteCache = null, RedesignService redesign = null, RecommendationService recommend = null, DeckStructureService deckStructure = null, ConceptSuggester conceptSuggester = null)
         {
             _aiService = aiService;
             _styleConfig = styles;
@@ -2940,6 +3230,7 @@ namespace TeampptAddin
             _redesign = redesign;
             _recommend = recommend;
             _deckStructure = deckStructure;
+            _conceptSuggester = conceptSuggester;
             PopulateStylePanel();
         }
 

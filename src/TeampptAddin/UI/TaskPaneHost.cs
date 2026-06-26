@@ -194,12 +194,14 @@ namespace TeampptAddin
             RedesignService redesign = null;
             RecommendationService recommend = null;
             DeckStructureService deckStructure = null;
+            ConceptSuggester conceptSuggester = null;
             if (!string.IsNullOrEmpty(supaUrl) && !string.IsNullOrEmpty(supaAnon) && !string.IsNullOrEmpty(gemini))
             {
                 ai = new VectorRecommendService(supaUrl, supaAnon, gemini);
                 redesign = new RedesignService(supaUrl, supaAnon, gemini);
                 recommend = new RecommendationService(supaUrl, supaAnon, gemini);
                 deckStructure = new DeckStructureService(new GeminiAiService(gemini));
+                conceptSuggester = new ConceptSuggester(new GeminiAiService(gemini));
                 Logger.Log("[AI] VectorRecommendService (Supabase 벡터검색) 사용");
             }
             else if (!string.IsNullOrEmpty(gemini))
@@ -207,6 +209,7 @@ namespace TeampptAddin
                 try { ai = GeminiAiService.FromAssetsDir(assetsDir); }
                 catch { ai = new MockAiService(); }
                 deckStructure = new DeckStructureService(new GeminiAiService(gemini));
+                conceptSuggester = new ConceptSuggester(new GeminiAiService(gemini));
                 Logger.Log("[AI] Supabase 설정 없음 → 로컬 AI 사용 (덱 구조 분석은 Gemini 사용)");
             }
             else
@@ -216,7 +219,7 @@ namespace TeampptAddin
                 Logger.Log("[AI] Supabase 설정 없음 → 로컬 AI 사용");
             }
 
-            _wpfPanel.InitAi(ai, styles, _remoteCache, redesign, recommend, deckStructure);
+            _wpfPanel.InitAi(ai, styles, _remoteCache, redesign, recommend, deckStructure, conceptSuggester);
 
             if (_supaClient != null)
             {
