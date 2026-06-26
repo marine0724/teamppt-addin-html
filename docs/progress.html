@@ -28,7 +28,7 @@
 
 <div class="abar">
   <span class="atag atag-dev">진행보드</span>
-  <span class="abar-text">지금 여기 · PROGRESS-BOARD.md 기준 · 최종 갱신 2026-06-25</span>
+  <span class="abar-text">지금 여기 · PROGRESS-BOARD.md 기준 · 최종 갱신 2026-06-26</span>
 </div>
 
 <div class="section-wrap">
@@ -58,57 +58,67 @@
   <div style="background:var(--hero);border-radius:var(--r);padding:28px 32px;margin-bottom:14px;position:relative;overflow:hidden">
     <div style="position:absolute;inset:0;background:radial-gradient(ellipse 60% 80% at 100% 50%,rgba(49,130,246,.15),transparent 70%);pointer-events:none"></div>
     <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#7eb8ff;margin-bottom:12px">현재 상태</div>
-    <div style="font-size:20px;font-weight:800;color:#fff;letter-spacing:-.5px;margin-bottom:8px">독백 + 병목 진단 정밀화</div>
+    <div style="font-size:20px;font-weight:800;color:#fff;letter-spacing:-.5px;margin-bottom:8px">리디자인 Phase 2 (컨셉3) 진입</div>
     <div style="font-size:14px;color:rgba(255,255,255,.6);line-height:1.75;margin-bottom:16px">
-      판단 파이프라인 코드 전체 완료(Task 1~10). 이제 reasoning을 한국어 독백으로 실시간 버블에 흘리고,<br>
-      검색 유사도·검수 병목 4분류로 "기능 문제가 사라질 때까지" 가리는 진단 계기판 구현.
+      Phase 1 (파일진입+덱구조분석) 완료 → 이제 컨셉3 구현으로 진입.<br>
+      플랜 작성부터 시작. 데모 임박 시엔 Phase 1 선택 폴리시 2건을 먼저 처리해도 됨.
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <span style="background:rgba(49,130,246,.25);border:1px solid rgba(49,130,246,.4);color:#7eb8ff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:6px">feat/asset-combination-recommendation</span>
-      <span style="background:rgba(49,130,246,.25);border:1px solid rgba(49,130,246,.4);color:#7eb8ff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:6px">🔵 독백+병목진단 Task 1 대기</span>
+      <span style="background:rgba(49,130,246,.25);border:1px solid rgba(49,130,246,.4);color:#7eb8ff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:6px">🔵 Phase 2 플랜 작성 대기</span>
     </div>
   </div>
 
-  <!-- Task 큐 — 판단 파이프라인 -->
-  <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin:28px 0 12px">독백 + 병목 진단 Task 큐</div>
+  <!-- Phase 로드맵 -->
+  <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin:28px 0 12px">리디자인 Phase 로드맵</div>
   <div style="display:flex;flex-direction:column;gap:10px">
 
-    <div style="background:var(--white);border-radius:var(--r-sm);padding:18px 22px;border:1.5px solid var(--accent);display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:16px;box-shadow:var(--shadow)">
-      <div style="font-size:13px;font-weight:800;color:var(--accent)">#1</div>
+    <div style="background:var(--white);border-radius:var(--r-sm);padding:18px 22px;border:1.5px solid var(--accent);display:grid;grid-template-columns:80px 1fr auto;align-items:center;gap:16px;box-shadow:var(--shadow)">
+      <div style="font-size:13px;font-weight:800;color:var(--accent)">Phase 2</div>
       <div>
-        <div style="font-size:14px;font-weight:700;margin-bottom:3px">검색 유사도 trace 노출</div>
-        <div style="font-size:12px;color:var(--text2)">버리던 similarity를 Extra에 살려 "에셋 부족(양)" 신호 가시화 (TDD)</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:3px">컨셉3 구현</div>
+        <div style="font-size:12px;color:var(--text2)">플랜 없음 → brainstorming → writing-plans → subagent-driven 실행</div>
       </div>
       <span style="font-size:11px;font-weight:700;background:var(--accent);color:#fff;padding:4px 12px;border-radius:99px;white-space:nowrap">다음</span>
     </div>
 
-    <div style="background:var(--white);border-radius:var(--r-sm);padding:18px 22px;border:1px solid var(--border);display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:16px;box-shadow:var(--shadow)">
-      <div style="font-size:13px;font-weight:800;color:var(--text3)">#2-3</div>
+    <div style="background:var(--white);border-radius:var(--r-sm);padding:18px 22px;border:1px solid var(--border);display:grid;grid-template-columns:80px 1fr auto;align-items:center;gap:16px;box-shadow:var(--shadow);opacity:.75">
+      <div style="font-size:13px;font-weight:800;color:var(--text3)">Phase 3</div>
       <div>
-        <div style="font-size:14px;font-weight:700;margin-bottom:3px">thinkingBudget 상향 + 프롬프트 한국어 재작성</div>
-        <div style="font-size:12px;color:var(--text2)">이해·구성 768, 검수 2048 + reasoning 한국어 존대말·약점 솔직</div>
-      </div>
-      <span style="font-size:11px;font-weight:700;background:var(--accent-light);color:var(--accent);padding:4px 12px;border-radius:99px;white-space:nowrap">대기</span>
-    </div>
-
-    <div style="background:var(--white);border-radius:var(--r-sm);padding:18px 22px;border:1px solid var(--border);display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:16px;box-shadow:var(--shadow)">
-      <div style="font-size:13px;font-weight:800;color:var(--text3)">#4-5</div>
-      <div>
-        <div style="font-size:14px;font-weight:700;margin-bottom:3px">검수 병목 4분류 + 실시간 버블 독백</div>
-        <div style="font-size:12px;color:var(--text2)">기능/데이터추출/에셋부족/에셋품질 + 단계별 reasoning 채팅 버블</div>
-      </div>
-      <span style="font-size:11px;font-weight:700;background:var(--accent-light);color:var(--accent);padding:4px 12px;border-radius:99px;white-space:nowrap">대기</span>
-    </div>
-
-    <div style="background:var(--white);border-radius:var(--r-sm);padding:18px 22px;border:1px solid var(--border);display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:16px;box-shadow:var(--shadow);opacity:.75">
-      <div style="font-size:13px;font-weight:800;color:var(--text3)">#6</div>
-      <div>
-        <div style="font-size:14px;font-weight:700;margin-bottom:3px">PPT 수동 검증 (판단 파이프라인 + 독백 통합)</div>
-        <div style="font-size:12px;color:var(--text2)">한국어 독백 버블 · 유사도 표시 · 병목 4분류 · debug.log 확인</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:3px">박스별 덱 추천</div>
+        <div style="font-size:12px;color:var(--text2)">슬라이드별 최적 에셋 추천 → 덱 전체 매핑</div>
       </div>
       <span style="font-size:11px;font-weight:700;background:var(--bg);color:var(--text3);padding:4px 12px;border-radius:99px;white-space:nowrap;border:1px solid var(--border)">대기</span>
     </div>
 
+    <div style="background:var(--white);border-radius:var(--r-sm);padding:18px 22px;border:1px solid var(--border);display:grid;grid-template-columns:80px 1fr auto;align-items:center;gap:16px;box-shadow:var(--shadow);opacity:.65">
+      <div style="font-size:13px;font-weight:800;color:var(--text3)">Phase 4~5</div>
+      <div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:3px">빈 템플릿 조립 → 재료 이식</div>
+        <div style="font-size:12px;color:var(--text2)">Scratch 덱 조립 + 본문 1~2장 이식</div>
+      </div>
+      <span style="font-size:11px;font-weight:700;background:var(--bg);color:var(--text3);padding:4px 12px;border-radius:99px;white-space:nowrap;border:1px solid var(--border)">대기</span>
+    </div>
+
+  </div>
+
+  <!-- 데모 전 선택 폴리시 (옵션) -->
+  <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin:28px 0 12px">데모 임박 시 우선 처리 옵션</div>
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <div style="background:var(--white);border-radius:var(--r-sm);padding:14px 22px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow)">
+      <div>
+        <span style="font-size:13px;font-weight:700">실패 시 _emptyState 복원</span>
+        <span style="font-size:12px;color:var(--text2);margin-left:10px">리디자인 실패 시 원본 상태 복원 처리</span>
+      </div>
+      <span style="font-size:11px;font-weight:700;color:var(--orange);white-space:nowrap">옵션</span>
+    </div>
+    <div style="background:var(--white);border-radius:var(--r-sm);padding:14px 22px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow)">
+      <div>
+        <span style="font-size:13px;font-weight:700">실행 중 덱 바 dim</span>
+        <span style="font-size:12px;color:var(--text2);margin-left:10px">리디자인 진행 중 UI dim 처리</span>
+      </div>
+      <span style="font-size:11px;font-weight:700;color:var(--orange);white-space:nowrap">옵션</span>
+    </div>
   </div>
 
   <!-- 완료 -->
@@ -117,8 +127,16 @@
 
     <div style="background:var(--green-light);border-radius:var(--r-sm);padding:14px 22px;border:1px solid #a7f3d0;display:flex;justify-content:space-between;align-items:center">
       <div>
-        <span style="font-size:13px;font-weight:700;color:#065f46">판단 파이프라인 전체 (Task 1~10)</span>
-        <span style="font-size:12px;color:#0a7a50;margin-left:10px">Trace·reasoning·멀티모달 구성기·루브릭 검수자·판단 과정 패널·검수 버튼</span>
+        <span style="font-size:13px;font-weight:700;color:#065f46">리디자인 Phase 1 — 파일 진입 + 덱 구조 분석</span>
+        <span style="font-size:12px;color:#0a7a50;margin-left:10px">DeckFileReader · 덱 구조 요약 박스 UI (demo hero ①) · PPT 수동검증 ✅ (dd2496a·6053a69·db0a3f2)</span>
+      </div>
+      <span style="font-size:11px;font-weight:700;color:#065f46;white-space:nowrap">✓ 완료</span>
+    </div>
+
+    <div style="background:var(--green-light);border-radius:var(--r-sm);padding:14px 22px;border:1px solid #a7f3d0;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <span style="font-size:13px;font-weight:700;color:#065f46">리디자인 Phase 0 — 두 유사도 분리</span>
+        <span style="font-size:12px;color:#0a7a50;margin-left:10px">검색 유사도 · 검수 유사도 분리 · PPT 수동검증 ✅ (b29fd84·be10db8·c5676a6·437d924)</span>
       </div>
       <span style="font-size:11px;font-weight:700;color:#065f46;white-space:nowrap">✓ 완료</span>
     </div>
