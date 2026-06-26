@@ -21,56 +21,47 @@
 
 ```
 [A 에셋 조립·커서식]      [B 리디자인·위임식]       [C 기획+에셋]
-   ▲ 지금 여기                 (다음)                  (추후)
+ 토대 ✅(계속 활용)          ▲ 지금 여기              (추후)
  곁에서 추천·삽입         통째로 한방 변환          백지부터 구성
  "어떤 에셋?"             "어떤 컨셉?"              "어떤 구성?"
 ```
 
 > A·B의 유일한 차이 = "전체를 한 번에 갈아치우는 실행엔진"(=D)의 유무. 둘 다 같은 '읽기 엔진' 공유.
-> **지금은 토대인 A를 온전하게.** A만 써도 감동이 나와야 B·C가 이상적으로 얹힌다. (D 한방엔진은 B 루트로 분리·후순위)
+> **A 토대(인제스트→Supabase 벡터추천·해자) 위에 지금 B 리디자인을 올리는 중.** 단일 슬라이드 추천(A)이 검증됐고, 그걸 초안 파일 통째·덱 전체로 일반화한 게 B다. (C는 추후)
 
 ---
 
-## 🌲 숲 — 지금 로드맵: **"온전한 A"** (데이터 → 공유 → 추천·진단 UX)
+## 🌲 숲 — 지금 로드맵: **리디자인 (초안 파일 통째 → 덱 전체, Route B 일반화)**
+
+> **왜:** 실사용 워크플로 = "초안 만들어 두고 더 이쁘게". 단일 슬라이드 추천(A)을 **파일 진입 + 덱 전체**로 일반화. 디자인-온리(내용 불변).
+> 설계: [덱 리디자인 스펙](docs/superpowers/specs/2026-06-25-route-b-deck-redesign-design.md) · 하이브리드 데모 스코프: 임팩트 큰 곳(구조박스·박스별추천·두 유사도·조립덱)은 진짜 / overflow·표·완벽합성은 검증 위주.
 
 ```
-[A-1 데이터 토대]──▶[A-2 실시간 공유엔진]──▶[A-3 추천·진단 UX]      ┊  (분리) D 한방 실행엔진
-      ✅ 완료              🔵 첫 조각 완료          ⬜               ┊   → B 루트·후순위
-  인제스트→Supabase     슬라이드 읽기+공유표시     에셋추천+일관성진단
-  벡터추천 (해자)        [슬라이드 N 공유중]
+Phase: 0 두유사도 ──▶ 1 파일진입+덱구조 ──▶ 2 컨셉3 ──▶ 3 박스별추천 ──▶ 4 빈템플릿조립 ──▶ 5 재료이식
+        ✅ 완료          ✅ 완료              🔵 진행◀      ⬜             ⬜               ⬜
+                      (데모 hero ①)        (다리)      (데모 hero ②)                  (본문1~2장)
 ```
 
-- **A-1:** ✅ 인제스트 LLM 이해 → 임베딩 → Supabase 업로드 + 벡터검색 읽기경로. 완료.
-- **A-2:** 🔵 첫 조각(화면공유 진단) 완료. 리디자인(B) 진입 시 확장 예정.
-- **A-3:** ⬜ 텍스트 질의 추천 → 현재슬라이드 추천 + 전체덱 일관성 진단.
+> **밑단(A 토대, 계속 활용):** A-1 인제스트→Supabase 벡터추천(해자) ✅. A-2 화면공유 진단 첫 조각 ✅(B에서 확장 예정). 이 데이터·읽기 엔진 위에 리디자인이 얹힘.
+> **Phase 0 (두 유사도 분리): ✅** — Task 1~4 (b29fd84·be10db8·c5676a6·437d924), 리뷰 READY TO MERGE, PPT 검증 ✅. 플랜: [Phase 0](docs/superpowers/plans/2026-06-25-redesign-phase0-dual-similarity.md).
+> **Phase 1 (파일진입+덱구조): ✅** — Task 1~3 (dd2496a·6053a69·db0a3f2), 리뷰 READY TO MERGE, PPT 구조박스 검증 ✅(데모 hero ①). 플랜: [Phase 1](docs/superpowers/plans/2026-06-25-redesign-phase1-file-entry-deck-structure.md).
 
 ---
 
-## 🌲 나무 — 새 방향: **리디자인 (초안 파일 통째 → 덱 전체)** · 잎 = Phase 1 (파일진입+덱구조)
+## 🌲 나무 — 현재 Phase: **Phase 2 — 컨설팅 컨셉 (질문 → 컨셉 3블록 생성·선택)**
 
-> **왜:** 실사용 워크플로 = "초안 만들어 두고 더 이쁘게". 단일 슬라이드 추천을 **파일 진입 + 덱 전체**로 일반화. 디자인-온리(내용 불변).
-> 설계: [덱 리디자인 스펙](docs/superpowers/specs/2026-06-25-route-b-deck-redesign-design.md)
-> 하이브리드 데모 스코프: 임팩트 큰 곳(구조박스·박스별추천·두 유사도·조립덱)은 진짜 / overflow·표·완벽합성은 검증 위주.
+> **왜:** 구조박스(hero ①)와 박스별 추천(hero ②) 사이의 다리. "어디 쓰나/어떤 느낌" 답 + 구조요약 → LLM이 컨셉 3개 생성 → 선택. 선택 컨셉은 D2로 가볍게 (a) 검색 쿼리 styleTags 가중 (b) unlocked 색/폰트 ConceptResolver override. 깊은 컨셉 엔진은 후순위.
+> 설계: 스펙 "Phase 2 — 컨설팅 컨셉(Step 3)" 절. 신규 = ConceptSuggester(LLM 생성) + 질문/컨셉 카드 UI. 재사용 = DesignConcept 모델·ConceptResolver(적용).
 
-**Phase 로드맵:** `0 두 유사도 분리 ✅` → `1 파일진입+덱구조분석 ◀` → `2 컨셉3` → `3 박스별 덱추천` → `4 빈 템플릿 조립` → `5 재료이식(본문1~2장)`
+### 🍃 잎 — Phase 2 Task — **플랜 미작성** (다음 세션: brainstorming → writing-plans 먼저)
 
-> **Phase 0 (두 유사도 분리): ✅ 완료** — Task 1~4 (b29fd84·be10db8·c5676a6·437d924), 최종 리뷰 READY TO MERGE, PPT 수동검증 ✅(두 점수 정상). 플랜: [Phase 0](docs/superpowers/plans/2026-06-25-redesign-phase0-dual-similarity.md).
-
-### 🍃 잎 — Phase 1: 파일 진입 + 덱 구조 분석 — ✅ **완료** (리뷰 READY TO MERGE + PPT 수동검증 ✅)
-
-> 플랜: [Phase 1](docs/superpowers/plans/2026-06-25-redesign-phase1-file-entry-deck-structure.md). 커밋 dd2496a·6053a69·db0a3f2, 최종 리뷰 READY TO MERGE, PPT 구조박스 정상.
-
-| # | 무엇 | 상태 |
-|---|------|------|
-| 1 | 덱 구조 분석 로직 (models+schema+parser+formatter+service, TDD) | ✅ dd2496a |
-| 2 | DeckFileReader 외부 pptx 비파괴 읽기 (COM, 빌드+수동) | ✅ 6053a69 |
-| 3 | [리디자인] 파일진입 + 구조 요약 박스 UI (데모 hero ①) | ✅ db0a3f2 · PPT 검증✅ |
+> 아직 Task 분해 전. `실행프롬프트.md` 붙여넣어 플랜부터 작성 후 subagent-driven 실행. (Phase 1 비차단 폴리시 2건은 데모 임박 시 먼저 처리 가능: ① 실패 시 _emptyState 복원 ② 실행 중 덱 바 dim.)
 
 > **빌드/테스트 절차(이번 세션 확립):** 새 .cs는 `TeampptAddin.csproj`의 `<Compile Include>`에 **수동 등록 필수**(old-style csproj). 단위테스트 = 관리자 MSBuild 솔루션 빌드(`/p:RegisterForComInterop=false`) → `dotnet test --no-build -p:BuildProjectReferences=false --filter`. (플랜의 "dotnet test 1순위"는 단독으론 NuGet 참조 못 풀어 실패.)
 
 > **브랜치:** `feat/asset-combination-recommendation`. **구현은 Sonnet** — `실행프롬프트.md` 붙여넣어 시작.
 > **추천→배치 동작 확인됨(2026-06-25):** "이 조합으로 배치" → 새 슬라이드에 header+layout shapes 합체 성공. 버그 2건 해결: ① 인제스트 503 재시도 중복적재(42행=35+7, kind는 깨끗 — 추후 중복정리), ② Storage 다운로드 400(`asset.File` 파일명 대신 `Extra["remote_file"]` 사용으로 수정).
-> **⚠ UI 현황:** "AI 리디자인" 바 = **조합 추천**(`RunRecommendationAsync`). 통짜 리디자인(`RunRedesignAsync`)은 코드만 있고 버튼 미연결.
+> **⚠ UI 현황:** 패널에 바 2개 — ① "AI 리디자인" 바 = **단일 슬라이드 조합 추천**(`RunRecommendationAsync`), ② "📂 리디자인 (초안 파일)" 바 = **덱 파일진입+구조분석**(`RunDeckRedesignAsync`, Phase 1 신규·동작✅). 통짜 리디자인(`RunRedesignAsync`)은 코드만 있고 버튼 미연결.
 
 ---
 
