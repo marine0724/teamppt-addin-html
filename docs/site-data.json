@@ -99,8 +99,8 @@
   },
   "progress": {
     "lastUpdated": "2026-06-26",
-    "currentSummary": "리디자인 Phase 2 (컨셉3) 완료 → Phase 3(박스별 추천) 설계",
-    "currentDetail": "Phase 2 코드·리뷰·PPT 수동검증 전부 통과. 다음 = Phase 3 박스별 덱 추천 설계·플랜 작성. 통합(머지/PR) 결정 대기.",
+    "currentSummary": "리디자인 Phase 3(박스별 추천) 설계 완료 → writing-plans",
+    "currentDetail": "Phase 3 설계 spec 완료·커밋(910fe60). 스코프 3개 확정: 본문=패턴그룹, 두 배지=둘 다 계산(컨셉적합 프록시·LLM 비전은 Phase4/5 이월), 끝점=추천 카드까지. 다음 = writing-plans로 Task DAG → subagent 실행. 통합(머지/PR) 결정 대기.",
     "branch": "feat/asset-combination-recommendation",
     "roadmap": [
       { "id": "A 토대",   "label": "데이터 토대",        "sub": "인제스트→Supabase + 벡터추천 (해자)",  "status": "done" },
@@ -108,7 +108,7 @@
       { "id": "Route B",  "label": "리디자인 (덱 전체)",  "sub": "초안 파일 통째 → 덱 리디자인 (지금)",   "status": "active" }
     ],
     "queue": [
-      { "id": "Phase 3",  "label": "박스별 덱 추천",          "detail": "Phase 2 _selectedConcept 소비 → 박스별 에셋 추천·두 유사도(데모 hero ②). 플랜 없음 → brainstorming → writing-plans → 실행", "status": "next" },
+      { "id": "Phase 3",  "label": "박스별 덱 추천",          "detail": "Phase 2 _selectedConcept 소비 → 박스별 에셋 추천·두 배지(데모 hero ②). 설계 ✅ → writing-plans로 Task DAG → subagent 실행", "status": "next" },
       { "id": "Phase 4~5","label": "빈 템플릿 조립 → 재료 이식","detail": "Scratch 덱 조립 + 본문 1~2장 이식",             "status": "waiting" }
     ],
     "demoOptions": [
@@ -116,6 +116,7 @@
       { "label": "실행 중 덱 바 dim",        "detail": "리디자인 진행 중 UI dim 처리" }
     ],
     "done": [
+      { "label": "리디자인 Phase 3 — 박스별 덱 추천 설계 (brainstorming)", "detail": "스코프 3개 확정: 본문=패턴그룹 · 두 배지=둘 다 계산(컨셉적합 프록시) · 끝점=추천 카드까지. 신규 유닛 6개 + 모델·effort 배분표(A~I). spec 커밋 910fe60" },
       { "label": "리디자인 Phase 2 — 컨설팅 컨셉 (칩 질문 → 컨셉 3카드 → 선택)", "detail": "ConceptSuggester 로직(TDD) · 칩 질문/컨셉 카드/확정 배너 UI · final review READY TO MERGE · PPT 수동검증 ✅ (00f60f2·7d85e2c)" },
       { "label": "리디자인 Phase 1 — 파일 진입 + 덱 구조 분석", "detail": "DeckFileReader · 덱 구조 요약 박스 UI (demo hero ①) · PPT 수동검증 ✅ (dd2496a·6053a69·db0a3f2)" },
       { "label": "리디자인 Phase 0 — 두 유사도 분리",           "detail": "검색 유사도 · 검수 유사도 분리 · PPT 수동검증 ✅ (b29fd84·be10db8·c5676a6·437d924)" },
