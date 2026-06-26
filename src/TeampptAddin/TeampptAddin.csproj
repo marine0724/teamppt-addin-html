@@ -139,6 +139,9 @@
     <Compile Include="Services\DeckStructureParser.cs" />
     <Compile Include="Services\DeckStructureFormatter.cs" />
     <Compile Include="Services\DeckStructureService.cs" />
+    <Compile Include="Services\ConceptSuggesterSchema.cs" />
+    <Compile Include="Services\ConceptSuggesterParser.cs" />
+    <Compile Include="Services\ConceptSuggester.cs" />
     <Compile Include="Services\MaterialFitScorer.cs" />
     <Compile Include="Services\RecommendationService.cs" />
     <Compile Include="Services\UpdateService.cs" />
