@@ -1,12 +1,14 @@
 # 🗺️ TEAMPPT 개발 진행 보드
 
+> **▶ 다음 세션 시작점:** Phase 1 완료(커밋·푸시·검증✅). 다음 = **리디자인 Phase 2(컨셉3)** — 플랜 없음, brainstorming → writing-plans로 플랜부터 작성 후 subagent-driven 실행. (데모 임박 시엔 Phase 1 선택 폴리시 2건을 먼저 처리해도 됨.) 시작은 `실행프롬프트.md`.
+
 > 이 파일 하나만 열어두면 "지금 어디서 뭘 하는지" 보입니다. Claude가 매 세션 함께 유지.
 > **기록용 아카이브가 아니라 "지금 여기" 작업 보드.** 끝난 잎(Task)은 지우고 교체, 숲·나무 단위는 끝날 때까지 유지. (규칙: CLAUDE.md)
 > 계층: **나라 > 대지 > 숲 > 나무 > 잎** (2026-06-22 재정립)
-> 최종 갱신: 2026-06-25 · 현재 작업: **리디자인 Phase 0 완료(PPT검증✅). Phase 1(파일진입+덱구조) 플랜 작성완료 → 실행 대기(실행프롬프트.md).** 독백+병목진단·B1·R1·R2 완료.
+> 최종 갱신: 2026-06-26 · 현재 작업: **리디자인 Phase 1 완료 ✅ (Task 1~3, 최종 리뷰 READY TO MERGE, PPT 수동검증 ✅ 구조박스 정상).** 다음 = Phase 2(컨셉3). 독백+병목진단·B1·R1·R2 완료.
 
 ### ▶ 다음 작업
-**리디자인 Phase 1 실행** (subagent-driven). `실행프롬프트.md`를 새 세션에 붙여넣어 시작 → Task 1(구조 분석 로직, TDD) → 2(DeckFileReader, COM) → 3(파일진입+구조박스 UI, 데모 hero ①). Task 3 끝나면 PPT 수동검증(빈 PPT → "📂 리디자인(초안 파일)" → 구조 박스 확인).
+**리디자인 Phase 2 (컨셉3)** 진입 — 플랜 작성부터. (또는 데모 전 Phase 1 선택 폴리시 처리: ① 실패 시 _emptyState 복원 ② 실행 중 덱 바 dim.)
 
 ---
 
@@ -54,15 +56,15 @@
 
 > **Phase 0 (두 유사도 분리): ✅ 완료** — Task 1~4 (b29fd84·be10db8·c5676a6·437d924), 최종 리뷰 READY TO MERGE, PPT 수동검증 ✅(두 점수 정상). 플랜: [Phase 0](docs/superpowers/plans/2026-06-25-redesign-phase0-dual-similarity.md).
 
-### 🍃 잎 — Phase 1: 파일 진입 + 덱 구조 분석 — **플랜 작성완료, 실행 대기**
+### 🍃 잎 — Phase 1: 파일 진입 + 덱 구조 분석 — ✅ **완료** (리뷰 READY TO MERGE + PPT 수동검증 ✅)
 
-> 플랜: [Phase 1](docs/superpowers/plans/2026-06-25-redesign-phase1-file-entry-deck-structure.md) · 실행: [실행프롬프트.md](실행프롬프트.md) (subagent-driven: opus 오케스트레이션 + sonnet 구현)
+> 플랜: [Phase 1](docs/superpowers/plans/2026-06-25-redesign-phase1-file-entry-deck-structure.md). 커밋 dd2496a·6053a69·db0a3f2, 최종 리뷰 READY TO MERGE, PPT 구조박스 정상.
 
 | # | 무엇 | 상태 |
 |---|------|------|
-| 1 | 덱 구조 분석 로직 (models+schema+parser+formatter+service, TDD) | ⬜ |
-| 2 | DeckFileReader 외부 pptx 비파괴 읽기 (COM, 빌드+수동) | ⬜ |
-| 3 | [리디자인] 파일진입 + 구조 요약 박스 UI (데모 hero ①, 빌드+수동) | ⬜ |
+| 1 | 덱 구조 분석 로직 (models+schema+parser+formatter+service, TDD) | ✅ dd2496a |
+| 2 | DeckFileReader 외부 pptx 비파괴 읽기 (COM, 빌드+수동) | ✅ 6053a69 |
+| 3 | [리디자인] 파일진입 + 구조 요약 박스 UI (데모 hero ①) | ✅ db0a3f2 · PPT 검증✅ |
 
 > **빌드/테스트 절차(이번 세션 확립):** 새 .cs는 `TeampptAddin.csproj`의 `<Compile Include>`에 **수동 등록 필수**(old-style csproj). 단위테스트 = 관리자 MSBuild 솔루션 빌드(`/p:RegisterForComInterop=false`) → `dotnet test --no-build -p:BuildProjectReferences=false --filter`. (플랜의 "dotnet test 1순위"는 단독으론 NuGet 참조 못 풀어 실패.)
 
