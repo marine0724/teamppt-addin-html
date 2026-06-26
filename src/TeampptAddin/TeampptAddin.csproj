@@ -85,6 +85,7 @@
     <Compile Include="Models\DraftModels.cs" />
     <Compile Include="Models\DeckModels.cs" />
     <Compile Include="Models\RecommendationModels.cs" />
+    <Compile Include="Models\DeckRecommendationModels.cs" />
     <Compile Include="Models\RecommendationTrace.cs" />
     <Compile Include="Models\DesignCritique.cs" />
     <Compile Include="Services\ColorHsl.cs" />
