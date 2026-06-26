@@ -20,6 +20,10 @@ packages/
 # API keys / admin credentials (secrets)
 **/api-keys.json
 **/admin.json
+/glm_api
+
+# 로컬 전용 메모 / 개인 기획 노트 (공개 repo 미포함)
+/memo
 
 # R&D 에셋 원본 묶음 (공개 repo 노출 금지 — 로컬 보관, 인제스트 테스트용)
 assets/layout_test_asset.pptx

@@ -1,14 +1,14 @@
 # 🗺️ TEAMPPT 개발 진행 보드
 
-> **▶ 다음 세션 시작점:** **리디자인 Phase 2(컨셉3)** — 플랜 작성·커밋 완료(`9fb9fe0`). subagent-driven으로 **Task 1(ConceptSuggester 로직, TDD)부터 실행 대기**. (데모 임박 시엔 Phase 1 선택 폴리시 2건을 먼저 처리해도 됨.) 플랜: [Phase 2](docs/superpowers/plans/2026-06-26-redesign-phase2-consulting-concept.md).
+> **▶ 다음 세션 시작점:** **리디자인 Phase 3(박스별 덱 추천) 설계·플랜 작성부터**. Phase 2(컨셉3)는 완전 종료 — Task 1·2 리뷰 clean, 129/129 green, final review READY TO MERGE, **PPT 수동검증 통과**(구조박스→칩 질문→컨셉 3카드→선택·확정 배너 흐름 정상). 통합(머지/PR) 결정도 다음 세션에서. Phase 3 = 구조 박스별로 `_selectedConcept`(styleTags/colors/fonts)를 소비해 슬라이드에 맞는 에셋 추천(데모 hero ②). 먼저 brainstorming → writing-plans.
 
 > 이 파일 하나만 열어두면 "지금 어디서 뭘 하는지" 보입니다. Claude가 매 세션 함께 유지.
 > **기록용 아카이브가 아니라 "지금 여기" 작업 보드.** 끝난 잎(Task)은 지우고 교체, 숲·나무 단위는 끝날 때까지 유지. (규칙: CLAUDE.md)
 > 계층: **나라 > 대지 > 숲 > 나무 > 잎** (2026-06-22 재정립)
-> 최종 갱신: 2026-06-26 · 현재 작업: **리디자인 Phase 2(컨셉3) 플랜 작성·커밋 완료 (`9fb9fe0`, Task 1·2 분해 — ConceptSuggester 로직 / 칩질문·컨셉카드 UI). 실행 대기.** Phase 1 완료 ✅. 독백+병목진단·B1·R1·R2 완료.
+> 최종 갱신: 2026-06-26 · 현재 작업: **리디자인 Phase 2(컨셉3) 완전 종료** ✅ — Task 1·2 review clean(`00f60f2`·`7d85e2c`), 129/129 green, final review READY TO MERGE, **PPT 수동검증 통과**. 다음 = Phase 3(박스별 추천) 설계·플랜. Phase 1 완료 ✅. 독백+병목진단·B1·R1·R2 완료.
 
 ### ▶ 다음 작업
-**리디자인 Phase 2 (컨셉3)** 실행 — 플랜 작성·커밋 완료(`9fb9fe0`). subagent-driven으로 **Task 1(ConceptSuggester 로직)부터**. (또는 데모 전 Phase 1 선택 폴리시 처리: ① 실패 시 _emptyState 복원 ② 실행 중 덱 바 dim.)
+**리디자인 Phase 3 (박스별 덱 추천)** — 플랜 없음 → `superpowers:brainstorming` → `superpowers:writing-plans` → subagent-driven 실행. Phase 2가 저장한 `_selectedConcept`(styleTags/colors/fonts)를 소비해 구조 박스별(표지·본문·엔드)로 적합 에셋 추천(데모 hero ②). 통합(머지/PR) 결정도 이번 세션에서. (Phase 1 비차단 폴리시 2건은 데모 임박 시 먼저: ① 실패 시 _emptyState 복원 ② 실행 중 덱 바 dim. Phase 2 UX 카피 폴리시: 확정 배너 "진행할게요" → Phase 3 적용이 붙기 전엔 "다음 단계에서 반영돼요" 식으로 조정 권장.)
 
 ---
 
@@ -38,24 +38,25 @@
 
 ```
 Phase: 0 두유사도 ──▶ 1 파일진입+덱구조 ──▶ 2 컨셉3 ──▶ 3 박스별추천 ──▶ 4 빈템플릿조립 ──▶ 5 재료이식
-        ✅ 완료          ✅ 완료              🔵 진행◀      ⬜             ⬜               ⬜
-                      (데모 hero ①)        (다리)      (데모 hero ②)                  (본문1~2장)
+        ✅ 완료          ✅ 완료            ✅ 완료        🔵 다음◀        ⬜               ⬜
+                      (데모 hero ①)      (다리)        (데모 hero ②)                  (본문1~2장)
 ```
 
 > **밑단(A 토대, 계속 활용):** A-1 인제스트→Supabase 벡터추천(해자) ✅. A-2 화면공유 진단 첫 조각 ✅(B에서 확장 예정). 이 데이터·읽기 엔진 위에 리디자인이 얹힘.
 > **Phase 0 (두 유사도 분리): ✅** — Task 1~4 (b29fd84·be10db8·c5676a6·437d924), 리뷰 READY TO MERGE, PPT 검증 ✅. 플랜: [Phase 0](docs/superpowers/plans/2026-06-25-redesign-phase0-dual-similarity.md).
 > **Phase 1 (파일진입+덱구조): ✅** — Task 1~3 (dd2496a·6053a69·db0a3f2), 리뷰 READY TO MERGE, PPT 구조박스 검증 ✅(데모 hero ①). 플랜: [Phase 1](docs/superpowers/plans/2026-06-25-redesign-phase1-file-entry-deck-structure.md).
+> **Phase 2 (컨설팅 컨셉): ✅** — Task 1 ConceptSuggester 로직(TDD 3/3)·Task 2 칩 질문→컨셉 3카드→확정 배너 UI (00f60f2·7d85e2c), final review READY TO MERGE, **PPT 수동검증 통과**(데모 다리). 플랜: [Phase 2](docs/superpowers/plans/2026-06-26-redesign-phase2-consulting-concept.md).
 
 ---
 
-## 🌲 나무 — 현재 Phase: **Phase 2 — 컨설팅 컨셉 (질문 → 컨셉 3블록 생성·선택)**
+## 🌲 나무 — 현재 Phase: **Phase 3 — 박스별 덱 추천 (슬라이드 단위 에셋 매핑, 데모 hero ②)**
 
-> **왜:** 구조박스(hero ①)와 박스별 추천(hero ②) 사이의 다리. "어디 쓰나/어떤 느낌" 답 + 구조요약 → LLM이 컨셉 3개 생성 → 선택. 선택 컨셉은 D2로 가볍게 (a) 검색 쿼리 styleTags 가중 (b) unlocked 색/폰트 ConceptResolver override. 깊은 컨셉 엔진은 후순위.
-> 설계: 스펙 "Phase 2 — 컨설팅 컨셉(Step 3)" 절. 신규 = ConceptSuggester(LLM 생성) + 질문/컨셉 카드 UI. 재사용 = DesignConcept 모델·ConceptResolver(적용).
+> **왜:** Phase 2가 저장한 `_selectedConcept`(styleTags/colors/fonts)를 소비해, 구조 박스(표지·본문공통헤더·본문 슬라이드별·엔드)마다 적합 에셋을 추천·배치. 단일 슬라이드 추천(Route A, 검증됨)을 **덱 전체로 일반화**. 두 유사도(재료 적합도 / 디자인·컨셉)로 추천 품질 검수 — 점수가 낮으면 에셋 탓인지 데이터 설계 탓인지 가린다.
+> 설계: 스펙 "Phase 3" 절. 재사용 = `RecommendationService`(Route A), `DeckStructure`·`DeckStructureFormatter`(Phase 1), `_selectedConcept`·`ConceptResolver`(Phase 2). 신규 = 박스별 오케스트레이션 + 두 유사도 표시 UX. **플랜 없음 → `superpowers:brainstorming` → `superpowers:writing-plans` → subagent-driven.**
 
-### 🍃 잎 — Phase 2 Task — **플랜 작성·커밋 완료 (`9fb9fe0`), 실행 대기**
+### 🍃 잎 — Phase 3 — **플랜 작성부터 (brainstorming → writing-plans → 실행)**
 
-> 플랜: [Phase 2 컨설팅 컨셉](docs/superpowers/plans/2026-06-26-redesign-phase2-consulting-concept.md). **Task 1** ConceptSuggester 로직(schema+parser+service, TDD) → **Task 2** 칩 질문 → 컨셉 3카드 → 선택·저장·확정 배너 UI(빌드+수동). 스코프 결정(브레인스토밍): 질문=느낌·용도 칩 / 컨셉 카드 단일선택 / D2는 **저장+확정 배너까지**(실제 검색가중·색폰트 override는 소비자 Phase 3). subagent-driven으로 Task 1부터. (Phase 1 비차단 폴리시 2건은 데모 임박 시 먼저 처리 가능: ① 실패 시 _emptyState 복원 ② 실행 중 덱 바 dim.)
+> Phase 2(컨셉3) ✅ 완전 종료: Task 1 ConceptSuggester 로직(TDD 3/3)·Task 2 칩 질문→컨셉 3카드→확정 배너 UI (`00f60f2`·`7d85e2c`), final review READY TO MERGE, **PPT 수동검증 통과**(데모 다리). 진행 원장: `.superpowers/sdd/progress.md`. 다음 잎 = Phase 3 플랜: brainstorming으로 스코프(박스 정의·`StyleTags` 가중 방식·두 유사도 UX·데모 스코프) 좁히기 → writing-plans으로 Task 분해. 통합(머지/PR) 결정도 이번 세션에서.
 
 > **빌드/테스트 절차(이번 세션 확립):** 새 .cs는 `TeampptAddin.csproj`의 `<Compile Include>`에 **수동 등록 필수**(old-style csproj). 단위테스트 = 관리자 MSBuild 솔루션 빌드(`/p:RegisterForComInterop=false`) → `dotnet test --no-build -p:BuildProjectReferences=false --filter`. (플랜의 "dotnet test 1순위"는 단독으론 NuGet 참조 못 풀어 실패.)
 
@@ -69,10 +70,11 @@ Phase: 0 두유사도 ──▶ 1 파일진입+덱구조 ──▶ 2 컨셉3 ─
 
 ```
 PROGRESS-BOARD.md를 먼저 읽어줘.
-독백+병목진단 Task 1~5 코드 완료·커밋됨. Task 6(PPT 수동검증)을 해야 해.
-PowerPoint 재시작 후 "AI 리디자인" → 추천 → 배치 → 검수 흐름에서:
-① 한국어 독백 버블 ② 유사도 표시 ③ 병목 4분류 ④ debug.log reasoning 확인.
-브랜치: feat/asset-combination-recommendation.
+Phase 2(컨셉3) 완전 종료 — 코드·리뷰·PPT 수동검증 전부 통과. 이제 Phase 3(박스별 덱 추천, 데모 hero ②) 설계 단계.
+먼저 superpowers:brainstorming으로 Phase 3 스코프 좁히기(박스 정의·_selectedConcept.StyleTags 가중·두 유사도 UX·데모 스코프) → superpowers:writing-plans으로 Task 분해 → subagent-driven 실행.
+스펙: docs/superpowers/specs/2026-06-25-route-b-deck-redesign-design.md (Phase 3 절). 재사용: RecommendationService(Route A)·DeckStructure(Phase 1)·_selectedConcept(Phase 2).
+모델: opus→glm 5.2 max(오케스트레이션·최종리뷰), sonnet→glm 5.2 high(구현·로직리뷰). 브랜치: feat/asset-combination-recommendation.
+통합(머지/PR) 결정도 이번 세션에서.
 ```
 
 ## 🐛 버그 / 📋 요구사항 (다음 세션)

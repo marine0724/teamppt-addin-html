@@ -40,15 +40,27 @@ tail -5 c:/Projects/teamppt-addin/build.log
 
 세션을 닫기 전(커밋·실행프롬프트 작성 직전) **반드시** 아래를 수행한다.
 
-1. **`docs/site-data.json`의 `progress` 블록을 PROGRESS-BOARD.md 기준으로 갱신한다.**
-   - `lastUpdated`: 오늘 날짜
-   - `currentSummary` / `currentDetail`: 현재 상태 요약
-   - `queue`: 다음 Task 목록 (status: "next" | "waiting")
-   - `done` 배열 맨 앞에 이번 세션 완료 항목 추가
-   - 변경 없으면 갱신 불필요
-2. **커밋에 포함시킨다.** 별도 커밋 불필요 — 코드 커밋에 같이 묶으면 된다.
+**`docs/site-data.json` 하나가 웹사이트 전체를 구동한다. Cowork 불필요. 커밋에 같이 묶으면 된다.**
 
-> 이 파일 하나가 웹사이트 진행보드(progress.html)를 구동한다. Cowork 불필요.
+### 매 세션 종료 시 (필수)
+
+`progress` 블록을 PROGRESS-BOARD.md 기준으로 갱신한다.
+- `lastUpdated`: 오늘 날짜
+- `currentSummary` / `currentDetail`: 현재 상태 요약
+- `queue`: 다음 Task 목록 (status: "next" | "waiting")
+- `done` 배열 맨 앞에 이번 세션 완료 항목 추가
+
+### 해당하는 변경이 있을 때만 (선택)
+
+| 변경 내용 | 수정할 JSON 키 |
+|---|---|
+| LLM 모델 교체/추가 | `features.llmModels` |
+| Route A/B/C 상태 변경 | `routes.A/B/C` |
+| HeaderAsset 필드 추가/변경 | `data.headerAssetFields` |
+| AssetColor/Font/Slot 필드 변경 | `data.subTypes.AssetColor/Font/Slot` |
+| Supabase 컬럼 추가/변경 | `data.supabaseColumns` |
+| 설계 결정 추가/변경 | `data.designDecisions` |
+| 릴리즈 (새 버전 배포) | `version.current`, `version.downloadUrl`, `changelog` 배열 맨 앞에 추가 |
 
 ## API 키
 

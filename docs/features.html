@@ -15,7 +15,6 @@
     <li><a href="features.html" class="active">기능</a></li>
     <li><a href="data.html">데이터</a></li>
     <li><a href="progress.html">진행보드</a></li>
-    <li><a href="pitch.html">피치</a></li>
     <li><a href="download.html">다운로드</a></li>
   </ul>
 </nav>
@@ -374,28 +373,8 @@
   <!-- LLM MODELS -->
   <div class="section-label mt48">LLM Models</div>
   <h2 class="stitle" style="font-size:24px">현재 사용 중인 AI 모델</h2>
-  <table class="model-table" style="border-collapse:collapse">
+  <table class="model-table" id="llm-model-table" style="border-collapse:collapse">
     <tr><th>역할</th><th>모델</th><th>세부 내용</th></tr>
-    <tr>
-      <td>에셋 이해 (인제스트)</td>
-      <td><span class="model-badge">gemini-2.0-flash</span></td>
-      <td style="color:var(--text2)">PNG + 섹션명을 직접 보고 kind·slots·colors·fonts·use_when 등을 추출. 멀티모달 이해. thinkingBudget 0.</td>
-    </tr>
-    <tr>
-      <td>텍스트 임베딩</td>
-      <td><span class="model-badge">text-embedding-004</span></td>
-      <td style="color:var(--text2)">768차원 벡터 생성. 인제스트 시(에셋 embed_text) + 추천 시(질의 텍스트) 양쪽에 사용.</td>
-    </tr>
-    <tr>
-      <td>AI 탭 추천 대화</td>
-      <td><span class="model-badge">gemini-2.0-flash</span></td>
-      <td style="color:var(--text2)">벡터검색 top 8 결과를 받아 2~3개 선택 + 이유 설명. 카탈로그 입력 다이어트 적용(slots·colors·fonts 제거)으로 토큰 최소화.</td>
-    </tr>
-    <tr>
-      <td>스타일 팔레트 생성</td>
-      <td><span style="color:var(--text2);font-size:12px">LLM 없음</span></td>
-      <td style="color:var(--text2)">순수 C# 색상수학(HSL 변환 + WCAG 대비비). ColorHsl · PaletteRoleMapper · PaletteGenerator. 토큰 0.</td>
-    </tr>
   </table>
 </div>
 
@@ -405,28 +384,39 @@
 </footer>
 
 <script>
-(function(){
-  const STATUS_MAP = {
-    active: { cls: 'active', badgeCls: 'rcb-now' },
-    next:   { cls: 'next',   badgeCls: 'rcb-next' },
-    later:  { cls: 'later',  badgeCls: 'rcb-later' }
-  };
-  fetch('site-data.json').then(r=>r.json()).then(d=>{
+fetch('site-data.json').then(r=>r.json()).then(d=>{
+  // LLM 모델 테이블
+  const tbl = document.getElementById('llm-model-table');
+  if(tbl && d.features && d.features.llmModels){
+    d.features.llmModels.forEach(m=>{
+      const modelCell = m.model
+        ? `<span class="model-badge">${m.model}</span>`
+        : `<span style="color:var(--text2);font-size:12px">LLM 없음</span>`;
+      tbl.insertAdjacentHTML('beforeend',
+        `<tr><td>${m.role}</td><td>${modelCell}</td><td style="color:var(--text2)">${m.detail}</td></tr>`);
+    });
+  }
+  // 루트 배지
+  if(d.routes){
+    const STATUS_MAP = {
+      active: { cls:'active', badgeCls:'rcb-now' },
+      next:   { cls:'next',   badgeCls:'rcb-next' },
+      later:  { cls:'later',  badgeCls:'rcb-later' }
+    };
     ['A','B','C'].forEach(r=>{
       const route = d.routes[r];
       if(!route) return;
-      const card = document.getElementById('route-card-'+r);
+      const card  = document.getElementById('route-card-'+r);
       const badge = document.getElementById('route-badge-'+r);
       if(!card||!badge) return;
-      // update card class
-      card.className = 'rc ' + (STATUS_MAP[route.status]||{cls:route.status}).cls;
-      // update badge class + text
+      card.className  = 'rc ' + (STATUS_MAP[route.status]||{cls:route.status}).cls;
       badge.className = 'rc-badge ' + (STATUS_MAP[route.status]||{badgeCls:''}).badgeCls;
       badge.textContent = route.badge;
     });
-  }).catch(()=>{});
-})();
+  }
+}).catch(()=>{});
 </script>
+
 
 </body>
 </html>
