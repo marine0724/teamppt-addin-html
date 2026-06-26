@@ -144,6 +144,7 @@
     <Compile Include="Services\ConceptSuggesterParser.cs" />
     <Compile Include="Services\ConceptSuggester.cs" />
     <Compile Include="Services\MaterialFitScorer.cs" />
+    <Compile Include="Services\BodyPatternClusterer.cs" />
     <Compile Include="Services\RecommendationService.cs" />
     <Compile Include="Services\UpdateService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
