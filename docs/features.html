@@ -39,22 +39,22 @@
   <p class="sdesc">루트가 달라져도 같은 데이터·추천 엔진을 공유한다. A를 완성하면 B·C는 그 위에 얹힌다.</p>
 
   <div class="route-row">
-    <div class="rc active">
-      <span class="rc-badge rcb-now">지금 여기</span>
+    <div class="rc active" id="route-card-A">
+      <span class="rc-badge rcb-now" id="route-badge-A">지금 여기</span>
       <div class="rc-ico">🧩</div>
       <div class="rc-id">Route A</div>
       <h3>에셋 조립 · 커서식</h3>
       <p>사용자가 슬라이드에 직접 손을 댄다. AI는 옆에서 "이게 어울려"라고 추천하고 삽입을 도와준다.</p>
     </div>
-    <div class="rc next">
-      <span class="rc-badge rcb-next">다음</span>
+    <div class="rc next" id="route-card-B">
+      <span class="rc-badge rcb-next" id="route-badge-B">진행 중</span>
       <div class="rc-ico">🎨</div>
       <div class="rc-id">Route B</div>
       <h3>리디자인 · 위임식</h3>
       <p>컨셉만 고르면 AI가 전체 덱을 한 번에 바꾼다. Claude Code에 작업을 위임하는 것처럼.</p>
     </div>
-    <div class="rc later">
-      <span class="rc-badge rcb-later">추후</span>
+    <div class="rc later" id="route-card-C">
+      <span class="rc-badge rcb-later" id="route-badge-C">추후</span>
       <div class="rc-ico">📐</div>
       <div class="rc-id">Route C</div>
       <h3>기획 + 에셋</h3>
@@ -403,6 +403,30 @@
   <strong>TEAMPPT</strong> — Vibe Designing
   <span><a href="index.html" style="color:rgba(255,255,255,.4);text-decoration:none">← 홈으로</a></span>
 </footer>
+
+<script>
+(function(){
+  const STATUS_MAP = {
+    active: { cls: 'active', badgeCls: 'rcb-now' },
+    next:   { cls: 'next',   badgeCls: 'rcb-next' },
+    later:  { cls: 'later',  badgeCls: 'rcb-later' }
+  };
+  fetch('site-data.json').then(r=>r.json()).then(d=>{
+    ['A','B','C'].forEach(r=>{
+      const route = d.routes[r];
+      if(!route) return;
+      const card = document.getElementById('route-card-'+r);
+      const badge = document.getElementById('route-badge-'+r);
+      if(!card||!badge) return;
+      // update card class
+      card.className = 'rc ' + (STATUS_MAP[route.status]||{cls:route.status}).cls;
+      // update badge class + text
+      badge.className = 'rc-badge ' + (STATUS_MAP[route.status]||{badgeCls:''}).badgeCls;
+      badge.textContent = route.badge;
+    });
+  }).catch(()=>{});
+})();
+</script>
 
 </body>
 </html>

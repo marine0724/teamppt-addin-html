@@ -36,6 +36,20 @@ tail -5 c:/Projects/teamppt-addin/build.log
 
 - `/t:Build` 사용 (변경분만 빌드). 전체 재빌드 필요시 `/t:Rebuild`
 
+## 세션 종료 절차 — 웹사이트 자동 동기화
+
+세션을 닫기 전(커밋·실행프롬프트 작성 직전) **반드시** 아래를 수행한다.
+
+1. **`docs/site-data.json`의 `progress` 블록을 PROGRESS-BOARD.md 기준으로 갱신한다.**
+   - `lastUpdated`: 오늘 날짜
+   - `currentSummary` / `currentDetail`: 현재 상태 요약
+   - `queue`: 다음 Task 목록 (status: "next" | "waiting")
+   - `done` 배열 맨 앞에 이번 세션 완료 항목 추가
+   - 변경 없으면 갱신 불필요
+2. **커밋에 포함시킨다.** 별도 커밋 불필요 — 코드 커밋에 같이 묶으면 된다.
+
+> 이 파일 하나가 웹사이트 진행보드(progress.html)를 구동한다. Cowork 불필요.
+
 ## API 키
 
 - API 키를 문서나 커밋에 평문으로 절대 포함하지 않는다

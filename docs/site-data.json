@@ -1,0 +1,64 @@
+{
+  "version": {
+    "current": "1.0.0",
+    "downloadUrl": "https://github.com/marine0724/teamppt-addin-html/releases/download/v1.0.0/TeampptAddin-1.0.0.zip",
+    "releaseDate": "2026-06-25"
+  },
+  "changelog": [
+    {
+      "version": "1.0.0",
+      "date": "2026-06-25",
+      "tag": "최초 릴리즈",
+      "tagColor": "green",
+      "items": [
+        "에셋 조합 추천 (Route A) — 벡터검색 + Gemini AI 선택 + 슬라이드 삽입",
+        "자동 업데이트 — PowerPoint 재시작 시 버전 체크 + 배너 + 1클릭 적용",
+        "인제스트 파이프라인 — PPTX → LLM 이해 → 임베딩 → Supabase",
+        "보안 분리 — anon(읽기전용) / service_role(쓰기) 완전 격리",
+        "install.bat 설치 스크립트 (robocopy 버그 수정 포함)"
+      ]
+    }
+  ],
+  "routes": {
+    "A": { "status": "active", "badge": "토대 ✅ 계속 활용" },
+    "B": { "status": "active", "badge": "지금 여기" },
+    "C": { "status": "later",  "badge": "추후" }
+  },
+  "progress": {
+    "lastUpdated": "2026-06-26",
+    "currentSummary": "리디자인 Phase 2 (컨셉3) 진입",
+    "currentDetail": "Phase 1 완료 → 플랜 작성부터 시작. 데모 임박 시엔 선택 폴리시 2건 먼저 처리해도 됨.",
+    "branch": "feat/asset-combination-recommendation",
+    "roadmap": [
+      { "id": "A 토대",   "label": "데이터 토대",        "sub": "인제스트→Supabase + 벡터추천 (해자)",  "status": "done" },
+      { "id": "Route A",  "label": "단일 슬라이드 추천",  "sub": "에셋 조합 추천 + 배치 (검증됨)",       "status": "done" },
+      { "id": "Route B",  "label": "리디자인 (덱 전체)",  "sub": "초안 파일 통째 → 덱 리디자인 (지금)",   "status": "active" }
+    ],
+    "queue": [
+      { "id": "Phase 2",  "label": "컨셉3 구현",              "detail": "플랜 없음 → brainstorming → writing-plans → 실행", "status": "next" },
+      { "id": "Phase 3",  "label": "박스별 덱 추천",          "detail": "슬라이드별 최적 에셋 추천 → 덱 전체 매핑",         "status": "waiting" },
+      { "id": "Phase 4~5","label": "빈 템플릿 조립 → 재료 이식","detail": "Scratch 덱 조립 + 본문 1~2장 이식",             "status": "waiting" }
+    ],
+    "demoOptions": [
+      { "label": "실패 시 _emptyState 복원", "detail": "리디자인 실패 시 원본 상태 복원 처리" },
+      { "label": "실행 중 덱 바 dim",        "detail": "리디자인 진행 중 UI dim 처리" }
+    ],
+    "done": [
+      { "label": "리디자인 Phase 1 — 파일 진입 + 덱 구조 분석", "detail": "DeckFileReader · 덱 구조 요약 박스 UI (demo hero ①) · PPT 수동검증 ✅ (dd2496a·6053a69·db0a3f2)" },
+      { "label": "리디자인 Phase 0 — 두 유사도 분리",           "detail": "검색 유사도 · 검수 유사도 분리 · PPT 수동검증 ✅ (b29fd84·be10db8·c5676a6·437d924)" },
+      { "label": "배포 install.bat 버그 수정 (R2)",             "detail": "robocopy 트레일링 백슬래시 → 신규 설치 0개 복사 차단. v1.0.0 자산 재업로드" },
+      { "label": "에셋 조합 추천 구현 (Route A)",               "detail": "4분류 스키마 · 초안 이해 · 추천 엔진 · UI 카드 (10커밋, 110 tests)" },
+      { "label": "자동 업데이트 + 배포 (R1)",                   "detail": "UpdateService · updater.bat · install/uninstall · GitHub Release v1.0.0 · 팀원 배포" },
+      { "label": "A-2 첫 조각 · 화면공유 진단",                 "detail": "슬라이드 읽기 + 공유 표시 기본 구현" },
+      { "label": "A-1 데이터 토대 전체",                        "detail": "LLM 이해 어댑터 · Supabase 적재 · 벡터검색 읽기경로" }
+    ],
+    "onHold": [
+      "UIUX 프롬프트 수정 (Route B 이후)",
+      "kind 3분류 · Scratch 삽입 · 이미지 미화 · 덱 전체 일괄",
+      "화면공유 진단 확장 (리디자인 B 루트 진입 시 — 슬라이드 변경 감지, 에셋 추천 연동, 전체덱 일관성 진단)",
+      "한글 폰트 커버리지 (영문 전용 폰트 → Font.NameFarEast 이원 체계)",
+      "폰트+팔레트 동시 적용 UX (버그 #3)",
+      "덱 전체 통일 (Scratch 삽입 이후)"
+    ]
+  }
+}
