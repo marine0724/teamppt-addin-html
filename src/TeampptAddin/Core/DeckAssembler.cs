@@ -57,8 +57,8 @@ namespace TeampptAddin
                     var slots = new List<RecommendedSlot>();
                     if (commonHeader != null) slots.Add(commonHeader);
                     if (rec.Layout != null) slots.Add(rec.Layout);
-                    foreach (var c in rec.Components ?? new List<RecommendedSlot>())
-                        if (c != null) slots.Add(c);
+                    // Phase 4.5: 컴포넌트는 레이아웃에 이미 내장 → 별도 오버레이 삽입 안 함(겹침 제거).
+                    //            컴포넌트 교체는 후속 단계(comp_ 모델, 로드맵 참조)에서 클릭-교체로 처리.
 
                     var covered = box.Plan.CoveredSlideIndexes ?? new List<int>();
                     for (int i = 0; i < covered.Count; i++)
