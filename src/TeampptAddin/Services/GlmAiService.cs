@@ -11,12 +11,20 @@ using Newtonsoft.Json.Linq;
 
 namespace TeampptAddin
 {
-    /// <summary>z.ai 무료 GLM-Flash(OpenAI-호환) provider. 텍스트=glm-4.7-flash, 비전=glm-4.6v-flash.</summary>
+    /// <summary>
+    /// z.ai 무료 GLM-Flash(OpenAI-호환) provider. 텍스트 생성=glm-4.7-flash.
+    /// 비전(이미지 포함) 호출은 Gemini로 위임한다 — glm-4.6v-flash가 response_format:json_object +
+    /// 스키마 지시를 안 지키고 최상위 JSON 배열을 반환함이 라이브 검증으로 확인됨(텍스트 flash는 정상).
+    /// </summary>
     public class GlmAiService : IAiService
     {
         private const string Endpoint = "https://api.z.ai/api/paas/v4/chat/completions";
         private static readonly HttpClient Http = new HttpClient();
         private readonly string _apiKey;
+
+        // 비전 위임용 Gemini(지연 생성). 키는 AiConfig에서 1회 로딩됨.
+        private GeminiAiService _vision;
+        private GeminiAiService Vision => _vision ?? (_vision = new GeminiAiService(AiConfig.GeminiKey));
 
         public GlmAiService(string apiKey) { _apiKey = apiKey; }
 
@@ -32,13 +40,20 @@ namespace TeampptAddin
             string systemPrompt, string userText, IEnumerable<string> pngPaths,
             JObject responseSchema, double temperature = 0.4, int thinkingBudget = 0)
         {
-            var b64 = (pngPaths ?? Enumerable.Empty<string>())
+            var paths = (pngPaths ?? Enumerable.Empty<string>())
                 .Where(p => !string.IsNullOrEmpty(p) && File.Exists(p))
-                .Select(p => Convert.ToBase64String(File.ReadAllBytes(p)))
                 .ToList();
 
-            var body = GlmRequestBuilder.Build(systemPrompt, userText, b64, responseSchema, temperature, thinkingBudget);
-            var resp = await PostAsync(body, b64.Count > 0 ? "vision" : "text").ConfigureAwait(false);
+            // 비전 경로는 Gemini로 위임(flash 비전이 객체 대신 배열 반환). 텍스트는 무료 GLM-Flash 유지.
+            if (paths.Count > 0)
+            {
+                Logger.Log($"[GLM] 비전 호출 → Gemini 위임 (이미지 {paths.Count}장)");
+                return await Vision.GenerateJsonAsync(
+                    systemPrompt, userText, paths, responseSchema, temperature, thinkingBudget).ConfigureAwait(false);
+            }
+
+            var body = GlmRequestBuilder.Build(systemPrompt, userText, null, responseSchema, temperature, thinkingBudget);
+            var resp = await PostAsync(body, "text").ConfigureAwait(false);
             return ExtractContent(resp);
         }
 
