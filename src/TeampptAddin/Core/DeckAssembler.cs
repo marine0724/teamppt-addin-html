@@ -14,6 +14,21 @@ namespace TeampptAddin
 
     public static class DeckAssembler
     {
+        private static readonly Dictionary<string, int> LayerOrder = new Dictionary<string, int>
+        {
+            ["component"] = 0,  // 맨 먼저 삽입 → z-order 맨 아래
+            ["layout"] = 1,
+            ["slide"] = 2,
+            ["header"] = 3      // 맨 마지막 삽입 → z-order 맨 위 (상단 고정)
+        };
+
+        public static List<RecommendedSlot> SortSlotsByLayer(List<RecommendedSlot> slots)
+        {
+            return (slots ?? new List<RecommendedSlot>())
+                .OrderBy(s => LayerOrder.TryGetValue(s.Asset?.Kind ?? "", out var v) ? v : 1)
+                .ToList();
+        }
+
         public static List<SlideAssemblyItem> BuildSlideOrder(DeckRecommendation deck)
         {
             var items = new List<SlideAssemblyItem>();

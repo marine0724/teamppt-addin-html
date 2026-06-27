@@ -137,5 +137,32 @@ namespace TeampptAddin.Tests
             Assert.Single(order);
             Assert.Empty(order[0].Slots); // Slide가 null이면 슬롯 없음
         }
+
+        [Fact]
+        public void SortSlotsByLayer_HeaderLastForTopZOrder()
+        {
+            var slots = new List<RecommendedSlot>
+            {
+                new RecommendedSlot { Asset = new HeaderAsset { Kind = "header", Name = "h" } },
+                new RecommendedSlot { Asset = new HeaderAsset { Kind = "layout", Name = "l" } },
+                new RecommendedSlot { Asset = new HeaderAsset { Kind = "component", Name = "c" } }
+            };
+            var sorted = DeckAssembler.SortSlotsByLayer(slots);
+            Assert.Equal("component", sorted[0].Asset.Kind); // 먼저 삽입 → 맨 아래
+            Assert.Equal("layout", sorted[1].Asset.Kind);
+            Assert.Equal("header", sorted[2].Asset.Kind);    // 마지막 삽입 → 맨 위
+        }
+
+        [Fact]
+        public void SortSlotsByLayer_SlideKindUnchanged()
+        {
+            var slots = new List<RecommendedSlot>
+            {
+                new RecommendedSlot { Asset = new HeaderAsset { Kind = "slide", Name = "s" } }
+            };
+            var sorted = DeckAssembler.SortSlotsByLayer(slots);
+            Assert.Single(sorted);
+            Assert.Equal("slide", sorted[0].Asset.Kind);
+        }
     }
 }
