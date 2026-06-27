@@ -1,14 +1,14 @@
 # 🗺️ TEAMPPT 개발 진행 보드
 
-> **▶ 다음 세션 시작점:** **Phase 4 빈 템플릿 덱 조립 완료. PPT 수동검증 → main 머지 → Phase 5 재료 이식.**
+> **▶ 다음 세션 시작점:** **Phase 4.5 플랜 작성 완료(겹침수정+출처기록). 새 창에서 subagent-driven으로 구현 — `docs/superpowers/plans/2026-06-27-redesign-phase4_5-clean-assembly-provenance.md`.**
 
 > 이 파일 하나만 열어두면 "지금 어디서 뭘 하는지" 보입니다. Claude가 매 세션 함께 유지.
 > **기록용 아카이브가 아니라 "지금 여기" 작업 보드.** 끝난 잎(Task)은 지우고 교체, 숲·나무 단위는 끝날 때까지 유지. (규칙: CLAUDE.md)
 > 계층: **나라 > 대지 > 숲 > 나무 > 잎** (2026-06-22 재정립)
-> 최종 갱신: 2026-06-27 · 현재 작업: **Phase 4 빈 템플릿 덱 조립 완료, PPT 수동검증 대기.**
+> 최종 갱신: 2026-06-28 · 현재 작업: **Phase 4.5(겹침수정+출처기록) 플랜 작성 완료 — 새 창에서 구현 시작.**
 
 ### ▶ 다음 작업
-**PPT 수동검증** → main 머지 → **Phase 5 — 재료 이식 (본문 1~2장)** 설계·구현.
+**Phase 4.5 구현** (subagent-driven, Sonnet) → PPT 수동검증 → main 머지 → 이후 **Phase 5 재료이식** 또는 **컴포넌트 모델(6a/6b/6c, 디자이너 재저작 선행)**.
 
 ---
 
@@ -37,9 +37,9 @@
 > 설계: [덱 리디자인 스펙](docs/superpowers/specs/2026-06-25-route-b-deck-redesign-design.md) · 하이브리드 데모 스코프: 임팩트 큰 곳(구조박스·박스별추천·두 유사도·조립덱)은 진짜 / overflow·표·완벽합성은 검증 위주.
 
 ```
-Phase: 0 두유사도 ──▶ 1 파일진입+덱구조 ──▶ 2 컨셉3 ──▶ 3 박스별추천 ──▶ 4 빈템플릿조립 ──▶ 5 재료이식
-        ✅ 완료          ✅ 완료            ✅ 완료        ✅ 완료          🔵 검증대기◀      ⬜
-                      (데모 hero ①)      (다리)        (데모 hero ②)                  (본문1~2장)
+Phase: 0 두유사도 ─▶ 1 파일진입 ─▶ 2 컨셉3 ─▶ 3 박스별추천 ─▶ 4 빈템플릿조립 ─▶ 4.5 겹침수정+출처 ─▶ 5 재료이식
+        ✅          ✅           ✅        ✅            ✅(겹침발견)       🔵 다음◀            ⬜
+                  (데모 hero ①)  (다리)    (데모 hero ②)                                    (본문1~2장)
 ```
 
 > **밑단(A 토대, 계속 활용):** A-1 인제스트→Supabase 벡터추천(해자) ✅. A-2 화면공유 진단 첫 조각 ✅(B에서 확장 예정). 이 데이터·읽기 엔진 위에 리디자인이 얹힘.
@@ -50,18 +50,21 @@ Phase: 0 두유사도 ──▶ 1 파일진입+덱구조 ──▶ 2 컨셉3 ─
 
 ---
 
-## 🌲 나무 — 현재 Phase: **Phase 4 — 빈 템플릿 덱 조립 (DeckAssembler, 데모 hero ②)**
+## 🌲 나무 — 현재 Phase: **Phase 4.5 — 깨끗한 빈 템플릿 조립 + 출처 기록**
 
-> **왜:** Phase 3 추천 결과(`DeckRecommendation`)를 소비해, 빈 템플릿 덱(N장)을 COM으로 조립. 순서 결정(`BuildSlideOrder`)·z-order 합성(`SortSlotsByLayer`)·COM 슬라이드 생성(`AssembleAsync`)·UI("이 추천으로 덱 조립 ▶" 버튼 + 진행 표시).
-> 플랜: [Phase 4](docs/superpowers/plans/2026-06-27-redesign-phase4-deck-assembly.md).
+> **왜:** Phase 4(`DeckAssembler`)는 구현·리뷰 완료(READY TO MERGE)지만 **PPT 수동검증서 컴포넌트 겹침 발견**(스샷). 원인 = 레이아웃에 이미 내장된 컴포넌트 위에 별도 컴포넌트 에셋을 또 얹음([DeckAssembler.cs:60-61]). → 본문을 **header+layout만**으로 조립하면 겹침 해소. 동시에 **출처 기록**(어떤 슬라이드에 어떤 에셋이 갔는지 슬라이드 Tags에 JSON)을 깔아 후속 컴포넌트교체·슬라이드별 대화형 UX 토대 마련.
+> 플랜: [Phase 4.5](docs/superpowers/plans/2026-06-27-redesign-phase4_5-clean-assembly-provenance.md) (Phase 4 플랜: [link](docs/superpowers/plans/2026-06-27-redesign-phase4-deck-assembly.md)).
 
-### 🍃 잎 — **Phase 4 구현 완료 — PPT 수동검증 대기**
+### 🍃 잎 — **Phase 4.5 플랜 작성 완료 — 새 창에서 subagent-driven 구현**
 
-> **구현 완료 (2026-06-27):**
-> - `DeckAssembler` 신규: `BuildSlideOrder` (순수 조립 순서), `SortSlotsByLayer` (z-order 합성 규칙), `AssembleAsync` (COM N장 조립)
-> - UI: "이 추천으로 덱 조립 ▶" 버튼 + 진행 표시
-> - TDD: 8 tests (5 BuildSlideOrder + 2 SortSlotsByLayer + 1 toc/section) — 전체 PASS
-> - 다음: PPT 수동검증 → main 머지 → Phase 5 (재료 이식)
+> **이번 세션 (2026-06-28): 브레인스토밍 → Phase 4.5 플랜.** Phase 4 구현물은 main(`a67607d`까지) 반영됨(8 tests PASS, STA 스레딩 fix 포함).
+> **Phase 4.5 = 3 Task:** ① 본문 조립 header+layout만(컴포넌트 제외, TDD) ② `SlideProvenance` JSON 직렬화(TDD 3) ③ `AssembleAsync`가 슬라이드 Tags에 출처 기록(복제는 Duplicate가 상속). **에셋 재저작 불필요 — 즉시 구현 가능.**
+>
+> **🗺️ 후속 로드맵(플랜의 로드맵 섹션에 박제, 디자이너 재저작·인제스트 선행이라 별도 플랜):**
+> - **6a 컴포넌트 데이터 모델:** 디자이너가 레이아웃 저작 시 교체될 요소를 Group 묶고 이름 접두사 **`comp_`**(선택 창). 인제스트가 `comp_` 그룹을 ①레이아웃 일부 + ②독립 컴포넌트 에셋으로 동시 수확(pptx조각·임베딩·썸네일, `parent_layout`·`bbox`·**종횡비** 태그). DB는 일반화된 **`slot_type`**(나중 `img_`/`chart_` 무료 확장). LLM이 그룹마다 **설명** 생성(검색은 이름 아닌 임베딩으로). 벡터 이웃 **top-3 미리저장**.
+> - **6b 클릭-교체:** 컴포넌트 선택 → 패널이 미리저장 3개 → bbox 먼저기록→새거삽입→**fit(비율유지 균일스케일)**→원본삭제→태그재부여+컨셉색→1회Undo. 종횡비 필터로 찌그러짐·텍스트넘침 회피.
+> - **6c 슬라이드별 대화형 UX:** 출처기록(4.5)이 토대. 슬라이드 이동 감지(화면공유 조각 확장)→슬라이드 태그 조회→적용에셋 박스+슬라이드별 추천블록(이웃, 비전0)+스코프 Q&A. "슬라이드마다 채팅방" = 위임→대화형 조립 전환.
+> - **유연성:** 새 마킹 필요 기능은 소스 재저작 필요(공짜 X). 로고·사진 등 자동검출 가능 슬롯은 일회성 배치 enrichment. `slot_type` 일반화 + 소스 pptx 보관으로 대부분 흡수.
 
 > **빌드/테스트 절차(이번 세션 확립):** 새 .cs는 `TeampptAddin.csproj`의 `<Compile Include>`에 **수동 등록 필수**(old-style csproj). 단위테스트 = 관리자 MSBuild 솔루션 빌드(`/p:RegisterForComInterop=false`) → `dotnet test --no-build -p:BuildProjectReferences=false --filter`. (플랜의 "dotnet test 1순위"는 단독으론 NuGet 참조 못 풀어 실패.)
 
@@ -76,10 +79,11 @@ Phase: 0 두유사도 ──▶ 1 파일진입+덱구조 ──▶ 2 컨셉3 ─
 ```
 PROGRESS-BOARD.md를 먼저 읽어줘.
 
-Phase 4 빈 템플릿 덱 조립 구현 완료. PPT 수동검증 후 main 머지하고,
-Phase 5 재료 이식(본문 1~2장) 설계·구현을 시작하자.
+Phase 4.5 플랜이 작성돼 있어: docs/superpowers/plans/2026-06-27-redesign-phase4_5-clean-assembly-provenance.md
+subagent-driven-development로 Task 1~3 구현해줘 (구현 Sonnet, 리뷰 Sonnet).
+끝나면 PPT 수동검증 안내.
 
-브랜치: feat/asset-combination-recommendation
+브랜치: feat/asset-combination-recommendation (main에서 계속)
 ```
 
 ## 🐛 버그 / 📋 요구사항 (다음 세션)
