@@ -14,7 +14,9 @@ namespace TeampptAddin.Tests
                 UseWhen = "연도 강조", Tags = new List<string> { "표지" },
                 ContentFit = new List<string> { "표지" },
                 Colors = new List<AssetColor> { new AssetColor { Role = "main", Value = "#1A2B4C", Locked = false } },
-                Slots = new List<AssetSlot> { new AssetSlot { Name = "title", Type = "text", PerSlide = true } }
+                Slots = new List<AssetSlot> { new AssetSlot { Name = "title", Type = "text", PerSlide = true } },
+                Capacity = new AssetCapacity { Min = 3, Max = 3 },
+                MaterialKinds = new List<string> { "text", "image" }
             },
             ExampleIntents = new List<string> { "IR 표지" }
         };
@@ -41,6 +43,15 @@ namespace TeampptAddin.Tests
             var meta = (JObject)row["metadata"];
             Assert.NotNull(meta["colors"]);
             Assert.NotNull(meta["slots"]);
+        }
+
+        [Fact]
+        public void Build_Puts_Capacity_And_MaterialKinds_In_Metadata()
+        {
+            var row = AssetRowBuilder.Build(U(), new float[] { 0.1f }, "t", "p", "th", "d");
+            var meta = (JObject)row["metadata"];
+            Assert.Equal(3, (int)meta["capacity"]["min"]);
+            Assert.Equal("text", (string)meta["material_kinds"][0]);
         }
     }
 }

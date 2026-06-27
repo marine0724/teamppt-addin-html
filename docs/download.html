@@ -71,7 +71,6 @@ code{background:#f0f2f5;border-radius:6px;padding:2px 8px;font-size:12.5px;color
     <li><a href="features.html">기능</a></li>
     <li><a href="data.html">데이터</a></li>
     <li><a href="progress.html">진행보드</a></li>
-    <li><a href="pitch.html">피치</a></li>
     <li><a href="download.html" class="active">다운로드</a></li>
   </ul>
 </nav>
@@ -83,11 +82,11 @@ code{background:#f0f2f5;border-radius:6px;padding:2px 8px;font-size:12.5px;color
     <h1><em>설치하고 시작하기.</em></h1>
     <p class="hero-sub">최초 1회만 설치하면,<br>이후 업데이트는 자동입니다.</p>
     <div class="dl-btn-wrap">
-      <a class="dl-btn" href="https://github.com/marine0724/teamppt-addin-html/releases/download/v1.0.0/TeampptAddin-1.0.0.zip">
+      <a class="dl-btn" id="dl-btn" href="https://github.com/marine0724/teamppt-addin-html/releases/download/v1.0.0/TeampptAddin-1.0.0.zip">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2v10m0 0l-3-3m3 3l3-3M3 14v2a1 1 0 001 1h12a1 1 0 001-1v-2" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         최신 버전 다운로드
       </a>
-      <span class="ver-badge"><span class="dot"></span>현재 버전 v1.0.0</span>
+      <span class="ver-badge"><span class="dot"></span><span id="ver-text">현재 버전 v1.0.0</span></span>
     </div>
   </div>
 </div>
@@ -238,6 +237,12 @@ code{background:#f0f2f5;border-radius:6px;padding:2px 8px;font-size:12.5px;color
     </div>
   </div>
 
+  <!-- CHANGELOG -->
+  <div id="changelog-section" style="display:none">
+    <div class="section-label" style="margin-bottom:16px;margin-top:48px">릴리즈 노트</div>
+    <div id="changelog-list" style="display:flex;flex-direction:column;gap:16px"></div>
+  </div>
+
  </div>
 </div>
 
@@ -245,6 +250,40 @@ code{background:#f0f2f5;border-radius:6px;padding:2px 8px;font-size:12.5px;color
   <strong>TEAMPPT</strong> — Vibe Designing
   <span>업데이트는 PowerPoint 안에서 자동 적용</span>
 </footer>
+
+<script>
+fetch('site-data.json').then(r=>r.json()).then(d=>{
+  // 버전 배지 + 다운로드 버튼
+  document.getElementById('ver-text').textContent = '현재 버전 v' + d.version.current;
+  document.getElementById('dl-btn').href = d.version.downloadUrl;
+
+  // changelog
+  const sec = document.getElementById('changelog-section');
+  const list = document.getElementById('changelog-list');
+  if(d.changelog && d.changelog.length){
+    sec.style.display = '';
+    d.changelog.forEach(rel=>{
+      const tagStyle = rel.tagColor === 'green'
+        ? 'background:var(--green-light);color:#0a7a50'
+        : 'background:var(--accent-light);color:#1a56db';
+      const items = rel.items.map(i=>`
+        <div style="display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--text2);line-height:1.7">
+          <span style="width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;margin-top:7px"></span>
+          <span>${i}</span>
+        </div>`).join('');
+      list.insertAdjacentHTML('beforeend',`
+        <div style="background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);padding:28px 30px;box-shadow:var(--shadow-lg)">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+            <span style="font-size:19px;font-weight:800;letter-spacing:-.5px">v${rel.version}</span>
+            <span style="font-size:11px;font-weight:700;padding:4px 12px;border-radius:99px;${tagStyle}">${rel.tag}</span>
+            <span style="font-size:12px;color:var(--text3);margin-left:auto">${rel.date}</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">${items}</div>
+        </div>`);
+    });
+  }
+}).catch(()=>{});
+</script>
 
 </body>
 </html>

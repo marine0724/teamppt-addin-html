@@ -21,6 +21,7 @@ namespace TeampptAddin
     {
         private PowerPoint.Application _app;
         private readonly TaskPaneManager _manager = new TaskPaneManager();
+        private readonly UpdateService _updater = new UpdateService();
 
         #region IDTExtensibility2
 
@@ -54,7 +55,13 @@ namespace TeampptAddin
 
         public void OnAddInsUpdate(ref Array custom) { }
 
-        public void OnStartupComplete(ref Array custom) { }
+        public void OnStartupComplete(ref Array custom)
+        {
+            // 자동 업데이트: 논블로킹 백그라운드 확인. 새 버전이면 staging에 받아두고
+            // %LOCALAPPDATA%\TeampptAddin\update-staging\pending-update.json 마커를 남긴다.
+            // 패널은 이 마커를 읽어 "업데이트 준비됨" 배너를 띄운다.
+            _updater.CheckInBackground();
+        }
 
         public void OnBeginShutdown(ref Array custom)
         {

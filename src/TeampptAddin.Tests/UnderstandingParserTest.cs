@@ -1,3 +1,4 @@
+using System.Linq;
 using Xunit;
 
 namespace TeampptAddin.Tests
@@ -54,6 +55,36 @@ namespace TeampptAddin.Tests
             Assert.Empty(u.Asset.Tags);
             Assert.Empty(u.Asset.Slots);
             Assert.Empty(u.ExampleIntents);
+        }
+
+        [Fact]
+        public void Parses_Slide_Kind_And_Capacity_And_MaterialKinds()
+        {
+            const string llm = @"{
+              ""name"":""3단 카드 레이아웃"", ""kind"":""layout"",
+              ""use_when"":""기능 비교"", ""content_fit"":[""카드""], ""tags"":[""3단""],
+              ""example_intents"":[""기능 3개 비교""], ""slots"":[], ""colors"":[], ""fonts"":[],
+              ""capacity"":{ ""min"":3, ""max"":3 },
+              ""material_kinds"":[""text"",""image""]
+            }";
+            var u = UnderstandingParser.Parse(llm, "레이아웃", "pptx/x.pptx");
+            Assert.Equal("layout", u.Asset.Kind);
+            Assert.Equal(3, u.Asset.Capacity.Min);
+            Assert.Equal(3, u.Asset.Capacity.Max);
+            Assert.Equal(new[] { "text", "image" }, u.Asset.MaterialKinds.ToArray());
+        }
+
+        [Fact]
+        public void Capacity_Defaults_Null_When_Absent()
+        {
+            const string llm = @"{
+              ""name"":""표지"", ""kind"":""slide"", ""use_when"":""오프닝"",
+              ""content_fit"":[], ""tags"":[], ""example_intents"":[], ""slots"":[], ""colors"":[], ""fonts"":[]
+            }";
+            var u = UnderstandingParser.Parse(llm, "표지", "pptx/c.pptx");
+            Assert.Equal("slide", u.Asset.Kind);
+            Assert.Null(u.Asset.Capacity);
+            Assert.Empty(u.Asset.MaterialKinds);
         }
     }
 }

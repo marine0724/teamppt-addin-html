@@ -15,7 +15,6 @@
     <li><a href="features.html" class="active">기능</a></li>
     <li><a href="data.html">데이터</a></li>
     <li><a href="progress.html">진행보드</a></li>
-    <li><a href="pitch.html">피치</a></li>
     <li><a href="download.html">다운로드</a></li>
   </ul>
 </nav>
@@ -39,22 +38,22 @@
   <p class="sdesc">루트가 달라져도 같은 데이터·추천 엔진을 공유한다. A를 완성하면 B·C는 그 위에 얹힌다.</p>
 
   <div class="route-row">
-    <div class="rc active">
-      <span class="rc-badge rcb-now">지금 여기</span>
+    <div class="rc active" id="route-card-A">
+      <span class="rc-badge rcb-now" id="route-badge-A">지금 여기</span>
       <div class="rc-ico">🧩</div>
       <div class="rc-id">Route A</div>
       <h3>에셋 조립 · 커서식</h3>
       <p>사용자가 슬라이드에 직접 손을 댄다. AI는 옆에서 "이게 어울려"라고 추천하고 삽입을 도와준다.</p>
     </div>
-    <div class="rc next">
-      <span class="rc-badge rcb-next">다음</span>
+    <div class="rc next" id="route-card-B">
+      <span class="rc-badge rcb-next" id="route-badge-B">진행 중</span>
       <div class="rc-ico">🎨</div>
       <div class="rc-id">Route B</div>
       <h3>리디자인 · 위임식</h3>
       <p>컨셉만 고르면 AI가 전체 덱을 한 번에 바꾼다. Claude Code에 작업을 위임하는 것처럼.</p>
     </div>
-    <div class="rc later">
-      <span class="rc-badge rcb-later">추후</span>
+    <div class="rc later" id="route-card-C">
+      <span class="rc-badge rcb-later" id="route-badge-C">추후</span>
       <div class="rc-ico">📐</div>
       <div class="rc-id">Route C</div>
       <h3>기획 + 에셋</h3>
@@ -374,28 +373,8 @@
   <!-- LLM MODELS -->
   <div class="section-label mt48">LLM Models</div>
   <h2 class="stitle" style="font-size:24px">현재 사용 중인 AI 모델</h2>
-  <table class="model-table" style="border-collapse:collapse">
+  <table class="model-table" id="llm-model-table" style="border-collapse:collapse">
     <tr><th>역할</th><th>모델</th><th>세부 내용</th></tr>
-    <tr>
-      <td>에셋 이해 (인제스트)</td>
-      <td><span class="model-badge">gemini-2.0-flash</span></td>
-      <td style="color:var(--text2)">PNG + 섹션명을 직접 보고 kind·slots·colors·fonts·use_when 등을 추출. 멀티모달 이해. thinkingBudget 0.</td>
-    </tr>
-    <tr>
-      <td>텍스트 임베딩</td>
-      <td><span class="model-badge">text-embedding-004</span></td>
-      <td style="color:var(--text2)">768차원 벡터 생성. 인제스트 시(에셋 embed_text) + 추천 시(질의 텍스트) 양쪽에 사용.</td>
-    </tr>
-    <tr>
-      <td>AI 탭 추천 대화</td>
-      <td><span class="model-badge">gemini-2.0-flash</span></td>
-      <td style="color:var(--text2)">벡터검색 top 8 결과를 받아 2~3개 선택 + 이유 설명. 카탈로그 입력 다이어트 적용(slots·colors·fonts 제거)으로 토큰 최소화.</td>
-    </tr>
-    <tr>
-      <td>스타일 팔레트 생성</td>
-      <td><span style="color:var(--text2);font-size:12px">LLM 없음</span></td>
-      <td style="color:var(--text2)">순수 C# 색상수학(HSL 변환 + WCAG 대비비). ColorHsl · PaletteRoleMapper · PaletteGenerator. 토큰 0.</td>
-    </tr>
   </table>
 </div>
 
@@ -403,6 +382,41 @@
   <strong>TEAMPPT</strong> — Vibe Designing
   <span><a href="index.html" style="color:rgba(255,255,255,.4);text-decoration:none">← 홈으로</a></span>
 </footer>
+
+<script>
+fetch('site-data.json').then(r=>r.json()).then(d=>{
+  // LLM 모델 테이블
+  const tbl = document.getElementById('llm-model-table');
+  if(tbl && d.features && d.features.llmModels){
+    d.features.llmModels.forEach(m=>{
+      const modelCell = m.model
+        ? `<span class="model-badge">${m.model}</span>`
+        : `<span style="color:var(--text2);font-size:12px">LLM 없음</span>`;
+      tbl.insertAdjacentHTML('beforeend',
+        `<tr><td>${m.role}</td><td>${modelCell}</td><td style="color:var(--text2)">${m.detail}</td></tr>`);
+    });
+  }
+  // 루트 배지
+  if(d.routes){
+    const STATUS_MAP = {
+      active: { cls:'active', badgeCls:'rcb-now' },
+      next:   { cls:'next',   badgeCls:'rcb-next' },
+      later:  { cls:'later',  badgeCls:'rcb-later' }
+    };
+    ['A','B','C'].forEach(r=>{
+      const route = d.routes[r];
+      if(!route) return;
+      const card  = document.getElementById('route-card-'+r);
+      const badge = document.getElementById('route-badge-'+r);
+      if(!card||!badge) return;
+      card.className  = 'rc ' + (STATUS_MAP[route.status]||{cls:route.status}).cls;
+      badge.className = 'rc-badge ' + (STATUS_MAP[route.status]||{badgeCls:''}).badgeCls;
+      badge.textContent = route.badge;
+    });
+  }
+}).catch(()=>{});
+</script>
+
 
 </body>
 </html>

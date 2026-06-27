@@ -1,0 +1,138 @@
+{
+  "version": {
+    "current": "1.0.0",
+    "downloadUrl": "https://github.com/marine0724/teamppt-addin-html/releases/download/v1.0.0/TeampptAddin-1.0.0.zip",
+    "releaseDate": "2026-06-25"
+  },
+  "changelog": [
+    {
+      "version": "1.0.0",
+      "date": "2026-06-25",
+      "tag": "최초 릴리즈",
+      "tagColor": "green",
+      "items": [
+        "에셋 조합 추천 (Route A) — 벡터검색 + Gemini AI 선택 + 슬라이드 삽입",
+        "자동 업데이트 — PowerPoint 재시작 시 버전 체크 + 배너 + 1클릭 적용",
+        "인제스트 파이프라인 — PPTX → LLM 이해 → 임베딩 → Supabase",
+        "보안 분리 — anon(읽기전용) / service_role(쓰기) 완전 격리",
+        "install.bat 설치 스크립트 (robocopy 버그 수정 포함)"
+      ]
+    }
+  ],
+  "routes": {
+    "A": { "status": "active", "badge": "토대 ✅ 계속 활용" },
+    "B": { "status": "active", "badge": "지금 여기" },
+    "C": { "status": "later",  "badge": "추후" }
+  },
+  "features": {
+    "llmModels": [
+      {
+        "role": "에셋 이해 (인제스트)",
+        "model": "gemini-2.0-flash",
+        "detail": "PNG + 섹션명을 직접 보고 kind·slots·colors·fonts·use_when 등을 추출. 멀티모달 이해. thinkingBudget 0."
+      },
+      {
+        "role": "텍스트 임베딩",
+        "model": "text-embedding-004",
+        "detail": "768차원 벡터 생성. 인제스트 시(에셋 embed_text) + 추천 시(질의 텍스트) 양쪽에 사용."
+      },
+      {
+        "role": "AI 탭 추천 대화",
+        "model": "gemini-2.0-flash",
+        "detail": "벡터검색 top 8 결과를 받아 2~3개 선택 + 이유 설명. 카탈로그 입력 다이어트 적용(slots·colors·fonts 제거)으로 토큰 최소화."
+      },
+      {
+        "role": "스타일 팔레트 생성",
+        "model": null,
+        "detail": "순수 C# 색상수학(HSL 변환 + WCAG 대비비). ColorHsl · PaletteRoleMapper · PaletteGenerator. 토큰 0."
+      }
+    ]
+  },
+  "data": {
+    "headerAssetFields": [
+      { "name": "file",     "type": "string",                     "comment": "// 원본 pptx 경로" },
+      { "name": "name",     "type": "string",                     "comment": "" },
+      { "name": "kind",     "type": "\"layout\" | \"component\"", "comment": "// 고정 enum" },
+      { "name": "category", "type": "string",                     "comment": "// 섹션명 (사람이 분류)" },
+      { "name": "use_when", "type": "string",                     "comment": "// LLM 자동 생성" },
+      { "name": "tags",     "type": "string[]",                   "comment": "// LLM 자동 생성" },
+      { "name": "colors",   "type": "AssetColor[]",               "comment": "" },
+      { "name": "fonts",    "type": "AssetFont[]",                "comment": "" },
+      { "name": "slots",    "type": "AssetSlot[]",                "comment": "" }
+    ],
+    "subTypes": {
+      "AssetColor": [
+        { "name": "role",   "type": "string", "comment": "// \"main\",\"text\",\"background\"…" },
+        { "name": "value",  "type": "string", "comment": "// #RRGGBB 6자리 대문자" },
+        { "name": "locked", "type": "bool",   "comment": "// true = 변경 금지" }
+      ],
+      "AssetFont": [
+        { "name": "role",   "type": "string", "comment": "" },
+        { "name": "family", "type": "string", "comment": "// 실제 폰트명" },
+        { "name": "weight", "type": "string", "comment": "" },
+        { "name": "source", "type": "string", "comment": "// google / system" }
+      ],
+      "AssetSlot": [
+        { "name": "name",     "type": "string", "comment": "// \"title\",\"image\",\"body\"…" },
+        { "name": "type",     "type": "string", "comment": "// text / image / chart" },
+        { "name": "perSlide", "type": "bool",   "comment": "" }
+      ]
+    },
+    "supabaseColumns": [
+      { "name": "id",         "type": "uuid",        "note": "PK · asset 고유 식별자",                                                        "pk": true },
+      { "name": "asset_id",   "type": "text",        "note": "파일명 기반 결정적 ID (IngestPlanner 생성) · UNIQUE" },
+      { "name": "metadata",   "type": "jsonb",       "note": "HeaderAsset 전체 (name, kind, category, colors, fonts, slots, tags, use_when…)" },
+      { "name": "embed_text", "type": "text",        "note": "임베딩 소스 텍스트 (EmbedTextBuilder가 조합). 벡터 재생성 시 활용." },
+      { "name": "embedding",  "type": "vector(768)", "note": "Gemini embedding-004 벡터. pgvector HNSW cosine 인덱스." },
+      { "name": "image_url",  "type": "text",        "note": "Supabase Storage 썸네일 URL" },
+      { "name": "file_url",   "type": "text",        "note": "Supabase Storage 원본 PPTX URL" },
+      { "name": "created_at", "type": "timestamptz", "note": "인제스트 시각" }
+    ],
+    "designDecisions": [
+      { "q": "왜 kind는 \"layout/component\" 두 가지만?",   "h": "AI가 카테고리를 만들지 못하게",    "p": "\"그래프 vs 차트 vs 도표\" 같은 자유 분류 난립 차단. 사람이 정한 고정 enum에 LLM이 배정만 한다. 나머지 분류는 벡터 의미 검색이 처리한다." },
+      { "q": "왜 metadata를 jsonb로?",                      "h": "스키마 진화에 자유롭게",           "p": "colors·fonts·slots 같은 서브필드를 DB 컬럼 추가 없이 확장 가능. 추천에 필요한 필드(embed_text·embedding)만 명시적 컬럼으로 분리, 나머지는 jsonb에 넣는다." },
+      { "q": "왜 embed_text와 embedding을 분리?",           "h": "재임베딩 비용을 0으로",            "p": "임베딩 모델이 바뀌거나 embed_text 포맷을 개선하면 embed_text 컬럼에서 바로 재생성 가능. 전체 이해 파이프라인을 다시 돌릴 필요가 없다." },
+      { "q": "왜 AssetColor에 role·locked를?",              "h": "팔레트 자동화 + 보호 동시에",     "p": "role로 \"main/text/background\"를 구분해 PaletteRoleMapper가 자동 팔레트를 만들 수 있다. locked=true인 색은 자동 팔레트가 건드리지 않는다." },
+      { "q": "왜 스타일 팔레트는 LLM 없이?",               "h": "속도 + 비용 + 예측 가능성",       "p": "WCAG 대비비·HSL 수학은 결정적(deterministic)이다. LLM을 쓰면 같은 에셋에서 매번 다른 팔레트가 나올 수 있고, 토큰 비용도 든다. 색상 수학이 더 정확하다." },
+      { "q": "왜 IAccessPolicy를 인터페이스로?",            "h": "유료화 전환 비용을 0으로",        "p": "지금은 admin.json 파일 존재 여부로 판단. 유료화 시 Supabase Auth 로그인 role 확인으로 교체만 하면 된다. 인제스트 코드·UI 코드 한 줄도 안 바뀐다." }
+    ]
+  },
+  "progress": {
+    "lastUpdated": "2026-06-26",
+    "currentSummary": "리디자인 Phase 3(박스별 추천) 설계 완료 → writing-plans",
+    "currentDetail": "Phase 3 설계 spec 완료·커밋(910fe60). 스코프 3개 확정: 본문=패턴그룹, 두 배지=둘 다 계산(컨셉적합 프록시·LLM 비전은 Phase4/5 이월), 끝점=추천 카드까지. 다음 = writing-plans로 Task DAG → subagent 실행. 통합(머지/PR) 결정 대기.",
+    "branch": "feat/asset-combination-recommendation",
+    "roadmap": [
+      { "id": "A 토대",   "label": "데이터 토대",        "sub": "인제스트→Supabase + 벡터추천 (해자)",  "status": "done" },
+      { "id": "Route A",  "label": "단일 슬라이드 추천",  "sub": "에셋 조합 추천 + 배치 (검증됨)",       "status": "done" },
+      { "id": "Route B",  "label": "리디자인 (덱 전체)",  "sub": "초안 파일 통째 → 덱 리디자인 (지금)",   "status": "active" }
+    ],
+    "queue": [
+      { "id": "Phase 3",  "label": "박스별 덱 추천",          "detail": "Phase 2 _selectedConcept 소비 → 박스별 에셋 추천·두 배지(데모 hero ②). 설계 ✅ → writing-plans로 Task DAG → subagent 실행", "status": "next" },
+      { "id": "Phase 4~5","label": "빈 템플릿 조립 → 재료 이식","detail": "Scratch 덱 조립 + 본문 1~2장 이식",             "status": "waiting" }
+    ],
+    "demoOptions": [
+      { "label": "실패 시 _emptyState 복원", "detail": "리디자인 실패 시 원본 상태 복원 처리" },
+      { "label": "실행 중 덱 바 dim",        "detail": "리디자인 진행 중 UI dim 처리" }
+    ],
+    "done": [
+      { "label": "리디자인 Phase 3 — 박스별 덱 추천 설계 (brainstorming)", "detail": "스코프 3개 확정: 본문=패턴그룹 · 두 배지=둘 다 계산(컨셉적합 프록시) · 끝점=추천 카드까지. 신규 유닛 6개 + 모델·effort 배분표(A~I). spec 커밋 910fe60" },
+      { "label": "리디자인 Phase 2 — 컨설팅 컨셉 (칩 질문 → 컨셉 3카드 → 선택)", "detail": "ConceptSuggester 로직(TDD) · 칩 질문/컨셉 카드/확정 배너 UI · final review READY TO MERGE · PPT 수동검증 ✅ (00f60f2·7d85e2c)" },
+      { "label": "리디자인 Phase 1 — 파일 진입 + 덱 구조 분석", "detail": "DeckFileReader · 덱 구조 요약 박스 UI (demo hero ①) · PPT 수동검증 ✅ (dd2496a·6053a69·db0a3f2)" },
+      { "label": "리디자인 Phase 0 — 두 유사도 분리",           "detail": "검색 유사도 · 검수 유사도 분리 · PPT 수동검증 ✅ (b29fd84·be10db8·c5676a6·437d924)" },
+      { "label": "배포 install.bat 버그 수정 (R2)",             "detail": "robocopy 트레일링 백슬래시 → 신규 설치 0개 복사 차단. v1.0.0 자산 재업로드" },
+      { "label": "에셋 조합 추천 구현 (Route A)",               "detail": "4분류 스키마 · 초안 이해 · 추천 엔진 · UI 카드 (10커밋, 110 tests)" },
+      { "label": "자동 업데이트 + 배포 (R1)",                   "detail": "UpdateService · updater.bat · install/uninstall · GitHub Release v1.0.0 · 팀원 배포" },
+      { "label": "A-2 첫 조각 · 화면공유 진단",                 "detail": "슬라이드 읽기 + 공유 표시 기본 구현" },
+      { "label": "A-1 데이터 토대 전체",                        "detail": "LLM 이해 어댑터 · Supabase 적재 · 벡터검색 읽기경로" }
+    ],
+    "onHold": [
+      "UIUX 프롬프트 수정 (Route B 이후)",
+      "kind 3분류 · Scratch 삽입 · 이미지 미화 · 덱 전체 일괄",
+      "화면공유 진단 확장 (리디자인 B 루트 진입 시 — 슬라이드 변경 감지, 에셋 추천 연동, 전체덱 일관성 진단)",
+      "한글 폰트 커버리지 (영문 전용 폰트 → Font.NameFarEast 이원 체계)",
+      "폰트+팔레트 동시 적용 UX (버그 #3)",
+      "덱 전체 통일 (Scratch 삽입 이후)"
+    ]
+  }
+}

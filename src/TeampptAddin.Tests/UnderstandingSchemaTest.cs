@@ -22,7 +22,9 @@ namespace TeampptAddin.Tests
         {
             var schema = UnderstandingSchema.BuildResponseSchema();
             var kindEnum = (JArray)schema["properties"]["kind"]["enum"];
-            Assert.Equal(2, kindEnum.Count);
+            Assert.Equal(4, kindEnum.Count);
+            Assert.Contains("slide", kindEnum.ToObject<string[]>());
+            Assert.Contains("header", kindEnum.ToObject<string[]>());
             Assert.Contains("layout", kindEnum.ToObject<string[]>());
             Assert.Contains("component", kindEnum.ToObject<string[]>());
         }

@@ -38,7 +38,11 @@ namespace TeampptAddin
                     Name = s["name"]?.ToString(),
                     Type = s["type"]?.ToString(),
                     PerSlide = s["perSlide"]?.Value<bool>() ?? false
-                }).ToList() ?? new List<AssetSlot>()
+                }).ToList() ?? new List<AssetSlot>(),
+                Capacity = o["capacity"] is JObject cap
+                    ? new AssetCapacity { Min = cap["min"]?.Value<int>() ?? 0, Max = cap["max"]?.Value<int>() ?? 0 }
+                    : null,
+                MaterialKinds = StrList(o["material_kinds"])
             };
 
             return new AssetUnderstanding

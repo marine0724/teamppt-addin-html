@@ -1,0 +1,86 @@
+using Newtonsoft.Json.Linq;
+
+namespace TeampptAddin
+{
+    public static class DraftUnderstandingSchema
+    {
+        public static JObject BuildResponseSchema()
+        {
+            JObject Str() => new JObject { ["type"] = "string" };
+            JObject Int() => new JObject { ["type"] = "integer" };
+            JObject StrArr() => new JObject { ["type"] = "array", ["items"] = Str() };
+
+            var material = new JObject
+            {
+                ["type"] = "object",
+                ["properties"] = new JObject
+                {
+                    ["role"] = Str(),
+                    ["type"] = new JObject { ["type"] = "string", ["enum"] = new JArray { "text", "image", "table", "chart" } },
+                    ["sourceShapeId"] = Int(),
+                    ["emphasis"] = new JObject { ["type"] = "string", ["enum"] = new JArray { "heading", "normal", "small" } }
+                },
+                ["required"] = new JArray { "role", "type", "sourceShapeId", "emphasis" }
+            };
+
+            return new JObject
+            {
+                ["type"] = "object",
+                ["properties"] = new JObject
+                {
+                    ["materials"] = new JObject { ["type"] = "array", ["items"] = material },
+                    ["counts"] = new JObject
+                    {
+                        ["type"] = "object",
+                        ["properties"] = new JObject
+                        {
+                            ["textBlocks"] = Int(), ["bullets"] = Int(), ["images"] = Int(),
+                            ["tables"] = Int(), ["charts"] = Int()
+                        },
+                        ["required"] = new JArray { "textBlocks", "bullets", "images", "tables", "charts" }
+                    },
+                    ["layoutShape"] = Str(),
+                    ["designSummary"] = Str(),
+                    ["dominantColors"] = StrArr(),
+                    ["matchIntent"] = Str(),
+                    ["slideKind"] = new JObject { ["type"] = "string", ["enum"] = new JArray { "cover", "toc", "body", "section", "end" } },
+                    ["purpose"] = Str(),
+                    ["reasoning"] = Str(),
+                    ["neededCombination"] = new JObject
+                    {
+                        ["type"] = "object",
+                        ["properties"] = new JObject
+                        {
+                            ["slide"] = Int(), ["header"] = Int(),
+                            ["layout"] = Int(), ["component"] = Int()
+                        },
+                        ["required"] = new JArray { "slide", "header", "layout", "component" }
+                    }
+                },
+                ["required"] = new JArray { "materials", "counts", "layoutShape", "designSummary", "dominantColors", "matchIntent", "slideKind", "purpose", "reasoning", "neededCombination" }
+            };
+        }
+
+        public static string BuildSystemPrompt()
+        {
+            return @"너는 발표 초안 슬라이드를 분석하는 엔진이야. 슬라이드 이미지 1장과 도형 목록(JSON)을 받아, 이 초안을 적합한 디자인 에셋과 매칭하기 위한 구조화 표현을 만들어.
+
+## 입력
+- 이미지: 초안 슬라이드 렌더.
+- 도형 목록: 각 도형의 id, kind(text/image/table/chart), 텍스트, 위치/크기, 글자수/불릿수. 이 값들이 사실이다.
+
+## 네 일 (역할 판단만)
+- materials: 각 도형(id)에 역할(title/subtitle/body/bullet/caption/image/table/chart/logo)과 강조(heading/normal/small)를 부여. sourceShapeId는 입력 도형 id를 그대로 써라. 텍스트 내용은 만들지 마라(사실은 입력에 있다).
+- counts: 종류별 개수.
+- layoutShape: 현재 골격을 짧게 (예: 'title-top + body-left + image-right').
+- designSummary: 디자인 현황과 약점 1~2문장.
+- dominantColors: 보이는 주요 색 hex 1~3개.
+- matchIntent: 이 초안에 어울리는 에셋을 검색할 자연어 한 문장 (재료 종류·양 반영).
+- slideKind: cover/toc/body/section/end 중 하나.
+- purpose: 이 슬라이드의 의도·목적 한 문장 (예: '3개 핵심 기능을 동등 비교').
+- neededCombination: 필요한 에셋 조합 수. cover/end면 {slide:1, header:0, layout:0, component:0}. body/section이면 {slide:0, header:1, layout:1, component:N} — N은 본문 부품 수(카드·블록 개수, counts·materials 기준). 슬롯 채우기가 아니라 '몇 종류·몇 개가 필요한가' 판단만.
+- reasoning: **반드시 한국어 존대말**로, 이 초안을 어떻게 읽었는지 담백한 전문가 톤 1~2문장. slideKind·neededCombination 판단 근거를 밝히고, **추출(counts/materials)에서 애매했거나 자신 없던 부분이 있으면 솔직히** 말해라. '문제없음' 식의 무난한 답 금지.
+모르면 지어내지 말고 보수적으로.";
+        }
+    }
+}

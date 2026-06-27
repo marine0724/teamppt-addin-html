@@ -15,7 +15,9 @@ namespace TeampptAddin
             {
                 ["colors"] = JArray.FromObject(a.Colors ?? new List<AssetColor>()),
                 ["fonts"] = JArray.FromObject(a.Fonts ?? new List<AssetFont>()),
-                ["slots"] = JArray.FromObject(a.Slots ?? new List<AssetSlot>())
+                ["slots"] = JArray.FromObject(a.Slots ?? new List<AssetSlot>()),
+                ["capacity"] = a.Capacity != null ? JObject.FromObject(a.Capacity) : null,
+                ["material_kinds"] = JArray.FromObject(a.MaterialKinds ?? new List<string>())
             };
 
             var vec = "[" + string.Join(",", embedding.Select(v => v.ToString(CultureInfo.InvariantCulture))) + "]";

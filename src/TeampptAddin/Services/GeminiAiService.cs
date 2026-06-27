@@ -211,6 +211,63 @@ namespace TeampptAddin
             return SlideDiagnosisParser.Parse(text);
         }
 
+        public Task<string> GenerateJsonAsync(string systemPrompt, string userText, string pngPathOrNull, JObject responseSchema, double temperature = 0.4, int thinkingBudget = 0)
+        {
+            var imgs = pngPathOrNull == null ? new string[0] : new[] { pngPathOrNull };
+            return GenerateJsonAsync(systemPrompt, userText, imgs, responseSchema, temperature, thinkingBudget);
+        }
+
+        public async Task<string> GenerateJsonAsync(string systemPrompt, string userText, IEnumerable<string> pngPaths, JObject responseSchema, double temperature = 0.4, int thinkingBudget = 0)
+        {
+            var parts = new JArray();
+            if (pngPaths != null)
+                foreach (var p in pngPaths)
+                {
+                    if (string.IsNullOrEmpty(p) || !File.Exists(p)) continue;
+                    parts.Add(new JObject { ["inline_data"] = new JObject {
+                        ["mime_type"] = "image/png",
+                        ["data"] = Convert.ToBase64String(File.ReadAllBytes(p)) } });
+                }
+            parts.Add(new JObject { ["text"] = userText });
+
+            var requestBody = new JObject
+            {
+                ["contents"] = new JArray { new JObject { ["role"] = "user", ["parts"] = parts } },
+                ["systemInstruction"] = new JObject { ["parts"] = new JArray { new JObject { ["text"] = systemPrompt } } },
+                ["generationConfig"] = new JObject
+                {
+                    ["temperature"] = temperature,
+                    ["responseMimeType"] = "application/json",
+                    ["responseSchema"] = responseSchema,
+                    ["thinkingConfig"] = new JObject { ["thinkingBudget"] = thinkingBudget }
+                }
+            };
+
+            var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={_apiKey}";
+            var bodyString = requestBody.ToString(Formatting.None);
+
+            const int maxAttempts = 3;
+            HttpResponseMessage response = null; string body = null;
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                var content = new StringContent(bodyString, Encoding.UTF8, "application/json");
+                Http.DefaultRequestHeaders.Authorization = null;
+                response = await Http.PostAsync(url, content).ConfigureAwait(false);
+                body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                Logger.Log($"[GenerateJson] attempt {attempt}: HTTP {(int)response.StatusCode}");
+                if (response.IsSuccessStatusCode) break;
+                var status = (int)response.StatusCode;
+                bool transient = status == 503 || status == 429 || status == 500;
+                if (transient && attempt < maxAttempts) { await Task.Delay(500 * (1 << (attempt - 1))).ConfigureAwait(false); continue; }
+                throw new HttpRequestException($"Gemini API 오류 ({status}): {body}");
+            }
+            var root = JObject.Parse(body);
+            LogTokenUsage(root);
+            var text = root["candidates"]?[0]?["content"]?["parts"]?[0]?["text"]?.ToString();
+            if (string.IsNullOrEmpty(text)) throw new InvalidOperationException("Gemini 응답에 텍스트가 없습니다.");
+            return text;
+        }
+
         private void LogTokenUsage(JObject root)
         {
             var usage = root["usageMetadata"];

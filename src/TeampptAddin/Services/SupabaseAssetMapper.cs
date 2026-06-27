@@ -38,6 +38,11 @@ namespace TeampptAddin
                     Name = s["name"]?.ToString(), Type = s["type"]?.ToString(),
                     PerSlide = s["perSlide"]?.Value<bool>() ?? false
                 }).ToList() ?? new List<AssetSlot>(),
+                Capacity = meta["capacity"] is JObject cap
+                    ? new AssetCapacity { Min = cap["min"]?.Value<int>() ?? 0, Max = cap["max"]?.Value<int>() ?? 0 }
+                    : null,
+                MaterialKinds = StrList(meta["material_kinds"]),
+                SourceDeck = row["source_deck"]?.ToString(),
                 Extra = new Dictionary<string, JToken>
                 {
                     ["remote_file"] = remoteFile,

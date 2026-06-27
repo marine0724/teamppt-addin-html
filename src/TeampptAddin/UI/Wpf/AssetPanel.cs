@@ -53,6 +53,28 @@ namespace TeampptAddin
 
         private Border _sendBtn;
         private Border _shareBar;
+        private Border _redesignBar;
+        private RedesignService _redesign;
+        private RecommendationService _recommend;
+        private DeckStructureService _deckStructure;
+        private ConceptSuggester _conceptSuggester;
+        private DeckStructure _lastStructure;
+        private string _selFeeling;
+        private string _selUsage;
+        private DesignConcept _selectedConcept;
+        private bool _conceptRunning;
+        private bool _deckRunning;
+        private DeckRecommendationOrchestrator _deckRecommend;
+        private List<DraftProfile> _deckProfiles;
+        private string _deckPath;
+        private bool _deckRecoRunning;
+        private DeckRecommendation _lastDeckRecommendation;
+        private CombinationRecommendation _lastRecommendation;
+        private RecommendationResult _lastRecoResult;
+        private string _lastResultPng;
+        private List<RedesignPreview> _lastPreviews;
+        private bool _redesignRunning;
+        private bool _redesignCommitted;
 
         private TextBlock _statusText;
         private Border _ingestButton;
@@ -96,6 +118,10 @@ namespace TeampptAddin
             DockPanel.SetDock(header, Dock.Top);
             root.Children.Add(header);
 
+            _updateBannerHost = new Border { Visibility = Visibility.Collapsed };
+            DockPanel.SetDock(_updateBannerHost, Dock.Top);
+            root.Children.Add(_updateBannerHost);
+
             var statusBar = BuildStatusBar();
             DockPanel.SetDock(statusBar, Dock.Bottom);
             root.Children.Add(statusBar);
@@ -111,6 +137,116 @@ namespace TeampptAddin
 
             Content = root;
             SwitchTab(0);
+
+            StartUpdateWatch();
+        }
+
+        // ── 자동 업데이트 배너 ─────────────────────────────────────────
+        // UpdateService(백그라운드)가 새 버전을 staging에 받아두면 마커 파일을 남긴다.
+        // 패널은 그 마커를 감시(폴링)하다 발견하면 상단 배너를 띄운다. (이벤트 배선 없이 디커플링)
+
+        private Border _updateBannerHost;
+        private DispatcherTimer _updateWatchTimer;
+        private bool _updateBannerShown;
+
+        private void StartUpdateWatch()
+        {
+            // 시작 직후 한 번, 이후 주기적으로 마커 확인(백그라운드 다운로드가 늦게 끝나는 경우 대비).
+            TryShowUpdateBanner();
+            if (_updateBannerShown) return;
+
+            _updateWatchTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(8) };
+            _updateWatchTimer.Tick += (s, e) => TryShowUpdateBanner();
+            _updateWatchTimer.Start();
+        }
+
+        private void TryShowUpdateBanner()
+        {
+            if (_updateBannerShown) return;
+            try
+            {
+                if (!System.IO.File.Exists(UpdateService.MarkerPath)) return;
+                var marker = Newtonsoft.Json.Linq.JObject.Parse(
+                    System.IO.File.ReadAllText(UpdateService.MarkerPath));
+                var version = (string)marker["version"] ?? "";
+                var notes = (string)marker["notes"] ?? "";
+
+                _updateBannerShown = true;
+                if (_updateWatchTimer != null) { _updateWatchTimer.Stop(); _updateWatchTimer = null; }
+                ShowUpdateBanner(version, notes);
+            }
+            catch (Exception ex) { Logger.Log($"[Update] 배너 표시 실패: {ex.Message}"); }
+        }
+
+        private void ShowUpdateBanner(string version, string notes)
+        {
+            var textCol = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            textCol.Children.Add(new TextBlock
+            {
+                Text = $"✨ 업데이트 v{version} 준비됨",
+                FontSize = 12, FontWeight = FontWeights.SemiBold,
+                Foreground = Brushes.White, FontFamily = ThemeResources.FontBase
+            });
+            if (!string.IsNullOrEmpty(notes))
+                textCol.Children.Add(new TextBlock
+                {
+                    Text = notes,
+                    FontSize = 10, Foreground = new SolidColorBrush(Color.FromArgb(200, 255, 255, 255)),
+                    FontFamily = ThemeResources.FontBase,
+                    TextTrimming = TextTrimming.CharacterEllipsis,
+                    Margin = new Thickness(0, 1, 0, 0)
+                });
+
+            var applyBtn = new Border
+            {
+                Background = new SolidColorBrush(Color.FromArgb(60, 255, 255, 255)),
+                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(12, 5, 12, 5),
+                VerticalAlignment = VerticalAlignment.Center,
+                Cursor = Cursors.Hand,
+                Child = new TextBlock
+                {
+                    Text = "지금 적용 ▶",
+                    FontSize = 11, FontWeight = FontWeights.SemiBold,
+                    Foreground = Brushes.White, FontFamily = ThemeResources.FontBase
+                }
+            };
+            applyBtn.MouseEnter += (s, e) => applyBtn.Opacity = 0.8;
+            applyBtn.MouseLeave += (s, e) => applyBtn.Opacity = 1;
+            applyBtn.MouseLeftButtonUp += (s, e) => ApplyUpdate();
+
+            var grid = new Grid();
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            Grid.SetColumn(textCol, 0);
+            Grid.SetColumn(applyBtn, 1);
+            grid.Children.Add(textCol);
+            grid.Children.Add(applyBtn);
+
+            _updateBannerHost.Background = ThemeResources.Accent;
+            _updateBannerHost.Padding = new Thickness(14, 10, 12, 10);
+            _updateBannerHost.Child = grid;
+            _updateBannerHost.Visibility = Visibility.Visible;
+        }
+
+        private void ApplyUpdate()
+        {
+            var confirm = System.Windows.MessageBox.Show(
+                "업데이트를 적용하려면 PowerPoint가 재시작됩니다.\n저장하지 않은 작업이 있으면 먼저 저장하세요.\n\n계속할까요?",
+                "TEAMPPT 업데이트",
+                System.Windows.MessageBoxButton.OKCancel,
+                System.Windows.MessageBoxImage.Information);
+            if (confirm != System.Windows.MessageBoxResult.OK) return;
+
+            if (!UpdateService.LaunchUpdater())
+            {
+                AddAiBubble("업데이트 적용을 시작하지 못했어요. 잠시 후 다시 시도하거나 수동으로 재설치해주세요.");
+                return;
+            }
+
+            // updater.bat이 PowerPoint 종료를 기다렸다 파일을 교체하고 재실행한다.
+            try { Globals.Application?.Quit(); }
+            catch (Exception ex) { Logger.Log($"[Update] PowerPoint 종료 실패: {ex.Message}"); }
         }
 
         // ══════════════════════════════════════════════════════════════
@@ -301,6 +437,8 @@ namespace TeampptAddin
 
             var bottom = new StackPanel();
             bottom.Children.Add(BuildShareBar());
+            bottom.Children.Add(BuildRedesignBar());
+            bottom.Children.Add(BuildDeckRedesignBar());
             bottom.Children.Add(BuildInputBar());
             Grid.SetRow(bottom, 1);
             grid.Children.Add(bottom);
@@ -539,6 +677,979 @@ namespace TeampptAddin
             };
             SetShareBarIdle();
             return _shareBar;
+        }
+
+        // ── Route B: AI 리디자인 (현재 슬라이드 풀변환) ──
+
+        private Border BuildRedesignBar()
+        {
+            _redesignBar = new Border
+            {
+                Background = ThemeResources.BgChip,
+                CornerRadius = new CornerRadius(10),
+                Margin = new Thickness(10, 8, 10, 0),
+                Padding = new Thickness(12, 8, 12, 8),
+                Cursor = Cursors.Hand
+            };
+            var row = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            row.Children.Add(new TextBlock
+            {
+                Text = "✨", FontSize = 13,
+                Margin = new Thickness(0, 0, 6, 0),
+                VerticalAlignment = VerticalAlignment.Center
+            });
+            row.Children.Add(new TextBlock
+            {
+                Text = "AI 리디자인", FontSize = 12, FontWeight = FontWeights.SemiBold,
+                Foreground = ThemeResources.TextAccent, FontFamily = ThemeResources.FontBase,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+            _redesignBar.Child = row;
+            _redesignBar.MouseLeftButtonUp += RedesignBarClick;
+            return _redesignBar;
+        }
+
+        // ── Route C: 덱 리디자인 (초안 파일 전체 구조 분석) ──
+
+        private Border BuildDeckRedesignBar()
+        {
+            var bar = new Border
+            {
+                Background = ThemeResources.BgChip,
+                CornerRadius = new CornerRadius(10),
+                Margin = new Thickness(10, 8, 10, 0),
+                Padding = new Thickness(12, 8, 12, 8),
+                Cursor = Cursors.Hand
+            };
+            var row = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
+            row.Children.Add(new TextBlock { Text = "\U0001F4C2", FontSize = 13, Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center });
+            row.Children.Add(new TextBlock
+            {
+                Text = "리디자인 (초안 파일)", FontSize = 12, FontWeight = FontWeights.SemiBold,
+                Foreground = ThemeResources.TextAccent, FontFamily = ThemeResources.FontBase,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+            bar.Child = row;
+            bar.MouseLeftButtonUp += async (s, e) => await RunDeckRedesignAsync();
+            return bar;
+        }
+
+        private async Task RunDeckRedesignAsync()
+        {
+            if (_deckRunning) return;
+            if (_deckStructure == null) { AddAiBubble("리디자인은 Gemini 설정이 있어야 동작해요."); return; }
+
+            var dlg = new System.Windows.Forms.OpenFileDialog
+            {
+                Filter = "PowerPoint 초안 (*.pptx)|*.pptx",
+                Title = "리디자인할 초안 파일 선택"
+            };
+            if (dlg.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+
+            _deckRunning = true;
+            if (_emptyState != null && _emptyState.Visibility == Visibility.Visible)
+                _emptyState.Visibility = Visibility.Collapsed;
+            try
+            {
+                AddAiBubble("초안을 읽고 있어요…");
+                var profiles = DeckFileReader.ReadFile(dlg.FileName);   // COM, STA — UI 스레드에서 동기 호출
+                if (profiles.Count == 0) { AddAiBubble("슬라이드를 읽지 못했어요. 파일을 확인해주세요."); return; }
+
+                AddAiBubble($"{profiles.Count}장을 분석하고 있어요…");
+                var structure = await _deckStructure.AnalyzeAsync(profiles);   // STA 유지 — ConfigureAwait(false) 금지
+                _chatStack.Children.Add(BuildStructureBox(structure));
+                _lastStructure = structure;
+                _deckProfiles = profiles;
+                _deckPath = dlg.FileName;
+                _selFeeling = null; _selUsage = null; _selectedConcept = null;
+                if (_conceptSuggester != null)
+                    _chatStack.Children.Add(BuildConceptQuestionCard());
+                _chatScroll.ScrollToBottom();
+            }
+            catch (Exception ex)
+            {
+                AddAiBubble($"구조 분석 중 오류: {ex.Message}");
+                Logger.Log($"[DeckRedesign] 실패: {ex}");
+            }
+            finally { _deckRunning = false; }
+        }
+
+        private Border BuildStructureBox(DeckStructure structure)
+        {
+            var panel = new StackPanel();
+            panel.Children.Add(new TextBlock
+            {
+                Text = "초안 구조", FontSize = 12, FontWeight = FontWeights.Bold,
+                Foreground = ThemeResources.TextAccent, FontFamily = ThemeResources.FontBase,
+                Margin = new Thickness(0, 0, 0, 6)
+            });
+            foreach (var line in DeckStructureFormatter.ToSummaryLines(structure))
+                panel.Children.Add(new TextBlock
+                {
+                    Text = line, FontSize = 12, FontFamily = ThemeResources.FontBase,
+                    Foreground = ThemeResources.TextMain, TextWrapping = TextWrapping.Wrap,
+                    Margin = new Thickness(0, 1, 0, 1)
+                });
+            return new Border
+            {
+                Background = ThemeResources.BgChip,
+                CornerRadius = new CornerRadius(10),
+                Margin = new Thickness(10, 8, 10, 0),
+                Padding = new Thickness(14, 10, 14, 10),
+                Child = panel
+            };
+        }
+
+        private static readonly string[] FeelingChips = { "신뢰감", "혁신적", "미니멀", "활기찬", "따뜻한", "고급스러운" };
+        private static readonly string[] UsageChips = { "투자유치(IR)", "회사소개", "제품소개", "사내보고", "교육·강의" };
+
+        private Border BuildConceptQuestionCard()
+        {
+            var panel = new StackPanel();
+            panel.Children.Add(new TextBlock
+            {
+                Text = "어떤 방향으로 만들까요?", FontSize = 12, FontWeight = FontWeights.Bold,
+                Foreground = ThemeResources.TextAccent, FontFamily = ThemeResources.FontBase,
+                Margin = new Thickness(0, 0, 0, 8)
+            });
+
+            panel.Children.Add(ConceptSectionLabel("느낌"));
+            var feelingWrap = new WrapPanel { Margin = new Thickness(0, 2, 0, 8) };
+            var feelingChips = new List<Border>();
+            foreach (var f in FeelingChips)
+            {
+                var captured = f;
+                var chip = BuildConceptChip(f);
+                chip.MouseLeftButtonUp += (s, e) =>
+                {
+                    _selFeeling = captured;
+                    foreach (var c in feelingChips) StyleConceptChip(c, c == chip);
+                };
+                feelingChips.Add(chip);
+                feelingWrap.Children.Add(chip);
+            }
+            panel.Children.Add(feelingWrap);
+
+            panel.Children.Add(ConceptSectionLabel("용도"));
+            var usageWrap = new WrapPanel { Margin = new Thickness(0, 2, 0, 8) };
+            var usageChips = new List<Border>();
+            foreach (var u in UsageChips)
+            {
+                var captured = u;
+                var chip = BuildConceptChip(u);
+                chip.MouseLeftButtonUp += (s, e) =>
+                {
+                    _selUsage = captured;
+                    foreach (var c in usageChips) StyleConceptChip(c, c == chip);
+                };
+                usageChips.Add(chip);
+                usageWrap.Children.Add(chip);
+            }
+            panel.Children.Add(usageWrap);
+
+            var makeBtn = new Border
+            {
+                Background = ThemeResources.Accent,
+                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(12, 7, 12, 7),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Cursor = Cursors.Hand,
+                Margin = new Thickness(0, 2, 0, 0),
+                Child = new TextBlock
+                {
+                    Text = "컨셉 만들기", FontSize = 12, FontWeight = FontWeights.SemiBold,
+                    Foreground = Brushes.White, FontFamily = ThemeResources.FontBase
+                }
+            };
+            makeBtn.MouseLeftButtonUp += async (s, e) => await RunConceptSuggestAsync();
+            panel.Children.Add(makeBtn);
+
+            return WrapConceptCard(panel);
+        }
+
+        private TextBlock ConceptSectionLabel(string t) => new TextBlock
+        {
+            Text = t, FontSize = 11, FontWeight = FontWeights.SemiBold,
+            Foreground = ThemeResources.TextSub, FontFamily = ThemeResources.FontBase,
+            Margin = new Thickness(0, 2, 0, 2)
+        };
+
+        private Border BuildConceptChip(string text)
+        {
+            return new Border
+            {
+                Background = ThemeResources.BgChip,
+                BorderBrush = ThemeResources.BorderCard,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(14),
+                Padding = new Thickness(11, 5, 11, 5),
+                Margin = new Thickness(0, 0, 6, 6),
+                Cursor = Cursors.Hand,
+                Child = new TextBlock
+                {
+                    Text = text, FontSize = 12, FontFamily = ThemeResources.FontBase,
+                    Foreground = ThemeResources.TextMain
+                }
+            };
+        }
+
+        private void StyleConceptChip(Border chip, bool selected)
+        {
+            chip.Background = selected ? ThemeResources.BgCategoryActive : ThemeResources.BgChip;
+            chip.BorderBrush = selected ? ThemeResources.Accent : ThemeResources.BorderCard;
+            var tb = (TextBlock)chip.Child;
+            tb.Foreground = selected ? ThemeResources.TextAccent : ThemeResources.TextMain;
+            tb.FontWeight = selected ? FontWeights.SemiBold : FontWeights.Normal;
+        }
+
+        private Border WrapConceptCard(UIElement child) => new Border
+        {
+            Background = ThemeResources.BgCard,
+            BorderBrush = ThemeResources.BorderCard,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(10),
+            Margin = new Thickness(10, 8, 10, 0),
+            Padding = new Thickness(14, 12, 14, 12),
+            Child = child
+        };
+
+        private static SolidColorBrush ConceptSwatch(string hex)
+        {
+            try { return BrushFromHex(hex); }
+            catch { return BrushFromHex("#CCCCCC"); }   // LLM 불량 HEX 가드(기존 BrushFromHex 재사용)
+        }
+
+        private async Task RunConceptSuggestAsync()
+        {
+            if (_conceptRunning) return;
+            if (_conceptSuggester == null || _lastStructure == null)
+            {
+                AddAiBubble("컨셉 추천은 Gemini 설정과 구조 분석이 먼저 필요해요.");
+                return;
+            }
+            if (string.IsNullOrEmpty(_selFeeling) || string.IsNullOrEmpty(_selUsage))
+            {
+                AddAiBubble("느낌과 용도를 하나씩 골라주세요.");
+                return;
+            }
+
+            _conceptRunning = true;
+            try
+            {
+                AddAiBubble($"'{_selUsage} · {_selFeeling}' 방향으로 컨셉 3개를 만들고 있어요…");
+                var concepts = await _conceptSuggester.SuggestAsync(_lastStructure, _selUsage, _selFeeling); // STA 유지
+                if (concepts.Count == 0) { AddAiBubble("컨셉을 만들지 못했어요. 다시 시도해주세요."); return; }
+                _chatStack.Children.Add(BuildConceptCards(concepts));
+                _chatScroll.ScrollToBottom();
+            }
+            catch (Exception ex)
+            {
+                AddAiBubble($"컨셉 생성 중 오류: {ex.Message}");
+                Logger.Log($"[ConceptSuggest] 실패: {ex}");
+            }
+            finally { _conceptRunning = false; }
+        }
+
+        private Border BuildConceptCards(List<DesignConcept> concepts)
+        {
+            var outer = new StackPanel();
+            outer.Children.Add(new TextBlock
+            {
+                Text = "컨셉 3안 — 하나를 고르세요", FontSize = 12, FontWeight = FontWeights.Bold,
+                Foreground = ThemeResources.TextAccent, FontFamily = ThemeResources.FontBase,
+                Margin = new Thickness(0, 0, 0, 6)
+            });
+
+            var cardRefs = new List<Border>();
+            foreach (var concept in concepts)
+            {
+                var captured = concept;
+                var card = BuildOneConceptCard(concept);
+                card.MouseLeftButtonUp += (s, e) => OnConceptSelected(captured, card, cardRefs);
+                cardRefs.Add(card);
+                outer.Children.Add(card);
+            }
+            return WrapConceptCard(outer);
+        }
+
+        private Border BuildOneConceptCard(DesignConcept concept)
+        {
+            var p = new StackPanel();
+            p.Children.Add(new TextBlock
+            {
+                Text = concept.Name, FontSize = 13, FontWeight = FontWeights.Bold,
+                Foreground = ThemeResources.TextMain, FontFamily = ThemeResources.FontBase
+            });
+
+            if (concept.StyleTags != null && concept.StyleTags.Count > 0)
+            {
+                var tags = new WrapPanel { Margin = new Thickness(0, 4, 0, 4) };
+                foreach (var t in concept.StyleTags)
+                    tags.Children.Add(new Border
+                    {
+                        Background = ThemeResources.BgBadge, CornerRadius = new CornerRadius(8),
+                        Padding = new Thickness(7, 2, 7, 2), Margin = new Thickness(0, 0, 4, 4),
+                        Child = new TextBlock { Text = t, FontSize = 10, Foreground = ThemeResources.TextAccent, FontFamily = ThemeResources.FontBase }
+                    });
+                p.Children.Add(tags);
+            }
+
+            var sw = new WrapPanel { Margin = new Thickness(0, 2, 0, 4) };
+            if (concept.Colors != null)
+                foreach (var kv in concept.Colors)
+                    sw.Children.Add(new Border
+                    {
+                        Width = 22, Height = 22, CornerRadius = new CornerRadius(5),
+                        Margin = new Thickness(0, 0, 5, 0),
+                        BorderBrush = ThemeResources.BorderCard, BorderThickness = new Thickness(1),
+                        Background = ConceptSwatch(kv.Value)
+                    });
+            p.Children.Add(sw);
+
+            if (concept.Fonts != null && concept.Fonts.Count > 0)
+                p.Children.Add(new TextBlock
+                {
+                    Text = "글꼴 · " + string.Join(" / ", concept.Fonts.Values),
+                    FontSize = 11, Foreground = ThemeResources.TextSub, FontFamily = ThemeResources.FontBase,
+                    Margin = new Thickness(0, 2, 0, 0)
+                });
+
+            return new Border
+            {
+                Background = ThemeResources.BgCard,
+                BorderBrush = ThemeResources.BorderCard,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(9),
+                Padding = new Thickness(12, 10, 12, 10),
+                Margin = new Thickness(0, 0, 0, 7),
+                Cursor = Cursors.Hand,
+                Child = p
+            };
+        }
+
+        private void OnConceptSelected(DesignConcept concept, Border selectedCard, List<Border> allCards)
+        {
+            _selectedConcept = concept;
+            foreach (var c in allCards)
+            {
+                bool sel = c == selectedCard;
+                c.BorderBrush = sel ? ThemeResources.Accent : ThemeResources.BorderCard;
+                c.BorderThickness = new Thickness(sel ? 2 : 1);
+                c.Background = sel ? ThemeResources.BgCardHover : ThemeResources.BgCard;
+            }
+            _chatStack.Children.Add(BuildConceptConfirmBanner(concept));
+            _chatScroll.ScrollToBottom();
+            _ = RunDeckRecommendAsync();
+            Logger.Log($"[ConceptSuggest] 선택: {concept.Id} {concept.Name}");
+        }
+
+        private Border BuildConceptConfirmBanner(DesignConcept concept)
+        {
+            var p = new StackPanel();
+            p.Children.Add(new TextBlock
+            {
+                Text = $"✓ '{concept.Name}' 방향으로 진행할게요",
+                FontSize = 12, FontWeight = FontWeights.SemiBold,
+                Foreground = ThemeResources.TextAccent, FontFamily = ThemeResources.FontBase,
+                TextWrapping = TextWrapping.Wrap
+            });
+            var sw = new WrapPanel { Margin = new Thickness(0, 6, 0, 0) };
+            if (concept.Colors != null)
+                foreach (var kv in concept.Colors)
+                    sw.Children.Add(new Border
+                    {
+                        Width = 20, Height = 20, CornerRadius = new CornerRadius(4),
+                        Margin = new Thickness(0, 0, 5, 0),
+                        BorderBrush = ThemeResources.BorderCard, BorderThickness = new Thickness(1),
+                        Background = ConceptSwatch(kv.Value)
+                    });
+            p.Children.Add(sw);
+            if (concept.Fonts != null && concept.Fonts.Count > 0)
+                p.Children.Add(new TextBlock
+                {
+                    Text = "글꼴 · " + string.Join(" / ", concept.Fonts.Values),
+                    FontSize = 11, Foreground = ThemeResources.TextSub, FontFamily = ThemeResources.FontBase,
+                    Margin = new Thickness(0, 4, 0, 0)
+                });
+            return new Border
+            {
+                Background = ThemeResources.BgCategoryActive,
+                CornerRadius = new CornerRadius(10),
+                Margin = new Thickness(10, 8, 10, 0),
+                Padding = new Thickness(14, 10, 14, 10),
+                Child = p
+            };
+        }
+
+        private async Task RunDeckRecommendAsync()
+        {
+            if (_deckRecoRunning) return;
+            if (_deckRecommend == null) { AddAiBubble("박스별 추천은 Supabase·Gemini 설정이 있어야 동작해요."); return; }
+            if (_deckProfiles == null || _lastStructure == null || _selectedConcept == null)
+            { AddAiBubble("먼저 초안을 열고 컨셉을 선택해주세요."); return; }
+
+            _deckRecoRunning = true;
+            try
+            {
+                AddAiBubble("선택한 컨셉으로 박스별 에셋을 추천할게요.");
+                var deckReco = await _deckRecommend.RecommendDeckAsync(
+                    _deckPath, _deckProfiles, _lastStructure, _selectedConcept,
+                    msg => Dispatcher.Invoke(() => AddAiBubble(msg)));
+                _lastDeckRecommendation = deckReco;
+                ShowDeckRecommendation(deckReco);
+            }
+            catch (Exception ex)
+            {
+                AddAiBubble($"박스별 추천 중 오류: {ex.Message}");
+                Logger.Log($"[DeckReco] 실패: {ex}");
+            }
+            finally { _deckRecoRunning = false; _chatScroll.ScrollToBottom(); }
+        }
+
+        private static readonly Dictionary<string, string> BoxKindLabel = new Dictionary<string, string>
+        {
+            ["cover"] = "표지", ["header"] = "공통 헤더", ["body"] = "본문",
+            ["toc"] = "목차", ["section"] = "간지", ["end"] = "마무리"
+        };
+
+        private void ShowDeckRecommendation(DeckRecommendation deck)
+        {
+            if (deck == null || deck.Boxes.Count == 0) { AddAiBubble("추천 결과가 없어요."); return; }
+            _chatStack.Children.Add(new TextBlock
+            {
+                Text = "박스별 추천", FontSize = 11, FontWeight = FontWeights.SemiBold,
+                Foreground = ThemeResources.TextSub, Margin = new Thickness(12, 8, 0, 2)
+            });
+            foreach (var box in deck.Boxes)
+                _chatStack.Children.Add(BuildBoxRecommendationCard(box, deck.Concept));
+            _chatScroll.ScrollToBottom();
+        }
+
+        private Border BuildBoxRecommendationCard(BoxRecommendation box, DesignConcept concept)
+        {
+            var kindLabel = BoxKindLabel.TryGetValue(box.Plan.BoxKind, out var kl) ? kl : box.Plan.BoxKind;
+            var col = new StackPanel();
+            col.Children.Add(new TextBlock
+            {
+                Text = box.Plan.BoxKind == "body" ? $"{kindLabel} · {box.Plan.Label}" : kindLabel,
+                FontSize = 11, FontWeight = FontWeights.Bold,
+                Foreground = ThemeResources.TextAccent, FontFamily = ThemeResources.FontBase
+            });
+
+            var primary = PrimaryAsset(box.Recommendation);
+            if (primary == null)
+            {
+                col.Children.Add(new TextBlock
+                {
+                    Text = "미충족 — 적합한 에셋 없음", FontSize = 11,
+                    Foreground = ThemeResources.TextSub, Margin = new Thickness(0, 4, 0, 0)
+                });
+            }
+            else
+            {
+                col.Children.Add(new TextBlock
+                {
+                    Text = primary.Name ?? primary.File ?? "에셋", FontSize = 12, FontWeight = FontWeights.SemiBold,
+                    Foreground = ThemeResources.TextMain, FontFamily = ThemeResources.FontBase,
+                    TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 3, 0, 0)
+                });
+
+                var sw = new WrapPanel { Margin = new Thickness(0, 5, 0, 0) };
+                foreach (var c in ConceptResolver.ResolveColors(primary, concept))
+                    sw.Children.Add(new Border
+                    {
+                        Width = 18, Height = 18, CornerRadius = new CornerRadius(4), Margin = new Thickness(0, 0, 5, 0),
+                        BorderBrush = ThemeResources.BorderCard, BorderThickness = new Thickness(1),
+                        Background = ConceptSwatch(c.Value)
+                    });
+                if (sw.Children.Count > 0) col.Children.Add(sw);
+
+                var fonts = ConceptResolver.ResolveFonts(primary, concept);
+                if (fonts.Count > 0)
+                    col.Children.Add(new TextBlock
+                    {
+                        Text = "글꼴 · " + string.Join(" / ", fonts.Select(f => f.Family).Distinct()),
+                        FontSize = 10, Foreground = ThemeResources.TextSub, Margin = new Thickness(0, 4, 0, 0)
+                    });
+            }
+
+            var badges = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
+            badges.Children.Add(Badge($"재료적합 {box.MaterialFit?.Score ?? 0}"));
+            badges.Children.Add(Badge($"컨셉적합 {box.ConceptFit?.Score ?? 0}"));
+            col.Children.Add(badges);
+
+            return new Border
+            {
+                Background = ThemeResources.BgChip, CornerRadius = new CornerRadius(10),
+                Margin = new Thickness(12, 4, 12, 4), Padding = new Thickness(12, 10, 12, 10), Child = col
+            };
+        }
+
+        private static HeaderAsset PrimaryAsset(CombinationRecommendation rec)
+            => rec?.Slide?.Asset ?? rec?.Header?.Asset ?? rec?.Layout?.Asset
+               ?? rec?.Components?.FirstOrDefault(s => s?.Asset != null)?.Asset;
+
+        private Border Badge(string text) => new Border
+        {
+            Background = ThemeResources.BgCategoryActive, CornerRadius = new CornerRadius(8),
+            Margin = new Thickness(0, 0, 6, 0), Padding = new Thickness(8, 3, 8, 3),
+            Child = new TextBlock
+            {
+                Text = text, FontSize = 10, FontWeight = FontWeights.SemiBold,
+                Foreground = ThemeResources.TextAccent, FontFamily = ThemeResources.FontBase
+            }
+        };
+
+        private async void RedesignBarClick(object sender, MouseButtonEventArgs e)
+        {
+            await RunRecommendationAsync();
+        }
+
+        private async Task RunRedesignAsync()
+        {
+            if (_redesignRunning) return;
+            if (_redesign == null)
+            {
+                AddAiBubble("리디자인은 Supabase·Gemini 설정이 있어야 동작해요.");
+                return;
+            }
+
+            _redesignRunning = true;
+            _redesignCommitted = false;
+            _redesignBar.IsEnabled = false;
+            _redesignBar.Opacity = 0.6;
+            if (_emptyState != null && _emptyState.Visibility == Visibility.Visible)
+                _emptyState.Visibility = Visibility.Collapsed;
+
+            try
+            {
+                AddAiBubble("현재 슬라이드를 리디자인할게요.");
+                // RedesignService는 COM(STA)을 호출하므로 이 UI 스레드에서 직접 await (ConfigureAwait(false) 미사용).
+                _lastPreviews = await _redesign.RunAsync(msg => Dispatcher.Invoke(() => AddAiBubble(msg)));
+                ShowRedesignCards(_lastPreviews);
+            }
+            catch (Exception ex)
+            {
+                AddAiBubble($"리디자인 중 오류: {ex.Message}");
+                Logger.Log($"[Redesign] 실패: {ex}");
+            }
+            finally
+            {
+                _redesignRunning = false;
+                _redesignBar.IsEnabled = true;
+                _redesignBar.Opacity = 1;
+                _chatScroll.ScrollToBottom();
+            }
+        }
+
+        private async Task RunRecommendationAsync()
+        {
+            if (_redesignRunning) return;
+            if (_recommend == null)
+            {
+                AddAiBubble("추천은 Supabase·Gemini 설정이 있어야 동작해요.");
+                return;
+            }
+
+            _redesignRunning = true;
+            _redesignBar.IsEnabled = false;
+            _redesignBar.Opacity = 0.6;
+            if (_emptyState != null && _emptyState.Visibility == Visibility.Visible)
+                _emptyState.Visibility = Visibility.Collapsed;
+
+            try
+            {
+                AddAiBubble("현재 초안에 어울리는 에셋 조합을 찾아볼게요.");
+                var result = await _recommend.RunAsync(
+                    msg => Dispatcher.Invoke(() => AddAiBubble(msg)),
+                    voice => Dispatcher.Invoke(() => AddAiBubble(voice)));
+                _lastRecoResult = result;
+                ShowRecommendation(result.Recommendation);
+            }
+            catch (Exception ex)
+            {
+                AddAiBubble($"추천 중 오류: {ex.Message}");
+                Logger.Log($"[Reco] 실패: {ex}");
+            }
+            finally
+            {
+                _redesignRunning = false;
+                _redesignBar.IsEnabled = true;
+                _redesignBar.Opacity = 1;
+                _chatScroll.ScrollToBottom();
+            }
+        }
+
+        private void ShowRecommendation(CombinationRecommendation rec)
+        {
+            if (rec == null) { AddAiBubble("추천 결과가 없어요."); return; }
+            _lastRecommendation = rec;
+
+            AddAiBubble(string.IsNullOrEmpty(rec.Purpose)
+                ? "추천 조합이에요."
+                : $"초안 분석: \"{rec.Purpose}\" ({rec.SlideKind})");
+
+            _chatStack.Children.Add(new TextBlock
+            {
+                Text = "추천 조합",
+                FontSize = 11, FontWeight = FontWeights.SemiBold,
+                Foreground = ThemeResources.TextSub,
+                Margin = new Thickness(12, 8, 0, 2)
+            });
+
+            if (rec.Slide != null)
+                _chatStack.Children.Add(BuildRecoCard("표지", rec.Slide));
+            if (rec.Header != null)
+                _chatStack.Children.Add(BuildRecoCard("헤더", rec.Header));
+            if (rec.Layout != null)
+                _chatStack.Children.Add(BuildRecoCard("레이아웃", rec.Layout));
+            for (int i = 0; i < rec.Components.Count; i++)
+                _chatStack.Children.Add(BuildRecoCard($"컴포넌트 {i + 1}", rec.Components[i]));
+
+            if (rec.Unmet != null && rec.Unmet.Count > 0)
+                _chatStack.Children.Add(new TextBlock
+                {
+                    Text = $"미충족: {string.Join(", ", rec.Unmet)} (적합한 에셋 없음)",
+                    FontSize = 10, Foreground = ThemeResources.TextSub,
+                    Margin = new Thickness(14, 4, 12, 2)
+                });
+
+            _chatStack.Children.Add(BuildTracePanel());
+            _chatStack.Children.Add(BuildPlaceArrangeButton());
+            _chatScroll.ScrollToBottom();
+        }
+
+        private UIElement BuildTracePanel()
+        {
+            var lines = _lastRecoResult?.Trace?.ToReadableLines() ?? new List<string>();
+            var body = new StackPanel { Margin = new Thickness(14, 2, 12, 2), Visibility = Visibility.Collapsed };
+            foreach (var l in lines)
+                body.Children.Add(new TextBlock
+                {
+                    Text = l, FontSize = 10, Foreground = ThemeResources.TextSub,
+                    TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 1, 0, 1)
+                });
+
+            var header = new TextBlock
+            {
+                Text = "\U0001f50d 판단 과정 (펼치기)", FontSize = 10, FontWeight = FontWeights.SemiBold,
+                Foreground = ThemeResources.TextSub, Cursor = Cursors.Hand,
+                Margin = new Thickness(14, 6, 12, 0)
+            };
+            header.MouseLeftButtonUp += (s, e) =>
+            {
+                body.Visibility = body.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+                header.Text = body.Visibility == Visibility.Visible ? "\U0001f50d 판단 과정 (접기)" : "\U0001f50d 판단 과정 (펼치기)";
+            };
+
+            var wrap = new StackPanel();
+            wrap.Children.Add(header);
+            wrap.Children.Add(body);
+            return wrap;
+        }
+
+        private Border BuildRecoCard(string slotLabel, RecommendedSlot slot)
+        {
+            var label = new TextBlock
+            {
+                Text = slotLabel,
+                FontSize = 10, FontWeight = FontWeights.SemiBold,
+                Foreground = ThemeResources.TextSub,
+                Width = 64, VerticalAlignment = VerticalAlignment.Center
+            };
+            var name = new TextBlock
+            {
+                Text = slot.Asset?.Name ?? slot.Asset?.File ?? "에셋",
+                FontSize = 12, FontWeight = FontWeights.SemiBold,
+                Foreground = ThemeResources.TextMain, FontFamily = ThemeResources.FontBase,
+                TextWrapping = TextWrapping.Wrap
+            };
+            var note = new TextBlock
+            {
+                Text = $"{slot.FitNote}  ·  {(int)(slot.Confidence * 100)}%",
+                FontSize = 10, Foreground = ThemeResources.TextSub,
+                Margin = new Thickness(0, 2, 0, 0)
+            };
+            var textCol = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            textCol.Children.Add(name);
+            textCol.Children.Add(note);
+
+            var row = new StackPanel { Orientation = Orientation.Horizontal };
+            row.Children.Add(label);
+            row.Children.Add(textCol);
+
+            return new Border
+            {
+                Background = ThemeResources.BgChip,
+                CornerRadius = new CornerRadius(10),
+                Margin = new Thickness(12, 4, 12, 4),
+                Padding = new Thickness(10, 8, 10, 8),
+                Child = row
+            };
+        }
+
+        private Border BuildPlaceArrangeButton()
+        {
+            var border = new Border
+            {
+                Background = ThemeResources.BgChip,
+                CornerRadius = new CornerRadius(10),
+                Margin = new Thickness(12, 8, 12, 8),
+                Padding = new Thickness(12, 8, 12, 8),
+                Cursor = Cursors.Hand,
+                Child = new TextBlock
+                {
+                    Text = "이 조합으로 배치 ▶",
+                    FontSize = 12, FontWeight = FontWeights.SemiBold,
+                    Foreground = new SolidColorBrush(Color.FromRgb(96, 165, 250)),
+                    FontFamily = ThemeResources.FontBase,
+                    HorizontalAlignment = HorizontalAlignment.Center
+                }
+            };
+            border.MouseLeftButtonUp += async (s, e) => await PlaceRecommendationAsync();
+            return border;
+        }
+
+        private async Task PlaceRecommendationAsync()
+        {
+            var rec = _lastRecommendation;
+            if (rec == null || _remoteCache == null) return;
+            if (_redesignRunning) return;
+            _redesignRunning = true;
+
+            try
+            {
+                AddAiBubble("에셋 다운로드 중…");
+
+                var slots = new List<RecommendedSlot>();
+                if (rec.Slide != null) slots.Add(rec.Slide);
+                if (rec.Header != null) slots.Add(rec.Header);
+                if (rec.Layout != null) slots.Add(rec.Layout);
+                slots.AddRange(rec.Components);
+
+                if (slots.Count == 0)
+                {
+                    AddAiBubble("배치할 에셋이 없어요.");
+                    return;
+                }
+
+                var localPaths = new List<string>();
+                foreach (var slot in slots)
+                {
+                    var remotePath = slot.Asset.Extra != null && slot.Asset.Extra.ContainsKey("remote_file")
+                        ? slot.Asset.Extra["remote_file"].ToString()
+                        : slot.Asset.File;
+                    var path = await _remoteCache.GetPptxAsync(remotePath);
+                    localPaths.Add(path);
+                    Logger.Log($"[Place] 다운로드 완료: {remotePath} → {path}");
+                }
+
+                AddAiBubble("새 슬라이드에 배치 중…");
+                Dispatcher.Invoke(() => PlaceOnNewSlide(localPaths));
+                AddAiBubble("배치 완료! 새 슬라이드를 확인해보세요.");
+
+                var resultPng = SlideCaptureService.CaptureCurrentSlide()?.PngPath;
+                _lastResultPng = resultPng;
+                Dispatcher.Invoke(() => _chatStack.Children.Add(BuildCritiqueButton()));
+            }
+            catch (Exception ex)
+            {
+                AddAiBubble($"배치 중 오류: {ex.Message}");
+                Logger.Log($"[Place] 실패: {ex}");
+            }
+            finally
+            {
+                _redesignRunning = false;
+                _chatScroll.ScrollToBottom();
+            }
+        }
+
+        private Border BuildCritiqueButton()
+        {
+            var border = new Border
+            {
+                Background = ThemeResources.BgChip, CornerRadius = new CornerRadius(10),
+                Margin = new Thickness(12, 4, 12, 8), Padding = new Thickness(12, 8, 12, 8),
+                Cursor = Cursors.Hand,
+                Child = new TextBlock
+                {
+                    Text = "\U0001f50d 디자이너 검수 받기", FontSize = 12, FontWeight = FontWeights.SemiBold,
+                    Foreground = new SolidColorBrush(Color.FromRgb(96, 165, 250)),
+                    FontFamily = ThemeResources.FontBase, HorizontalAlignment = HorizontalAlignment.Center
+                }
+            };
+            border.MouseLeftButtonUp += async (s, e) => await RunCritiqueAsync();
+            return border;
+        }
+
+        private async Task RunCritiqueAsync()
+        {
+            if (_recommend == null || _lastRecoResult == null || string.IsNullOrEmpty(_lastResultPng)) return;
+            if (_redesignRunning) return;
+            _redesignRunning = true;
+            try
+            {
+                AddAiBubble("실무 디자이너가 검수 중…");
+                var c = await _recommend.CritiqueAsync(_lastResultPng, _lastRecoResult);
+                AddAiBubble($"검수 결과 — 재료적합 {c.MaterialFit} / 디자인·컨셉 {c.DesignConcept}\n" +
+                            $"{c.Verdict}\n병목: {c.Bottleneck} · {c.Suggestion}"
+                    + (string.IsNullOrEmpty(c.Reasoning) ? "" : $"\n{c.Reasoning}"));
+                Dispatcher.Invoke(() => _chatStack.Children.Add(BuildTracePanel()));
+            }
+            catch (Exception ex)
+            {
+                AddAiBubble($"검수 중 오류: {ex.Message}");
+                Logger.Log($"[Critique] 실패: {ex}");
+            }
+            finally { _redesignRunning = false; _chatScroll.ScrollToBottom(); }
+        }
+
+        private void PlaceOnNewSlide(List<string> pptxPaths)
+        {
+            var app = Globals.Application;
+            if (app == null) return;
+            var pres = app.ActivePresentation;
+            var currentSlide = (Microsoft.Office.Interop.PowerPoint.Slide)app.ActiveWindow.View.Slide;
+            int insertAfter = currentSlide.SlideIndex;
+
+            app.StartNewUndoEntry();
+
+            var layout = currentSlide.CustomLayout;
+            var newSlide = pres.Slides.AddSlide(insertAfter + 1, layout);
+
+            while (newSlide.Shapes.Count > 0)
+                newSlide.Shapes[1].Delete();
+
+            foreach (var pptxPath in pptxPaths)
+            {
+                int tempIdx = pres.Slides.Count;
+                pres.Slides.InsertFromFile(pptxPath, tempIdx, 1, 1);
+                var tempSlide = pres.Slides[tempIdx + 1];
+
+                int count = tempSlide.Shapes.Count;
+                if (count > 0)
+                {
+                    var indices = new int[count];
+                    for (int i = 0; i < count; i++)
+                        indices[i] = i + 1;
+                    tempSlide.Shapes.Range(indices).Copy();
+                    newSlide.Shapes.Paste();
+                }
+                tempSlide.Delete();
+            }
+
+            app.ActiveWindow.View.GotoSlide(newSlide.SlideIndex);
+            Logger.Log($"[Place] 새 슬라이드 {newSlide.SlideIndex} 생성, 에셋 {pptxPaths.Count}개 배치");
+        }
+
+        private void ShowRedesignCards(List<RedesignPreview> previews)
+        {
+            if (previews == null || previews.Count == 0)
+            {
+                AddAiBubble("만들 수 있는 시안이 없어요.");
+                return;
+            }
+
+            AddAiBubble("시안을 골라줘. 선택한 디자인만 남기고 나머지는 정리할게.");
+            _chatStack.Children.Add(new TextBlock
+            {
+                Text = "리디자인 시안",
+                FontSize = 11, FontWeight = FontWeights.SemiBold,
+                Foreground = ThemeResources.TextSub,
+                Margin = new Thickness(12, 8, 0, 2)
+            });
+
+            foreach (var p in previews)
+                _chatStack.Children.Add(BuildRedesignCard(p, previews));
+
+            _chatScroll.ScrollToBottom();
+        }
+
+        private Border BuildRedesignCard(RedesignPreview preview, List<RedesignPreview> all)
+        {
+            var thumb = new Border
+            {
+                Width = 120, Height = 68,
+                Background = ThemeResources.BgThumb,
+                CornerRadius = new CornerRadius(8),
+                ClipToBounds = true,
+                Margin = new Thickness(0, 0, 10, 0)
+            };
+            ThemeResources.ApplyRoundedClip(thumb, 8);
+            var img = LoadBitmapFromFile(preview.ThumbPath);
+            if (img != null)
+                thumb.Child = new Image { Source = img, Stretch = Stretch.Uniform, Margin = new Thickness(2) };
+
+            var nameText = new TextBlock
+            {
+                Text = preview.Asset?.Name ?? preview.Asset?.File ?? "에셋",
+                FontSize = 12, FontWeight = FontWeights.SemiBold,
+                Foreground = ThemeResources.TextMain, FontFamily = ThemeResources.FontBase,
+                TextWrapping = TextWrapping.Wrap
+            };
+            var info = new TextBlock
+            {
+                Text = $"채움 {preview.Mapping?.Mappings.Count ?? 0} · 빈자리 {preview.Mapping?.Empty.Count ?? 0}",
+                FontSize = 10, Foreground = ThemeResources.TextSub,
+                Margin = new Thickness(0, 3, 0, 0)
+            };
+            var textCol = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            textCol.Children.Add(nameText);
+            textCol.Children.Add(info);
+
+            var row = new StackPanel { Orientation = Orientation.Horizontal };
+            row.Children.Add(thumb);
+            row.Children.Add(textCol);
+
+            var card = new Border
+            {
+                Background = ThemeResources.BgChip,
+                CornerRadius = new CornerRadius(10),
+                Margin = new Thickness(12, 4, 12, 4),
+                Padding = new Thickness(8),
+                Cursor = Cursors.Hand,
+                Child = row
+            };
+            card.MouseLeftButtonUp += (s, e) => OnRedesignCardChosen(preview, all);
+            return card;
+        }
+
+        private void OnRedesignCardChosen(RedesignPreview chosen, List<RedesignPreview> all)
+        {
+            if (_redesignCommitted) return;
+            try
+            {
+                _redesign.Commit(chosen, all);
+                _redesignCommitted = true;
+                AddAiBubble($"'{chosen.Asset?.Name ?? chosen.Asset?.File}'(으)로 변환했어요. 원본은 그대로 두고 변환본을 옆에 만들었어요.");
+            }
+            catch (Exception ex)
+            {
+                AddAiBubble($"적용 중 오류: {ex.Message}");
+                Logger.Log($"[Redesign] commit 실패: {ex}");
+            }
+            _chatScroll.ScrollToBottom();
+        }
+
+        private static System.Windows.Media.Imaging.BitmapImage LoadBitmapFromFile(string path)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(path) || !System.IO.File.Exists(path)) return null;
+                var bmp = new System.Windows.Media.Imaging.BitmapImage();
+                bmp.BeginInit();
+                bmp.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+                bmp.CreateOptions = System.Windows.Media.Imaging.BitmapCreateOptions.IgnoreImageCache;
+                bmp.UriSource = new Uri(path);
+                bmp.EndInit();
+                bmp.Freeze();
+                return bmp;
+            }
+            catch { return null; }
         }
 
         private void SetShareBarIdle()
@@ -2238,11 +3349,16 @@ namespace TeampptAddin
             return new StyleConfig { Palettes = palettes, Fonts = fonts };
         }
 
-        public void InitAi(IAiService aiService, StyleConfig styles, RemoteAssetCache remoteCache = null)
+        public void InitAi(IAiService aiService, StyleConfig styles, RemoteAssetCache remoteCache = null, RedesignService redesign = null, RecommendationService recommend = null, DeckStructureService deckStructure = null, ConceptSuggester conceptSuggester = null, DeckRecommendationOrchestrator deckRecommend = null)
         {
             _aiService = aiService;
             _styleConfig = styles;
             _remoteCache = remoteCache;
+            _redesign = redesign;
+            _recommend = recommend;
+            _deckStructure = deckStructure;
+            _conceptSuggester = conceptSuggester;
+            _deckRecommend = deckRecommend;
             PopulateStylePanel();
         }
 
@@ -2337,6 +3453,7 @@ namespace TeampptAddin
             ((TextBlock)_ingestButton.Child).Text = "실행 중...";
 
             _ingestCurrentContainer.Children.Clear();
+            _ingestLastIndex = -1;
             SetIngestStage("재시도 중");
             _ingestProgressText.Foreground = ThemeResources.TextSub;
 
@@ -2346,8 +3463,10 @@ namespace TeampptAddin
 
                 StopIngestAnimations();
                 var totalFiles = Directory.GetFiles(_retryOutputDir, "*.png").Length;
-                ShowIngestComplete(count + _retryStartFrom, totalFiles);
-                SetStatus($"인제스트 완료: {count + _retryStartFrom}개", ThemeResources.StatusSuccess.Color);
+                // count는 UploadDirectoryAsync가 반환하는 "유효 파일 총합"(startFrom 무관).
+                // _retryStartFrom을 더하면 이중계산되어 62/35처럼 초과 표시됨.
+                ShowIngestComplete(count, totalFiles);
+                SetStatus($"인제스트 완료: {count}개", ThemeResources.StatusSuccess.Color);
             }
             catch (Exception ex)
             {

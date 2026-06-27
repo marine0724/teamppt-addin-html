@@ -58,6 +58,12 @@
     <Compile Include="Core\SectionReader.cs" />
     <Compile Include="Core\SlideSplitter.cs" />
     <Compile Include="Core\SlideImageRenderer.cs" />
+    <Compile Include="Core\TextMetrics.cs" />
+    <Compile Include="Core\DraftSlideReader.cs" />
+    <Compile Include="Core\DeckFileReader.cs" />
+    <Compile Include="Core\DeckSlideImageExporter.cs" />
+    <Compile Include="Core\AssetShapeInventory.cs" />
+    <Compile Include="Core\RedesignApplier.cs" />
     <Compile Include="UI\TaskPaneHost.cs" />
     <Compile Include="UI\TaskPaneManager.cs" />
     <Compile Include="UI\CardControl.cs" />
@@ -77,6 +83,12 @@
     <Compile Include="Models\StylePalette.cs" />
     <Compile Include="Models\IngestModels.cs" />
     <Compile Include="Models\AssetUnderstanding.cs" />
+    <Compile Include="Models\DraftModels.cs" />
+    <Compile Include="Models\DeckModels.cs" />
+    <Compile Include="Models\RecommendationModels.cs" />
+    <Compile Include="Models\DeckRecommendationModels.cs" />
+    <Compile Include="Models\RecommendationTrace.cs" />
+    <Compile Include="Models\DesignCritique.cs" />
     <Compile Include="Services\ColorHsl.cs" />
     <Compile Include="Services\PaletteRoleMapper.cs" />
     <Compile Include="Services\PaletteGenerator.cs" />
@@ -93,6 +105,9 @@
     <Compile Include="Services\IngestPlanner.cs" />
     <Compile Include="Services\IngestRunner.cs" />
     <Compile Include="Services\UnderstandingSchema.cs" />
+    <Compile Include="Services\DraftUnderstandingSchema.cs" />
+    <Compile Include="Services\DraftUnderstandingParser.cs" />
+    <Compile Include="Services\DraftUnderstandingService.cs" />
     <Compile Include="Services\UnderstandingParser.cs" />
     <Compile Include="Services\EmbedTextBuilder.cs" />
     <Compile Include="Services\AssetUnderstandingService.cs" />
@@ -110,11 +125,40 @@
     <Compile Include="Services\SlideDiagnosisSchema.cs" />
     <Compile Include="Services\SlideDiagnosisParser.cs" />
     <Compile Include="Services\VectorRecommendService.cs" />
+    <Compile Include="Services\DraftMatchService.cs" />
+    <Compile Include="Services\SlotMapSchema.cs" />
+    <Compile Include="Services\SlotMapParser.cs" />
+    <Compile Include="Services\SlotMapper.cs" />
+    <Compile Include="Services\RedesignService.cs" />
+    <Compile Include="Services\CombinationRecommender.cs" />
+    <Compile Include="Services\CombinationRecommenderSchema.cs" />
+    <Compile Include="Services\CombinationRecommenderParser.cs" />
+    <Compile Include="Services\CombinationCandidateProvider.cs" />
+    <Compile Include="Services\DesignCritiqueParser.cs" />
+    <Compile Include="Services\DesignCritiqueSchema.cs" />
+    <Compile Include="Services\DesignCritiqueService.cs" />
+    <Compile Include="Services\DeckStructureSchema.cs" />
+    <Compile Include="Services\DeckStructureParser.cs" />
+    <Compile Include="Services\DeckStructureFormatter.cs" />
+    <Compile Include="Services\DeckStructureService.cs" />
+    <Compile Include="Services\ConceptSuggesterSchema.cs" />
+    <Compile Include="Services\ConceptSuggesterParser.cs" />
+    <Compile Include="Services\ConceptSuggester.cs" />
+    <Compile Include="Services\MaterialFitScorer.cs" />
+    <Compile Include="Services\BodyPatternClusterer.cs" />
+    <Compile Include="Services\ConceptFitScorer.cs" />
+    <Compile Include="Services\DeckBoxPlanner.cs" />
+    <Compile Include="Services\RecommendationService.cs" />
+    <Compile Include="Services\DeckRecommendationOrchestrator.cs" />
+    <Compile Include="Services\UpdateService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="install.bat" />
     <None Include="uninstall.bat" />
+    <Content Include="updater.bat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Views\Styles\Theme.xaml" />

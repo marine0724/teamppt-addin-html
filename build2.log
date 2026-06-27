@@ -1,4 +1,0 @@
-
-  TeampptAddin -> c:\Projects\teamppt-addin\src\TeampptAddin\bin\Debug\TeampptAddin.dll
-C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\Microsoft.Common.CurrentVersion.targets(5668,5): warning : 'TeampptAddin.IAiService.RecommendAsync(#0), TeampptAddin'을(를) 처리하는 동안 형식 라이브러리 내보내기에서 경고가 발생했습니다. 경고: 형식 라이브러리 내보내기에서 시그니처의 제네릭 형식 인스턴스를 발견했습니다. 제네릭 코드는 COM으로 내보낼 수 없습니다. [c:\Projects\teamppt-addin\src\TeampptAddin\TeampptAddin.csproj]
-  TeampptAddin.Tests -> c:\Projects\teamppt-addin\src\TeampptAddin.Tests\bin\Debug\net48\TeampptAddin.Tests.dll
