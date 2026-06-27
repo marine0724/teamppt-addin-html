@@ -98,9 +98,9 @@
     ]
   },
   "progress": {
-    "lastUpdated": "2026-06-26",
-    "currentSummary": "리디자인 Phase 3(박스별 추천) 설계 완료 → writing-plans",
-    "currentDetail": "Phase 3 설계 spec 완료·커밋(910fe60). 스코프 3개 확정: 본문=패턴그룹, 두 배지=둘 다 계산(컨셉적합 프록시·LLM 비전은 Phase4/5 이월), 끝점=추천 카드까지. 다음 = writing-plans로 Task DAG → subagent 실행. 통합(머지/PR) 결정 대기.",
+    "lastUpdated": "2026-06-27",
+    "currentSummary": "GLM provider 추상화 완료(Gemini 복귀) → Phase 3 박스별 추천 구현 대기",
+    "currentDetail": "IAiService+AiServiceFactory+AiConfig provider 추상화 완성. GLM-Flash 실험(무료 RPM 제한·FlashX 별도과금 확인) 후 Gemini 복귀. GlmSchema.ToExample(스키마→예시 변환) 추가. api-keys.json provider 한 줄로 GLM↔Gemini 즉시 전환 가능.",
     "branch": "feat/asset-combination-recommendation",
     "roadmap": [
       { "id": "A 토대",   "label": "데이터 토대",        "sub": "인제스트→Supabase + 벡터추천 (해자)",  "status": "done" },
@@ -116,6 +116,7 @@
       { "label": "실행 중 덱 바 dim",        "detail": "리디자인 진행 중 UI dim 처리" }
     ],
     "done": [
+      { "label": "GLM provider 추상화 + 실험 (Gemini 복귀)", "detail": "IAiService·AiServiceFactory·AiConfig·GlmSchema·GlmRequestBuilder·GlmAiService 구현. GLM-Flash 무료 RPM 제한·FlashX 별도 과금 확인 후 Gemini 복귀. provider 한 줄 전환 아키텍처 확보." },
       { "label": "리디자인 Phase 3 — 박스별 덱 추천 설계 (brainstorming)", "detail": "스코프 3개 확정: 본문=패턴그룹 · 두 배지=둘 다 계산(컨셉적합 프록시) · 끝점=추천 카드까지. 신규 유닛 6개 + 모델·effort 배분표(A~I). spec 커밋 910fe60" },
       { "label": "리디자인 Phase 2 — 컨설팅 컨셉 (칩 질문 → 컨셉 3카드 → 선택)", "detail": "ConceptSuggester 로직(TDD) · 칩 질문/컨셉 카드/확정 배너 UI · final review READY TO MERGE · PPT 수동검증 ✅ (00f60f2·7d85e2c)" },
       { "label": "리디자인 Phase 1 — 파일 진입 + 덱 구조 분석", "detail": "DeckFileReader · 덱 구조 요약 박스 UI (demo hero ①) · PPT 수동검증 ✅ (dd2496a·6053a69·db0a3f2)" },

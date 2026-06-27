@@ -96,6 +96,8 @@
     <Compile Include="Services\CatalogBuilder.cs" />
     <Compile Include="Services\ConceptResolver.cs" />
     <Compile Include="Services\AssetLoader.cs" />
+    <Compile Include="Services\AiConfig.cs" />
+    <Compile Include="Services\AiServiceFactory.cs" />
     <Compile Include="Services\GeminiAiService.cs" />
     <Compile Include="Services\GeminiPromptBuilder.cs" />
     <Compile Include="Services\IAiService.cs" />
@@ -137,6 +139,10 @@
     <Compile Include="Services\DesignCritiqueParser.cs" />
     <Compile Include="Services\DesignCritiqueSchema.cs" />
     <Compile Include="Services\DesignCritiqueService.cs" />
+    <Compile Include="Services\GlmSchema.cs" />
+    <Compile Include="Services\GlmRequestBuilder.cs" />
+    <Compile Include="Services\AiRecommendationParser.cs" />
+    <Compile Include="Services\GlmAiService.cs" />
     <Compile Include="Services\DeckStructureSchema.cs" />
     <Compile Include="Services\DeckStructureParser.cs" />
     <Compile Include="Services\DeckStructureFormatter.cs" />

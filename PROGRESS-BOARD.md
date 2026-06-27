@@ -1,14 +1,14 @@
 # 🗺️ TEAMPPT 개발 진행 보드
 
-> **▶ 다음 세션 시작점:** **GLM-Flash provider swap 실행.** Phase 3 완전 종료 ✅ (PPT 수동검증 통과, main 머지 `31deab4`). 플랜: `docs/superpowers/plans/2026-06-27-glm-flash-provider-swap.md` (Task 1~7, subagent-driven). `superpowers:subagent-driven-development`로 Task 1부터 시작.
+> **▶ 다음 세션 시작점:** **GLM provider swap 완료(Gemini 복귀). Phase 3 박스별 추천 구현 시작.**
 
 > 이 파일 하나만 열어두면 "지금 어디서 뭘 하는지" 보입니다. Claude가 매 세션 함께 유지.
 > **기록용 아카이브가 아니라 "지금 여기" 작업 보드.** 끝난 잎(Task)은 지우고 교체, 숲·나무 단위는 끝날 때까지 유지. (규칙: CLAUDE.md)
 > 계층: **나라 > 대지 > 숲 > 나무 > 잎** (2026-06-22 재정립)
-> 최종 갱신: 2026-06-27 · 현재 작업: **Phase 3 Task I(PPT 수동검증 + main 머지) + GLM-Flash provider swap 준비.** Phase 3 Task A~H 완료(`c40d5ae`), 빌드 ✅. 배치 기능은 Phase 4 이월 확정. GLM 플랜 확정(`docs/superpowers/plans/2026-06-27-glm-flash-provider-swap.md`).
+> 최종 갱신: 2026-06-27 · 현재 작업: **Phase 3 박스별 추천 구현 대기.**
 
 ### ▶ 다음 작업
-**GLM-Flash provider swap** — 플랜 `docs/superpowers/plans/2026-06-27-glm-flash-provider-swap.md`, Task 1~7 subagent-driven. 생성 LLM 전부 z.ai 무료 GLM-Flash로 전환, 임베딩만 Gemini 유지, `api-keys.json`의 `provider` 한 줄로 Gemini 즉시 복귀 가능한 구조.
+**Phase 3 — 박스별 덱 추천 구현 시작.** writing-plans로 Task DAG → subagent 실행.
 
 ---
 
@@ -54,10 +54,12 @@ Phase: 0 두유사도 ──▶ 1 파일진입+덱구조 ──▶ 2 컨셉3 ─
 > **왜:** Phase 2가 저장한 `_selectedConcept`(styleTags/colors/fonts)를 소비해, 구조 박스(표지·본문공통헤더·본문 슬라이드별·엔드)마다 적합 에셋을 추천·배치. 단일 슬라이드 추천(Route A, 검증됨)을 **덱 전체로 일반화**. 두 유사도(재료 적합도 / 디자인·컨셉)로 추천 품질 검수 — 점수가 낮으면 에셋 탓인지 데이터 설계 탓인지 가린다.
 > 설계: 스펙 `2026-06-26-redesign-phase3-box-recommendation-design.md`. 재사용 = `RecommendationService`/`CombinationCandidateProvider`/`CombinationRecommender`/`MaterialFitScorer`(Route A), `DeckStructure`(Phase 1), `_selectedConcept`·`ConceptResolver`(Phase 2). 신규 = `BodyPatternClusterer`/`DeckBoxPlanner`/`ConceptFitScorer`(순수·TDD)·`DeckSlideImageExporter`·`DeckRecommendationOrchestrator` + 박스카드 UI. **설계 ✅ → `superpowers:writing-plans` → subagent-driven.**
 
-### 🍃 잎 — **GLM-Flash provider swap (Task 1~7)**
+### 🍃 잎 — **GLM-Flash provider swap ✅ 완료 (Gemini 복귀)**
 
 > Phase 3 ✅ 완전 종료 — PPT 수동검증 통과, main 머지 `31deab4`. "이 조합으로 배치"는 Phase 4 이월.
-> 플랜: `docs/superpowers/plans/2026-06-27-glm-flash-provider-swap.md`. 생성 LLM 7개 호출 → z.ai 무료 GLM-Flash, 임베딩만 Gemini 유지. `provider` 한 줄로 즉시 복귀.
+> 플랜: `docs/superpowers/plans/2026-06-27-glm-flash-provider-swap.md`.
+>
+> **결과 (2026-06-27):** provider 추상화 아키텍처 완성(IAiService+AiServiceFactory+AiConfig). GLM-Flash 실험 결과: ① 텍스트(glm-4.7-flash)는 정상 동작, ② 비전(glm-4.6v-flash)은 무료 RPM 제한으로 연속 호출 시 429 폭주+타임아웃, ③ FlashX(유료)는 별도 리소스 패키지 필요. → **Gemini 복귀** 결정. `GlmSchema.ToExample`(스키마→예시 변환)은 유지. `api-keys.json`의 `"provider":"glm"`으로 언제든 GLM 전환 가능.
 
 > **빌드/테스트 절차(이번 세션 확립):** 새 .cs는 `TeampptAddin.csproj`의 `<Compile Include>`에 **수동 등록 필수**(old-style csproj). 단위테스트 = 관리자 MSBuild 솔루션 빌드(`/p:RegisterForComInterop=false`) → `dotnet test --no-build -p:BuildProjectReferences=false --filter`. (플랜의 "dotnet test 1순위"는 단독으론 NuGet 참조 못 풀어 실패.)
 
@@ -71,10 +73,12 @@ Phase: 0 두유사도 ──▶ 1 파일진입+덱구조 ──▶ 2 컨셉3 ─
 
 ```
 PROGRESS-BOARD.md를 먼저 읽어줘.
-Phase 3 완전 종료(PPT 수동검증 통과, main 머지 31deab4). 다음 = GLM-Flash provider swap.
-플랜: docs/superpowers/plans/2026-06-27-glm-flash-provider-swap.md (Task 1~7, subagent-driven).
-superpowers:subagent-driven-development 스킬로 Task 1(AiConfig + AiServiceFactory 골격)부터 순차 실행해줘.
-모델 배분: 순수 로직 Task 1~4 = sonnet TDD, Task 5~6 = sonnet, Task 7(라이브 검증) = opus.
+
+GLM provider swap 완료(Gemini 복귀). Phase 3 박스별 추천 구현을 시작하자.
+설계 spec: docs/superpowers/specs/2026-06-26-redesign-phase3-box-recommendation-design.md
+writing-plans로 Task DAG 만들고 subagent-driven으로 실행.
+
+브랜치: feat/asset-combination-recommendation
 ```
 
 ## 🐛 버그 / 📋 요구사항 (다음 세션)

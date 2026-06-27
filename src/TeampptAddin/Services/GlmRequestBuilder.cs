@@ -16,13 +16,12 @@ namespace TeampptAddin
             JObject responseSchema, double temperature, int thinkingBudget)
         {
             bool hasImages = imageBase64 != null && imageBase64.Count > 0;
-            var schema = GlmSchema.Normalize(responseSchema);
+            var example = GlmSchema.ToExample(responseSchema);
 
-            // 이중 안전장치: system 프롬프트에 스키마를 명시(양 모델 JSON 준수율↑)
             var sys = new StringBuilder(systemPrompt);
             sys.AppendLine();
-            sys.AppendLine("반드시 아래 JSON 스키마에 정확히 맞는 JSON 객체만 출력하라(설명·코드펜스 금지):");
-            sys.AppendLine(schema.ToString(Formatting.None));
+            sys.AppendLine("Reply ONLY with JSON matching this exact structure:");
+            sys.AppendLine(example.ToString(Formatting.Indented));
 
             JToken userContent;
             if (hasImages)

@@ -50,6 +50,18 @@ public class GlmRequestBuilderTest
     }
 
     [Fact]
+    public void SchemaEmbeddedAsExample_NotRawSchema()
+    {
+        // ToExample 변환 후 임베딩 — "properties" 같은 raw schema 키워드가 아니라
+        // "<string>" 같은 placeholder 예시가 시스템 프롬프트에 들어가야 한다
+        var body = GlmRequestBuilder.Build("sys", "hi", null, Schema(), 0.5, 0);
+        var sys = body["messages"][0]["content"].ToString();
+        Assert.Contains("\"x\"", sys);       // 필드명은 남아있어야
+        Assert.Contains("<string>", sys);    // 예시 placeholder 포함
+        Assert.DoesNotContain("\"properties\"", sys); // raw schema 키워드 없음
+    }
+
+    [Fact]
     public void Thinking_EnabledWhenBudgetPositive_DisabledWhenZero()
     {
         Assert.Equal("enabled",
