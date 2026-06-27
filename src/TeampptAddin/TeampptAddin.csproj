@@ -61,6 +61,7 @@
     <Compile Include="Core\TextMetrics.cs" />
     <Compile Include="Core\DraftSlideReader.cs" />
     <Compile Include="Core\DeckFileReader.cs" />
+    <Compile Include="Core\DeckSlideImageExporter.cs" />
     <Compile Include="Core\AssetShapeInventory.cs" />
     <Compile Include="Core\RedesignApplier.cs" />
     <Compile Include="UI\TaskPaneHost.cs" />
