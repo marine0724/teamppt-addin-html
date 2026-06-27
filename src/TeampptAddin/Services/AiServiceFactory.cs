@@ -5,7 +5,12 @@ namespace TeampptAddin
     {
         public static IAiService CreateGenerative()
         {
-            // Task 5에서 GlmAiService 분기 추가. 지금은 Gemini만.
+            if (AiConfig.UseGlm)
+            {
+                Logger.Log("[AiFactory] GLM-Flash provider 사용");
+                return new GlmAiService(AiConfig.GlmKey);
+            }
+            Logger.Log("[AiFactory] Gemini provider 사용");
             return new GeminiAiService(AiConfig.GeminiKey);
         }
     }
