@@ -161,20 +161,16 @@ namespace TeampptAddin
                     continue;
                 }
 
-                // 새 빈 슬라이드 추가
-                int insertAt = pres.Slides.Count + 1;
-                var newSlide = pres.Slides.AddSlide(insertAt, masterLayout);
+                // slide 에셋(표지/엔드/목차/간지): 슬라이드 통째 InsertFromFile (배경·레이아웃 보존)
+                // body 에셋(header+layout 합성): 빈 슬라이드에 도형 복사
+                var isWholeSlide = item.Slots.Count == 1 &&
+                    item.Slots[0].Asset?.Kind == "slide";
 
-                // 기본 placeholder 도형 제거
-                while (newSlide.Shapes.Count > 0)
-                    newSlide.Shapes[1].Delete();
+                PowerPoint.Slide newSlide;
 
-                // 이 슬라이드에 실제로 붙은 슬롯(출처 기록용)
-                var appliedSlots = new List<RecommendedSlot>();
-
-                // 에셋 슬롯 순서대로 삽입 (SortSlotsByLayer로 z-order 보장)
-                foreach (var slot in SortSlotsByLayer(item.Slots))
+                if (isWholeSlide)
                 {
+                    var slot = item.Slots[0];
                     var remotePath = slot.Asset.Extra != null &&
                         slot.Asset.Extra.ContainsKey("remote_file")
                         ? slot.Asset.Extra["remote_file"].ToString()
@@ -191,34 +187,77 @@ namespace TeampptAddin
 
                     try
                     {
-                        // InsertFromFile → 임시 슬라이드 → 도형 복사 → 대상 슬라이드에 붙여넣기 → 임시 삭제
-                        int tempIdx = pres.Slides.Count;
-                        pres.Slides.InsertFromFile(localPath, tempIdx, 1, 1);
-                        var tempSlide = pres.Slides[tempIdx + 1];
-                        int shapeCount = tempSlide.Shapes.Count;
-                        if (shapeCount > 0)
-                        {
-                            var indices = new int[shapeCount];
-                            for (int i = 0; i < shapeCount; i++) indices[i] = i + 1;
-                            tempSlide.Shapes.Range(indices).Copy();
-                            newSlide.Shapes.Paste();
-                        }
-                        tempSlide.Delete();
-                        appliedSlots.Add(slot);   // 붙기 성공한 것만 출처에 기록
+                        int insertAt = pres.Slides.Count;
+                        pres.Slides.InsertFromFile(localPath, insertAt, 1, 1);
+                        newSlide = pres.Slides[insertAt + 1];
+
+                        try { newSlide.Tags.Add(SlideProvenance.TagName, SlideProvenance.Format(item.Slots)); }
+                        catch (Exception ex) { Logger.Log($"[DeckAssembler] 출처 태그 실패: {ex.Message}"); }
                     }
                     catch (Exception ex)
                     {
-                        var warn = $"{slot.Asset.Name ?? remotePath} 슬롯 삽입 실패: {ex.Message}";
+                        var warn = $"{slot.Asset.Name ?? remotePath} 슬라이드 삽입 실패: {ex.Message}";
                         result.Warnings.Add(warn);
                         Logger.Log($"[DeckAssembler] {warn}");
+                        continue;
                     }
                 }
-
-                // 출처 기록 — 복제 본문 슬라이드는 Duplicate()가 이 태그를 복사하므로 자동 상속됨
-                if (appliedSlots.Count > 0)
+                else
                 {
-                    try { newSlide.Tags.Add(SlideProvenance.TagName, SlideProvenance.Format(appliedSlots)); }
-                    catch (Exception ex) { Logger.Log($"[DeckAssembler] 출처 태그 실패: {ex.Message}"); }
+                    // body: 빈 슬라이드 + 도형 복사 합성
+                    int insertAt = pres.Slides.Count + 1;
+                    newSlide = pres.Slides.AddSlide(insertAt, masterLayout);
+
+                    while (newSlide.Shapes.Count > 0)
+                        newSlide.Shapes[1].Delete();
+
+                    var appliedSlots = new List<RecommendedSlot>();
+
+                    foreach (var slot in SortSlotsByLayer(item.Slots))
+                    {
+                        var remotePath = slot.Asset.Extra != null &&
+                            slot.Asset.Extra.ContainsKey("remote_file")
+                            ? slot.Asset.Extra["remote_file"].ToString()
+                            : slot.Asset.File;
+
+                        string localPath;
+                        if (!prefetched.TryGetValue(remotePath, out localPath) ||
+                            string.IsNullOrEmpty(localPath) ||
+                            !System.IO.File.Exists(localPath))
+                        {
+                            result.Warnings.Add($"{slot.Asset.Name ?? remotePath} 파일 없음");
+                            continue;
+                        }
+
+                        try
+                        {
+                            int tempIdx = pres.Slides.Count;
+                            pres.Slides.InsertFromFile(localPath, tempIdx, 1, 1);
+                            var tempSlide = pres.Slides[tempIdx + 1];
+                            int shapeCount = tempSlide.Shapes.Count;
+                            if (shapeCount > 0)
+                            {
+                                var indices = new int[shapeCount];
+                                for (int i = 0; i < shapeCount; i++) indices[i] = i + 1;
+                                tempSlide.Shapes.Range(indices).Copy();
+                                newSlide.Shapes.Paste();
+                            }
+                            tempSlide.Delete();
+                            appliedSlots.Add(slot);
+                        }
+                        catch (Exception ex)
+                        {
+                            var warn = $"{slot.Asset.Name ?? remotePath} 슬롯 삽입 실패: {ex.Message}";
+                            result.Warnings.Add(warn);
+                            Logger.Log($"[DeckAssembler] {warn}");
+                        }
+                    }
+
+                    if (appliedSlots.Count > 0)
+                    {
+                        try { newSlide.Tags.Add(SlideProvenance.TagName, SlideProvenance.Format(appliedSlots)); }
+                        catch (Exception ex) { Logger.Log($"[DeckAssembler] 출처 태그 실패: {ex.Message}"); }
+                    }
                 }
 
                 if (item.BoxKind == "body" && item.IsRepresentative)
