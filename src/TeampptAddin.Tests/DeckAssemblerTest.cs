@@ -95,17 +95,17 @@ namespace TeampptAddin.Tests
         }
 
         [Fact]
-        public void BuildSlideOrder_BodyRepresentative_MergesHeaderLayoutComponent()
+        public void BuildSlideOrder_BodyRepresentative_HeaderAndLayoutOnly()
         {
             var deck = ThreeBoxDeck();
             var order = DeckAssembler.BuildSlideOrder(deck);
             var bodyRep = order[1]; // 대표 장
             Assert.True(bodyRep.IsRepresentative);
-            // header + layout + component = 3개 슬롯
-            Assert.Equal(3, bodyRep.Slots.Count);
+            // Phase 4.5: 컴포넌트 제외 → header + layout = 2개
+            Assert.Equal(2, bodyRep.Slots.Count);
             Assert.Contains(bodyRep.Slots, s => s.Asset.Kind == "header");
             Assert.Contains(bodyRep.Slots, s => s.Asset.Kind == "layout");
-            Assert.Contains(bodyRep.Slots, s => s.Asset.Kind == "component");
+            Assert.DoesNotContain(bodyRep.Slots, s => s.Asset.Kind == "component");
         }
 
         [Fact]

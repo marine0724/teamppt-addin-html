@@ -98,9 +98,9 @@
     ]
   },
   "progress": {
-    "lastUpdated": "2026-06-27",
-    "currentSummary": "GLM provider 추상화 완료(Gemini 복귀) → Phase 3 박스별 추천 구현 대기",
-    "currentDetail": "IAiService+AiServiceFactory+AiConfig provider 추상화 완성. GLM-Flash 실험(무료 RPM 제한·FlashX 별도과금 확인) 후 Gemini 복귀. GlmSchema.ToExample(스키마→예시 변환) 추가. api-keys.json provider 한 줄로 GLM↔Gemini 즉시 전환 가능.",
+    "lastUpdated": "2026-06-28",
+    "currentSummary": "Phase 4.5 구현+리뷰 완료(겹침수정+출처기록) — PPT 수동검증 후 main 머지",
+    "currentDetail": "본문 조립 header+layout만(컴포넌트 오버레이 제거→겹침 해소) + SlideProvenance JSON 직렬화 + AssembleAsync 출처 태그 기록. 3커밋(51433df·61833ff·c03e650), opus 최종 리뷰 READY TO MERGE.",
     "branch": "feat/asset-combination-recommendation",
     "roadmap": [
       { "id": "A 토대",   "label": "데이터 토대",        "sub": "인제스트→Supabase + 벡터추천 (해자)",  "status": "done" },
@@ -108,14 +108,17 @@
       { "id": "Route B",  "label": "리디자인 (덱 전체)",  "sub": "초안 파일 통째 → 덱 리디자인 (지금)",   "status": "active" }
     ],
     "queue": [
-      { "id": "Phase 3",  "label": "박스별 덱 추천",          "detail": "Phase 2 _selectedConcept 소비 → 박스별 에셋 추천·두 배지(데모 hero ②). 설계 ✅ → writing-plans로 Task DAG → subagent 실행", "status": "next" },
-      { "id": "Phase 4~5","label": "빈 템플릿 조립 → 재료 이식","detail": "Scratch 덱 조립 + 본문 1~2장 이식",             "status": "waiting" }
+      { "id": "Phase 5",  "label": "재료 이식 (본문 1~2장)",    "detail": "조립된 빈 템플릿 슬라이드에 원본 텍스트·이미지 이식", "status": "next" },
+      { "id": "Phase 6",  "label": "컴포넌트 모델 (6a/6b/6c)",  "detail": "comp_ 그룹마킹·fit교체·슬라이드별 대화형 UX (디자이너 재저작 선행)", "status": "waiting" }
     ],
     "demoOptions": [
       { "label": "실패 시 _emptyState 복원", "detail": "리디자인 실패 시 원본 상태 복원 처리" },
       { "label": "실행 중 덱 바 dim",        "detail": "리디자인 진행 중 UI dim 처리" }
     ],
     "done": [
+      { "label": "리디자인 Phase 4.5 — 깨끗한 조립 + 출처 기록", "detail": "본문 header+layout만(겹침 해소) · SlideProvenance JSON · 출처 태그 기록. opus 리뷰 READY TO MERGE (51433df·61833ff·c03e650)" },
+      { "label": "리디자인 Phase 4 — 빈 템플릿 덱 조립", "detail": "DeckAssembler BuildSlideOrder+AssembleAsync + 조립 버튼 UI. STA 스레딩 fix 포함. PPT 수동검증서 겹침 발견→4.5로 해소" },
+      { "label": "리디자인 Phase 3 — 박스별 덱 추천", "detail": "A~I 9 Task. 오케스트레이터·클러스터러·두배지·UI 카드. PPT 수동검증 ✅ main 머지 완료" },
       { "label": "GLM provider 추상화 + 실험 (Gemini 복귀)", "detail": "IAiService·AiServiceFactory·AiConfig·GlmSchema·GlmRequestBuilder·GlmAiService 구현. GLM-Flash 무료 RPM 제한·FlashX 별도 과금 확인 후 Gemini 복귀. provider 한 줄 전환 아키텍처 확보." },
       { "label": "리디자인 Phase 3 — 박스별 덱 추천 설계 (brainstorming)", "detail": "스코프 3개 확정: 본문=패턴그룹 · 두 배지=둘 다 계산(컨셉적합 프록시) · 끝점=추천 카드까지. 신규 유닛 6개 + 모델·effort 배분표(A~I). spec 커밋 910fe60" },
       { "label": "리디자인 Phase 2 — 컨설팅 컨셉 (칩 질문 → 컨셉 3카드 → 선택)", "detail": "ConceptSuggester 로직(TDD) · 칩 질문/컨셉 카드/확정 배너 UI · final review READY TO MERGE · PPT 수동검증 ✅ (00f60f2·7d85e2c)" },
