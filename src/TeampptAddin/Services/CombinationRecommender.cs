@@ -12,8 +12,8 @@ namespace TeampptAddin
     /// </summary>
     public class CombinationRecommender
     {
-        private readonly GeminiAiService _gemini;
-        public CombinationRecommender(GeminiAiService gemini) { _gemini = gemini; }
+        private readonly IAiService _gemini;
+        public CombinationRecommender(IAiService gemini) { _gemini = gemini; }
 
         public async Task<CombinationRecommendation> RecommendAsync(
             DraftUnderstanding u, Dictionary<string, List<HeaderAsset>> candidatesByKind)

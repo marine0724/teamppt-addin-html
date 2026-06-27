@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 
 namespace TeampptAddin
 {
@@ -47,5 +48,15 @@ namespace TeampptAddin
 
         public Task<SlideDiagnosis> DiagnoseSlideAsync(string pngPath)
             => _selector.DiagnoseSlideAsync(pngPath);
+
+        public Task<string> GenerateJsonAsync(
+            string systemPrompt, string userText, string pngPathOrNull,
+            JObject responseSchema, double temperature = 0.4, int thinkingBudget = 0)
+            => _selector.GenerateJsonAsync(systemPrompt, userText, pngPathOrNull, responseSchema, temperature, thinkingBudget);
+
+        public Task<string> GenerateJsonAsync(
+            string systemPrompt, string userText, IEnumerable<string> pngPaths,
+            JObject responseSchema, double temperature = 0.4, int thinkingBudget = 0)
+            => _selector.GenerateJsonAsync(systemPrompt, userText, pngPaths, responseSchema, temperature, thinkingBudget);
     }
 }

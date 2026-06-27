@@ -11,8 +11,8 @@ namespace TeampptAddin
     /// </summary>
     public class SlotMapper
     {
-        private readonly GeminiAiService _gemini;
-        public SlotMapper(GeminiAiService gemini) { _gemini = gemini; }
+        private readonly IAiService _gemini;
+        public SlotMapper(IAiService gemini) { _gemini = gemini; }
 
         public async Task<MappingResult> MapAsync(DraftUnderstanding u, List<AssetShapeInfo> assetShapes)
         {

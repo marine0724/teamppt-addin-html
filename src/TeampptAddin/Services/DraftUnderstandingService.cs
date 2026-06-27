@@ -9,8 +9,8 @@ namespace TeampptAddin
     /// </summary>
     public class DraftUnderstandingService
     {
-        private readonly GeminiAiService _gemini;
-        public DraftUnderstandingService(GeminiAiService gemini) { _gemini = gemini; }
+        private readonly IAiService _gemini;
+        public DraftUnderstandingService(IAiService gemini) { _gemini = gemini; }
 
         public async Task<DraftUnderstanding> UnderstandAsync(DraftProfile profile, string pngPath)
         {

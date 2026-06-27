@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 
 namespace TeampptAddin
 {
@@ -13,6 +14,14 @@ namespace TeampptAddin
             IEnumerable<StyleFont> fonts);
 
         Task<SlideDiagnosis> DiagnoseSlideAsync(string pngPath);
+
+        Task<string> GenerateJsonAsync(
+            string systemPrompt, string userText, string pngPathOrNull,
+            JObject responseSchema, double temperature = 0.4, int thinkingBudget = 0);
+
+        Task<string> GenerateJsonAsync(
+            string systemPrompt, string userText, IEnumerable<string> pngPaths,
+            JObject responseSchema, double temperature = 0.4, int thinkingBudget = 0);
     }
 
     public class MockAiService : IAiService
@@ -54,5 +63,15 @@ namespace TeampptAddin
                 }
             });
         }
+
+        public Task<string> GenerateJsonAsync(
+            string systemPrompt, string userText, string pngPathOrNull,
+            JObject responseSchema, double temperature = 0.4, int thinkingBudget = 0)
+            => Task.FromResult("{}");
+
+        public Task<string> GenerateJsonAsync(
+            string systemPrompt, string userText, IEnumerable<string> pngPaths,
+            JObject responseSchema, double temperature = 0.4, int thinkingBudget = 0)
+            => Task.FromResult("{}");
     }
 }

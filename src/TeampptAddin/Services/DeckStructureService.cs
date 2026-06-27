@@ -11,8 +11,8 @@ namespace TeampptAddin
     /// </summary>
     public class DeckStructureService
     {
-        private readonly GeminiAiService _gemini;
-        public DeckStructureService(GeminiAiService gemini) { _gemini = gemini; }
+        private readonly IAiService _gemini;
+        public DeckStructureService(IAiService gemini) { _gemini = gemini; }
 
         public static string BuildUserText(List<DraftProfile> slides)
         {

@@ -11,8 +11,8 @@ namespace TeampptAddin
     /// </summary>
     public class ConceptSuggester
     {
-        private readonly GeminiAiService _gemini;
-        public ConceptSuggester(GeminiAiService gemini) { _gemini = gemini; }
+        private readonly IAiService _gemini;
+        public ConceptSuggester(IAiService gemini) { _gemini = gemini; }
 
         public static string BuildUserText(DeckStructure structure, string usage, string feeling)
         {

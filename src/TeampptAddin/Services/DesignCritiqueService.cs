@@ -5,8 +5,8 @@ namespace TeampptAddin
 {
     public class DesignCritiqueService
     {
-        private readonly GeminiAiService _gemini;
-        public DesignCritiqueService(GeminiAiService gemini) { _gemini = gemini; }
+        private readonly IAiService _gemini;
+        public DesignCritiqueService(IAiService gemini) { _gemini = gemini; }
 
         public static string BuildUserText(
             DraftUnderstanding u, CombinationRecommendation rec, List<string> retrieveLines, MaterialFitResult materialFit)
