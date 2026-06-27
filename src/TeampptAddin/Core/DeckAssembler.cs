@@ -100,6 +100,40 @@ namespace TeampptAddin
             var order = BuildSlideOrder(deck);
             if (order.Count == 0) return result;
 
+            // ── Phase 1: Pre-fetch — 모든 원격 에셋을 STA 스레드에서 미리 다운로드 ──
+            // RemoteAssetCache 내부 ConfigureAwait(false) 때문에
+            // COM 루프 안에서 await하면 thread-pool로 복귀 → RPC_E_WRONGTHREAD.
+            // 여기서 모두 받아 놓으면 Phase 2는 await 없이 동기 실행.
+            progress?.Invoke("에셋 다운로드 중…");
+            var prefetched = new Dictionary<string, string>(); // remotePath → localPath
+            foreach (var item in order)
+            {
+                foreach (var slot in SortSlotsByLayer(item.Slots))
+                {
+                    var remotePath = slot.Asset.Extra != null &&
+                        slot.Asset.Extra.ContainsKey("remote_file")
+                        ? slot.Asset.Extra["remote_file"].ToString()
+                        : slot.Asset.File;
+
+                    if (string.IsNullOrEmpty(remotePath) || prefetched.ContainsKey(remotePath))
+                        continue;
+
+                    try
+                    {
+                        var localPath = await remoteCache.GetPptxAsync(remotePath);
+                        prefetched[remotePath] = localPath;
+                    }
+                    catch (Exception ex)
+                    {
+                        var warn = $"{slot.Asset.Name ?? slot.Asset.File} 다운로드 실패: {ex.Message}";
+                        result.Warnings.Add(warn);
+                        Logger.Log($"[DeckAssembler] {warn}");
+                        prefetched[remotePath] = null; // 실패 기록 — Phase 2에서 skip
+                    }
+                }
+            }
+
+            // ── Phase 2: COM 조립 — await 없음, STA 스레드 유지 ──
             var app = Globals.Application;
             var pres = app.ActivePresentation;
 
@@ -138,42 +172,42 @@ namespace TeampptAddin
                 // 에셋 슬롯 순서대로 삽입 (SortSlotsByLayer로 z-order 보장)
                 foreach (var slot in SortSlotsByLayer(item.Slots))
                 {
-                    string localPath = null;
+                    var remotePath = slot.Asset.Extra != null &&
+                        slot.Asset.Extra.ContainsKey("remote_file")
+                        ? slot.Asset.Extra["remote_file"].ToString()
+                        : slot.Asset.File;
+
+                    string localPath;
+                    if (!prefetched.TryGetValue(remotePath, out localPath) ||
+                        string.IsNullOrEmpty(localPath) ||
+                        !System.IO.File.Exists(localPath))
+                    {
+                        result.Warnings.Add($"{slot.Asset.Name ?? remotePath} 파일 없음");
+                        continue;
+                    }
+
                     try
                     {
-                        var remotePath = slot.Asset.Extra != null &&
-                            slot.Asset.Extra.ContainsKey("remote_file")
-                            ? slot.Asset.Extra["remote_file"].ToString()
-                            : slot.Asset.File;
-                        localPath = await remoteCache.GetPptxAsync(remotePath);
+                        // InsertFromFile → 임시 슬라이드 → 도형 복사 → 대상 슬라이드에 붙여넣기 → 임시 삭제
+                        int tempIdx = pres.Slides.Count;
+                        pres.Slides.InsertFromFile(localPath, tempIdx, 1, 1);
+                        var tempSlide = pres.Slides[tempIdx + 1];
+                        int shapeCount = tempSlide.Shapes.Count;
+                        if (shapeCount > 0)
+                        {
+                            var indices = new int[shapeCount];
+                            for (int i = 0; i < shapeCount; i++) indices[i] = i + 1;
+                            tempSlide.Shapes.Range(indices).Copy();
+                            newSlide.Shapes.Paste();
+                        }
+                        tempSlide.Delete();
                     }
                     catch (Exception ex)
                     {
-                        var warn = $"{slot.Asset.Name ?? slot.Asset.File} 다운로드 실패: {ex.Message}";
+                        var warn = $"{slot.Asset.Name ?? remotePath} 슬롯 삽입 실패: {ex.Message}";
                         result.Warnings.Add(warn);
                         Logger.Log($"[DeckAssembler] {warn}");
-                        continue;
                     }
-
-                    if (string.IsNullOrEmpty(localPath) || !System.IO.File.Exists(localPath))
-                    {
-                        result.Warnings.Add($"{slot.Asset.Name} 파일 없음");
-                        continue;
-                    }
-
-                    // InsertFromFile → 임시 슬라이드 → 도형 복사 → 대상 슬라이드에 붙여넣기 → 임시 삭제
-                    int tempIdx = pres.Slides.Count;
-                    pres.Slides.InsertFromFile(localPath, tempIdx, 1, 1);
-                    var tempSlide = pres.Slides[tempIdx + 1];
-                    int shapeCount = tempSlide.Shapes.Count;
-                    if (shapeCount > 0)
-                    {
-                        var indices = new int[shapeCount];
-                        for (int i = 0; i < shapeCount; i++) indices[i] = i + 1;
-                        tempSlide.Shapes.Range(indices).Copy();
-                        newSlide.Shapes.Paste();
-                    }
-                    tempSlide.Delete();
                 }
 
                 if (item.BoxKind == "body" && item.IsRepresentative)
