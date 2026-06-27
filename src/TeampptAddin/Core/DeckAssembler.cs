@@ -169,6 +169,9 @@ namespace TeampptAddin
                 while (newSlide.Shapes.Count > 0)
                     newSlide.Shapes[1].Delete();
 
+                // 이 슬라이드에 실제로 붙은 슬롯(출처 기록용)
+                var appliedSlots = new List<RecommendedSlot>();
+
                 // 에셋 슬롯 순서대로 삽입 (SortSlotsByLayer로 z-order 보장)
                 foreach (var slot in SortSlotsByLayer(item.Slots))
                 {
@@ -201,6 +204,7 @@ namespace TeampptAddin
                             newSlide.Shapes.Paste();
                         }
                         tempSlide.Delete();
+                        appliedSlots.Add(slot);   // 붙기 성공한 것만 출처에 기록
                     }
                     catch (Exception ex)
                     {
@@ -208,6 +212,13 @@ namespace TeampptAddin
                         result.Warnings.Add(warn);
                         Logger.Log($"[DeckAssembler] {warn}");
                     }
+                }
+
+                // 출처 기록 — 복제 본문 슬라이드는 Duplicate()가 이 태그를 복사하므로 자동 상속됨
+                if (appliedSlots.Count > 0)
+                {
+                    try { newSlide.Tags.Add(SlideProvenance.TagName, SlideProvenance.Format(appliedSlots)); }
+                    catch (Exception ex) { Logger.Log($"[DeckAssembler] 출처 태그 실패: {ex.Message}"); }
                 }
 
                 if (item.BoxKind == "body" && item.IsRepresentative)
