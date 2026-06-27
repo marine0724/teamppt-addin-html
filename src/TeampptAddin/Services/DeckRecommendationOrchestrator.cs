@@ -18,7 +18,7 @@ namespace TeampptAddin
 
         public DeckRecommendationOrchestrator(string supabaseUrl, string anonKey, string geminiKey)
         {
-            var gemini = new GeminiAiService(geminiKey);
+            var gemini = AiServiceFactory.CreateGenerative();
             _understand = new DraftUnderstandingService(gemini);
             var supa = new SupabaseClient(supabaseUrl, anonKey);
             _candidates = new CombinationCandidateProvider(

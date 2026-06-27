@@ -11,14 +11,14 @@ namespace TeampptAddin
         private const int TopN = 8;
         private readonly EmbeddingService _embed;
         private readonly SupabaseClient _supa;
-        private readonly GeminiAiService _selector;
+        private readonly IAiService _selector;
         private readonly RecommendationCache _cache = new RecommendationCache();
 
         public VectorRecommendService(string supabaseUrl, string anonKey, string geminiKey)
         {
             _embed = new EmbeddingService(geminiKey);
             _supa = new SupabaseClient(supabaseUrl, anonKey);
-            _selector = new GeminiAiService(geminiKey);
+            _selector = AiServiceFactory.CreateGenerative();
         }
 
         public async Task<AiRecommendation> RecommendAsync(

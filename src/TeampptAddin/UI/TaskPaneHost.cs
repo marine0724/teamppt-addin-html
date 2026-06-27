@@ -172,6 +172,7 @@ namespace TeampptAddin
             IAiService ai;
 
             string supaUrl = null, supaAnon = null, gemini = null;
+            AiConfig.Load(assetsDir);
             try
             {
                 var keysPath = Path.Combine(assetsDir, "api-keys.json");
@@ -201,22 +202,22 @@ namespace TeampptAddin
                 ai = new VectorRecommendService(supaUrl, supaAnon, gemini);
                 redesign = new RedesignService(supaUrl, supaAnon, gemini);
                 recommend = new RecommendationService(supaUrl, supaAnon, gemini);
-                deckStructure = new DeckStructureService(new GeminiAiService(gemini));
-                conceptSuggester = new ConceptSuggester(new GeminiAiService(gemini));
+                deckStructure = new DeckStructureService(AiServiceFactory.CreateGenerative());
+                conceptSuggester = new ConceptSuggester(AiServiceFactory.CreateGenerative());
                 deckRecommend = new DeckRecommendationOrchestrator(supaUrl, supaAnon, gemini);
                 Logger.Log("[AI] VectorRecommendService (Supabase 벡터검색) 사용");
             }
             else if (!string.IsNullOrEmpty(gemini))
             {
-                try { ai = GeminiAiService.FromAssetsDir(assetsDir); }
+                try { ai = AiServiceFactory.CreateGenerative(); }
                 catch { ai = new MockAiService(); }
-                deckStructure = new DeckStructureService(new GeminiAiService(gemini));
-                conceptSuggester = new ConceptSuggester(new GeminiAiService(gemini));
+                deckStructure = new DeckStructureService(AiServiceFactory.CreateGenerative());
+                conceptSuggester = new ConceptSuggester(AiServiceFactory.CreateGenerative());
                 Logger.Log("[AI] Supabase 설정 없음 → 로컬 AI 사용 (덱 구조 분석은 Gemini 사용)");
             }
             else
             {
-                try { ai = GeminiAiService.FromAssetsDir(assetsDir); }
+                try { ai = AiServiceFactory.CreateGenerative(); }
                 catch { ai = new MockAiService(); }
                 Logger.Log("[AI] Supabase 설정 없음 → 로컬 AI 사용");
             }

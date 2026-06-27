@@ -6,14 +6,14 @@ namespace TeampptAddin
 {
     public class RecommendationService
     {
-        private readonly GeminiAiService _gemini;
+        private readonly IAiService _gemini;
         private readonly DraftUnderstandingService _understand;
         private readonly CombinationCandidateProvider _candidates;
         private readonly CombinationRecommender _recommender;
 
         public RecommendationService(string supabaseUrl, string anonKey, string geminiKey)
         {
-            _gemini = new GeminiAiService(geminiKey);
+            _gemini = AiServiceFactory.CreateGenerative();
             _understand = new DraftUnderstandingService(_gemini);
             var supa = new SupabaseClient(supabaseUrl, anonKey);
             _candidates = new CombinationCandidateProvider(

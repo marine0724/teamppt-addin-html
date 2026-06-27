@@ -12,7 +12,7 @@ namespace TeampptAddin
     /// </summary>
     public class RedesignService
     {
-        private readonly GeminiAiService _gemini;
+        private readonly IAiService _gemini;
         private readonly DraftUnderstandingService _understand;
         private readonly DraftMatchService _match;
         private readonly SlotMapper _mapper;
@@ -20,7 +20,7 @@ namespace TeampptAddin
 
         public RedesignService(string supabaseUrl, string anonKey, string geminiKey)
         {
-            _gemini = new GeminiAiService(geminiKey);
+            _gemini = AiServiceFactory.CreateGenerative();
             _understand = new DraftUnderstandingService(_gemini);
             _match = new DraftMatchService(new EmbeddingService(geminiKey), new SupabaseClient(supabaseUrl, anonKey));
             _mapper = new SlotMapper(_gemini);
