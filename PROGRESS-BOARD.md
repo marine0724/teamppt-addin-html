@@ -1,14 +1,16 @@
 # 🗺️ TEAMPPT 개발 진행 보드
 
-> **▶ 다음 세션 시작점:** **리디자인 Phase 3 — subagent-driven 실행 중. Task A·B 완료(`5d4ff78`·`e309761`), Task C(ConceptFitScorer)부터 재개.** 설계 spec 완료·커밋(`910fe60`) — brainstorming ✅ 종료, 스코프 3개 확정(본문=패턴그룹 / 두 배지=둘 다 계산(컨셉적합 프록시, LLM 비전 designConcept는 Phase 4/5 이월) / Phase 3 끝점=추천 카드까지). 스펙: `docs/superpowers/specs/2026-06-26-redesign-phase3-box-recommendation-design.md`(모델·effort 배분표 A~I 포함). 그 표를 Task DAG(의존·병렬·subagent 모델 지정)로 확정 → subagent-driven 실행. 통합(머지/PR) 결정도.
+> **▶ 다음 세션 시작점:** **Phase 3 Task I — PPT 수동검증(사용자) → main 직접 머지 → GLM-Flash provider swap 실행.** Phase 3 Task A~H 전부 커밋 완료(`c40d5ae`), 빌드 ✅ (오류 0). 배치 버튼은 Phase 4로 이월 확정. GLM 플랜 작성됨: `docs/superpowers/plans/2026-06-27-glm-flash-provider-swap.md` (Task 1~7, subagent-driven). Phase 3 머지 후 바로 GLM 플랜 실행.
 
 > 이 파일 하나만 열어두면 "지금 어디서 뭘 하는지" 보입니다. Claude가 매 세션 함께 유지.
 > **기록용 아카이브가 아니라 "지금 여기" 작업 보드.** 끝난 잎(Task)은 지우고 교체, 숲·나무 단위는 끝날 때까지 유지. (규칙: CLAUDE.md)
 > 계층: **나라 > 대지 > 숲 > 나무 > 잎** (2026-06-22 재정립)
-> 최종 갱신: 2026-06-26 · 현재 작업: **리디자인 Phase 3 구현 중(subagent-driven)** — 플랜 확정·커밋(`e51eb55`). Task A·B 완료(`5d4ff78`·`e309761`), Task C부터. 원장 `.superpowers/sdd/progress.md`. Phase 2(컨셉3) 완전 종료 ✅, Phase 1 ✅. 독백+병목진단·B1·R1·R2 완료.
+> 최종 갱신: 2026-06-27 · 현재 작업: **Phase 3 Task I(PPT 수동검증 + main 머지) + GLM-Flash provider swap 준비.** Phase 3 Task A~H 완료(`c40d5ae`), 빌드 ✅. 배치 기능은 Phase 4 이월 확정. GLM 플랜 확정(`docs/superpowers/plans/2026-06-27-glm-flash-provider-swap.md`).
 
 ### ▶ 다음 작업
-**리디자인 Phase 3 (박스별 덱 추천)** — 설계 ✅ → `superpowers:writing-plans`로 Task DAG 작성 → subagent-driven 실행. 스펙 `2026-06-26-redesign-phase3-box-recommendation-design.md`(스코프 3개 확정 + 모델·effort 배분표 A~I). Phase 2가 저장한 `_selectedConcept`를 소비해 박스별(표지·공통header·본문패턴·엔드) 추천 + 두 배지(재료적합·컨셉적합, 둘 다 계산). 통합(머지/PR) 결정도 이번 세션에서. (Phase 1 비차단 폴리시 2건은 데모 임박 시 먼저: ① 실패 시 _emptyState 복원 ② 실행 중 덱 바 dim. Phase 2 UX 카피 폴리시: 확정 배너 "진행할게요" → Phase 3 적용이 붙기 전엔 "다음 단계에서 반영돼요" 식으로 조정 권장.)
+1. **PPT 수동검증(사용자)** — "📂 리디자인" 바 → 초안 진입 → 컨셉 3카드 선택 → 박스카드 자동 표시 + 두 배지 확인
+2. **main 직접 머지** — 검증 통과 후 `feat/asset-combination-recommendation` → `main` 머지
+3. **GLM-Flash provider swap** — 플랜 `docs/superpowers/plans/2026-06-27-glm-flash-provider-swap.md`, Task 1~7 subagent-driven. 생성 LLM 전부 z.ai 무료 GLM-Flash로 전환, 임베딩만 Gemini 유지, `api-keys.json`의 `provider` 한 줄로 Gemini 즉시 복귀 가능한 구조.
 
 ---
 
@@ -54,9 +56,11 @@ Phase: 0 두유사도 ──▶ 1 파일진입+덱구조 ──▶ 2 컨셉3 ─
 > **왜:** Phase 2가 저장한 `_selectedConcept`(styleTags/colors/fonts)를 소비해, 구조 박스(표지·본문공통헤더·본문 슬라이드별·엔드)마다 적합 에셋을 추천·배치. 단일 슬라이드 추천(Route A, 검증됨)을 **덱 전체로 일반화**. 두 유사도(재료 적합도 / 디자인·컨셉)로 추천 품질 검수 — 점수가 낮으면 에셋 탓인지 데이터 설계 탓인지 가린다.
 > 설계: 스펙 `2026-06-26-redesign-phase3-box-recommendation-design.md`. 재사용 = `RecommendationService`/`CombinationCandidateProvider`/`CombinationRecommender`/`MaterialFitScorer`(Route A), `DeckStructure`(Phase 1), `_selectedConcept`·`ConceptResolver`(Phase 2). 신규 = `BodyPatternClusterer`/`DeckBoxPlanner`/`ConceptFitScorer`(순수·TDD)·`DeckSlideImageExporter`·`DeckRecommendationOrchestrator` + 박스카드 UI. **설계 ✅ → `superpowers:writing-plans` → subagent-driven.**
 
-### 🍃 잎 — Phase 3 — **subagent-driven 실행 중 (Task A·B ✅, C부터)**
+### 🍃 잎 — Phase 3 — **Task I: PPT 수동검증 대기 (사용자)**
 
-> 플랜: `docs/superpowers/plans/2026-06-26-redesign-phase3-box-recommendation.md` (커밋 `e51eb55`). 진행 원장: `.superpowers/sdd/progress.md`. 통합 결정: Task I 게이트 후 main 직접 머지 (확정). Task A(모델 스캐폴딩, `5d4ff78`)·B(BodyPatternClusterer TDD 5/5, `e309761`) 완료·리뷰 clean. **다음 = Task C(ConceptFitScorer, sonnet TDD)부터** → D·E·F → G(opus) → H → I.
+> Task A~H 전부 커밋(`5d4ff78`~`c40d5ae`), 통합 리뷰 READY TO MERGE (Critical/Important 0). 빌드 ✅. **남은 것: ① PPT 수동검증(사용자) → ② main 직접 머지.** "이 조합으로 배치" 버튼은 Phase 4 이월 확정.
+>
+> **다음 나무 — GLM-Flash provider swap:** 플랜 `docs/superpowers/plans/2026-06-27-glm-flash-provider-swap.md` (Task 1~7). Phase 3 머지 직후 실행.
 
 > **빌드/테스트 절차(이번 세션 확립):** 새 .cs는 `TeampptAddin.csproj`의 `<Compile Include>`에 **수동 등록 필수**(old-style csproj). 단위테스트 = 관리자 MSBuild 솔루션 빌드(`/p:RegisterForComInterop=false`) → `dotnet test --no-build -p:BuildProjectReferences=false --filter`. (플랜의 "dotnet test 1순위"는 단독으론 NuGet 참조 못 풀어 실패.)
 
@@ -70,10 +74,9 @@ Phase: 0 두유사도 ──▶ 1 파일진입+덱구조 ──▶ 2 컨셉3 ─
 
 ```
 PROGRESS-BOARD.md를 먼저 읽어줘.
-리디자인 Phase 3(박스별 덱 추천) — subagent-driven 실행 중. Task A·B 완료(5d4ff78·e309761, 리뷰 clean). Task C(ConceptFitScorer)부터 재개.
-플랜: docs/superpowers/plans/2026-06-26-redesign-phase3-box-recommendation.md. 원장: .superpowers/sdd/progress.md.
-잔여 DAG: C(sonnet TDD)·D·E·F → G(opus) → H(sonnet) → I(opus 게이트). 통합=main 직접 머지(확정).
-superpowers:subagent-driven-development 스킬로 Task C부터 순차 실행 계속해줘. 모델 배분: 구현 C/D/E/F/H=sonnet, G/I=opus. 리뷰 C/D/F=sonnet, E/G/H/I=opus.
+Phase 3 Task A~H 완료, 빌드 ✅. 다음: PPT 수동검증 완료됐으면 main 직접 머지 후 GLM-Flash provider swap 플랜 실행.
+GLM 플랜: docs/superpowers/plans/2026-06-27-glm-flash-provider-swap.md (Task 1~7, subagent-driven).
+superpowers:subagent-driven-development 스킬로 Task 1부터 실행해줘.
 ```
 
 ## 🐛 버그 / 📋 요구사항 (다음 세션)
