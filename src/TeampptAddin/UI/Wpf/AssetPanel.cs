@@ -1126,7 +1126,59 @@ namespace TeampptAddin
             });
             foreach (var box in deck.Boxes)
                 _chatStack.Children.Add(BuildBoxRecommendationCard(box, deck.Concept));
+            _chatStack.Children.Add(BuildDeckAssembleButton());
             _chatScroll.ScrollToBottom();
+        }
+
+        private Border BuildDeckAssembleButton()
+        {
+            var border = new Border
+            {
+                Background = ThemeResources.BgChip, CornerRadius = new CornerRadius(10),
+                Margin = new Thickness(12, 8, 12, 8), Padding = new Thickness(12, 10, 12, 10),
+                Cursor = System.Windows.Input.Cursors.Hand,
+                Child = new TextBlock
+                {
+                    Text = "이 추천으로 덱 조립 ▶",
+                    FontSize = 12, FontWeight = FontWeights.SemiBold,
+                    Foreground = new SolidColorBrush(Color.FromRgb(96, 165, 250)),
+                    FontFamily = ThemeResources.FontBase,
+                    HorizontalAlignment = HorizontalAlignment.Center
+                }
+            };
+            border.MouseLeftButtonUp += async (s, e) => await RunDeckAssembleAsync();
+            return border;
+        }
+
+        private async Task RunDeckAssembleAsync()
+        {
+            var deck = _lastDeckRecommendation;
+            if (deck == null || _remoteCache == null) return;
+            if (_redesignRunning) return;
+            _redesignRunning = true;
+
+            try
+            {
+                AddAiBubble("빈 템플릿 덱을 조립할게요…");
+                var result = await DeckAssembler.AssembleAsync(
+                    deck, _remoteCache,
+                    msg => Dispatcher.Invoke(() => AddAiBubble(msg)));
+
+                if (result.Warnings.Count > 0)
+                    AddAiBubble($"경고 {result.Warnings.Count}건: {string.Join(", ", result.Warnings)}");
+
+                AddAiBubble($"덱 조립 완료! {result.SlideCount}장이 생성됐어요.");
+            }
+            catch (Exception ex)
+            {
+                AddAiBubble($"덱 조립 중 오류: {ex.Message}");
+                Logger.Log($"[DeckAssemble] 실패: {ex}");
+            }
+            finally
+            {
+                _redesignRunning = false;
+                _chatScroll.ScrollToBottom();
+            }
         }
 
         private Border BuildBoxRecommendationCard(BoxRecommendation box, DesignConcept concept)
