@@ -64,6 +64,11 @@ namespace TeampptAddin
         private DesignConcept _selectedConcept;
         private bool _conceptRunning;
         private bool _deckRunning;
+        private DeckRecommendationOrchestrator _deckRecommend;
+        private List<DraftProfile> _deckProfiles;
+        private string _deckPath;
+        private bool _deckRecoRunning;
+        private DeckRecommendation _lastDeckRecommendation;
         private CombinationRecommendation _lastRecommendation;
         private RecommendationResult _lastRecoResult;
         private string _lastResultPng;
@@ -758,6 +763,8 @@ namespace TeampptAddin
                 var structure = await _deckStructure.AnalyzeAsync(profiles);   // STA 유지 — ConfigureAwait(false) 금지
                 _chatStack.Children.Add(BuildStructureBox(structure));
                 _lastStructure = structure;
+                _deckProfiles = profiles;
+                _deckPath = dlg.FileName;
                 _selFeeling = null; _selUsage = null; _selectedConcept = null;
                 if (_conceptSuggester != null)
                     _chatStack.Children.Add(BuildConceptQuestionCard());
@@ -1036,6 +1043,7 @@ namespace TeampptAddin
             }
             _chatStack.Children.Add(BuildConceptConfirmBanner(concept));
             _chatScroll.ScrollToBottom();
+            _ = RunDeckRecommendAsync();
             Logger.Log($"[ConceptSuggest] 선택: {concept.Id} {concept.Name}");
         }
 
@@ -1076,6 +1084,125 @@ namespace TeampptAddin
                 Child = p
             };
         }
+
+        private async Task RunDeckRecommendAsync()
+        {
+            if (_deckRecoRunning) return;
+            if (_deckRecommend == null) { AddAiBubble("박스별 추천은 Supabase·Gemini 설정이 있어야 동작해요."); return; }
+            if (_deckProfiles == null || _lastStructure == null || _selectedConcept == null)
+            { AddAiBubble("먼저 초안을 열고 컨셉을 선택해주세요."); return; }
+
+            _deckRecoRunning = true;
+            try
+            {
+                AddAiBubble("선택한 컨셉으로 박스별 에셋을 추천할게요.");
+                var deckReco = await _deckRecommend.RecommendDeckAsync(
+                    _deckPath, _deckProfiles, _lastStructure, _selectedConcept,
+                    msg => Dispatcher.Invoke(() => AddAiBubble(msg)));
+                _lastDeckRecommendation = deckReco;
+                ShowDeckRecommendation(deckReco);
+            }
+            catch (Exception ex)
+            {
+                AddAiBubble($"박스별 추천 중 오류: {ex.Message}");
+                Logger.Log($"[DeckReco] 실패: {ex}");
+            }
+            finally { _deckRecoRunning = false; _chatScroll.ScrollToBottom(); }
+        }
+
+        private static readonly Dictionary<string, string> BoxKindLabel = new Dictionary<string, string>
+        {
+            ["cover"] = "표지", ["header"] = "공통 헤더", ["body"] = "본문",
+            ["toc"] = "목차", ["section"] = "간지", ["end"] = "마무리"
+        };
+
+        private void ShowDeckRecommendation(DeckRecommendation deck)
+        {
+            if (deck == null || deck.Boxes.Count == 0) { AddAiBubble("추천 결과가 없어요."); return; }
+            _chatStack.Children.Add(new TextBlock
+            {
+                Text = "박스별 추천", FontSize = 11, FontWeight = FontWeights.SemiBold,
+                Foreground = ThemeResources.TextSub, Margin = new Thickness(12, 8, 0, 2)
+            });
+            foreach (var box in deck.Boxes)
+                _chatStack.Children.Add(BuildBoxRecommendationCard(box, deck.Concept));
+            _chatScroll.ScrollToBottom();
+        }
+
+        private Border BuildBoxRecommendationCard(BoxRecommendation box, DesignConcept concept)
+        {
+            var kindLabel = BoxKindLabel.TryGetValue(box.Plan.BoxKind, out var kl) ? kl : box.Plan.BoxKind;
+            var col = new StackPanel();
+            col.Children.Add(new TextBlock
+            {
+                Text = box.Plan.BoxKind == "body" ? $"{kindLabel} · {box.Plan.Label}" : kindLabel,
+                FontSize = 11, FontWeight = FontWeights.Bold,
+                Foreground = ThemeResources.TextAccent, FontFamily = ThemeResources.FontBase
+            });
+
+            var primary = PrimaryAsset(box.Recommendation);
+            if (primary == null)
+            {
+                col.Children.Add(new TextBlock
+                {
+                    Text = "미충족 — 적합한 에셋 없음", FontSize = 11,
+                    Foreground = ThemeResources.TextSub, Margin = new Thickness(0, 4, 0, 0)
+                });
+            }
+            else
+            {
+                col.Children.Add(new TextBlock
+                {
+                    Text = primary.Name ?? primary.File ?? "에셋", FontSize = 12, FontWeight = FontWeights.SemiBold,
+                    Foreground = ThemeResources.TextMain, FontFamily = ThemeResources.FontBase,
+                    TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 3, 0, 0)
+                });
+
+                var sw = new WrapPanel { Margin = new Thickness(0, 5, 0, 0) };
+                foreach (var c in ConceptResolver.ResolveColors(primary, concept))
+                    sw.Children.Add(new Border
+                    {
+                        Width = 18, Height = 18, CornerRadius = new CornerRadius(4), Margin = new Thickness(0, 0, 5, 0),
+                        BorderBrush = ThemeResources.BorderCard, BorderThickness = new Thickness(1),
+                        Background = ConceptSwatch(c.Value)
+                    });
+                if (sw.Children.Count > 0) col.Children.Add(sw);
+
+                var fonts = ConceptResolver.ResolveFonts(primary, concept);
+                if (fonts.Count > 0)
+                    col.Children.Add(new TextBlock
+                    {
+                        Text = "글꼴 · " + string.Join(" / ", fonts.Select(f => f.Family).Distinct()),
+                        FontSize = 10, Foreground = ThemeResources.TextSub, Margin = new Thickness(0, 4, 0, 0)
+                    });
+            }
+
+            var badges = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
+            badges.Children.Add(Badge($"재료적합 {box.MaterialFit?.Score ?? 0}"));
+            badges.Children.Add(Badge($"컨셉적합 {box.ConceptFit?.Score ?? 0}"));
+            col.Children.Add(badges);
+
+            return new Border
+            {
+                Background = ThemeResources.BgChip, CornerRadius = new CornerRadius(10),
+                Margin = new Thickness(12, 4, 12, 4), Padding = new Thickness(12, 10, 12, 10), Child = col
+            };
+        }
+
+        private static HeaderAsset PrimaryAsset(CombinationRecommendation rec)
+            => rec?.Slide?.Asset ?? rec?.Header?.Asset ?? rec?.Layout?.Asset
+               ?? rec?.Components?.FirstOrDefault(s => s?.Asset != null)?.Asset;
+
+        private Border Badge(string text) => new Border
+        {
+            Background = ThemeResources.BgCategoryActive, CornerRadius = new CornerRadius(8),
+            Margin = new Thickness(0, 0, 6, 0), Padding = new Thickness(8, 3, 8, 3),
+            Child = new TextBlock
+            {
+                Text = text, FontSize = 10, FontWeight = FontWeights.SemiBold,
+                Foreground = ThemeResources.TextAccent, FontFamily = ThemeResources.FontBase
+            }
+        };
 
         private async void RedesignBarClick(object sender, MouseButtonEventArgs e)
         {
@@ -3222,7 +3349,7 @@ namespace TeampptAddin
             return new StyleConfig { Palettes = palettes, Fonts = fonts };
         }
 
-        public void InitAi(IAiService aiService, StyleConfig styles, RemoteAssetCache remoteCache = null, RedesignService redesign = null, RecommendationService recommend = null, DeckStructureService deckStructure = null, ConceptSuggester conceptSuggester = null)
+        public void InitAi(IAiService aiService, StyleConfig styles, RemoteAssetCache remoteCache = null, RedesignService redesign = null, RecommendationService recommend = null, DeckStructureService deckStructure = null, ConceptSuggester conceptSuggester = null, DeckRecommendationOrchestrator deckRecommend = null)
         {
             _aiService = aiService;
             _styleConfig = styles;
@@ -3231,6 +3358,7 @@ namespace TeampptAddin
             _recommend = recommend;
             _deckStructure = deckStructure;
             _conceptSuggester = conceptSuggester;
+            _deckRecommend = deckRecommend;
             PopulateStylePanel();
         }
 
