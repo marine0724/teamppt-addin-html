@@ -71,9 +71,10 @@ Phase: 0 두유사도 ──▶ 1 파일진입+덱구조 ──▶ 2 컨셉3 ─
 
 ```
 PROGRESS-BOARD.md를 먼저 읽어줘.
-Phase 3 Task A~H 완료, 빌드 ✅. 다음: PPT 수동검증 완료됐으면 main 직접 머지 후 GLM-Flash provider swap 플랜 실행.
-GLM 플랜: docs/superpowers/plans/2026-06-27-glm-flash-provider-swap.md (Task 1~7, subagent-driven).
-superpowers:subagent-driven-development 스킬로 Task 1부터 실행해줘.
+Phase 3 완전 종료(PPT 수동검증 통과, main 머지 31deab4). 다음 = GLM-Flash provider swap.
+플랜: docs/superpowers/plans/2026-06-27-glm-flash-provider-swap.md (Task 1~7, subagent-driven).
+superpowers:subagent-driven-development 스킬로 Task 1(AiConfig + AiServiceFactory 골격)부터 순차 실행해줘.
+모델 배분: 순수 로직 Task 1~4 = sonnet TDD, Task 5~6 = sonnet, Task 7(라이브 검증) = opus.
 ```
 
 ## 🐛 버그 / 📋 요구사항 (다음 세션)
