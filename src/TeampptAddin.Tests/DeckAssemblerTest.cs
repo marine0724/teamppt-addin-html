@@ -164,5 +164,70 @@ namespace TeampptAddin.Tests
             Assert.Single(sorted);
             Assert.Equal("slide", sorted[0].Asset.Kind);
         }
+
+        [Fact]
+        public void BuildSlideOrder_TocAndSection_TreatedAsSlideBox()
+        {
+            var deck = new DeckRecommendation
+            {
+                Boxes = new List<BoxRecommendation>
+                {
+                    new BoxRecommendation
+                    {
+                        Plan = new BoxPlan { BoxKind = "cover", Label = "표지", CoveredSlideIndexes = new List<int>{1} },
+                        Recommendation = new CombinationRecommendation { Slide = Slot("cover", "slide") }
+                    },
+                    new BoxRecommendation
+                    {
+                        Plan = new BoxPlan { BoxKind = "toc", Label = "목차", CoveredSlideIndexes = new List<int>{2} },
+                        Recommendation = new CombinationRecommendation { Slide = Slot("toc", "slide") }
+                    },
+                    new BoxRecommendation
+                    {
+                        Plan = new BoxPlan { BoxKind = "header", Label = "공통 헤더", CoveredSlideIndexes = new List<int>{3,4} },
+                        Recommendation = new CombinationRecommendation { Header = Slot("header", "header") }
+                    },
+                    new BoxRecommendation
+                    {
+                        Plan = new BoxPlan
+                        {
+                            BoxKind = "body", Label = "본문 (2장)",
+                            CoveredSlideIndexes = new List<int>{3,4},
+                            Signature = "t1i0b0c0|col1"
+                        },
+                        Recommendation = new CombinationRecommendation
+                        {
+                            Layout = Slot("layout", "layout")
+                        }
+                    },
+                    new BoxRecommendation
+                    {
+                        Plan = new BoxPlan { BoxKind = "section", Label = "간지", CoveredSlideIndexes = new List<int>{5} },
+                        Recommendation = new CombinationRecommendation { Slide = Slot("section", "slide") }
+                    },
+                    new BoxRecommendation
+                    {
+                        Plan = new BoxPlan { BoxKind = "end", Label = "마무리", CoveredSlideIndexes = new List<int>{6} },
+                        Recommendation = new CombinationRecommendation { Slide = Slot("end", "slide") }
+                    }
+                }
+            };
+            var order = DeckAssembler.BuildSlideOrder(deck);
+
+            // cover + toc + body대표 + body복제 + section + end = 6
+            Assert.Equal(6, order.Count);
+            Assert.Equal("cover", order[0].BoxKind);
+            Assert.Equal("toc", order[1].BoxKind);
+            Assert.Equal("body", order[2].BoxKind);
+            Assert.True(order[2].IsRepresentative);
+            Assert.Equal("body", order[3].BoxKind);
+            Assert.False(order[3].IsRepresentative);
+            Assert.Equal("section", order[4].BoxKind);
+            Assert.Equal("end", order[5].BoxKind);
+
+            // toc/section = slide-box → Slide 슬롯 1개씩
+            Assert.Single(order[1].Slots);
+            Assert.Single(order[4].Slots);
+        }
     }
 }
