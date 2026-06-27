@@ -41,11 +41,20 @@ namespace TeampptAddin
             return result;
         }
 
-        public async Task<Dictionary<string, List<HeaderAsset>>> GetCandidatesAsync(DraftUnderstanding u, int topK = 5)
+        public static string BuildQuery(DraftUnderstanding u, DesignConcept concept)
+        {
+            var countsText = string.Join(", ", u.Counts.Select(kv => $"{kv.Key}:{kv.Value}"));
+            var styleSuffix = (concept?.StyleTags != null && concept.StyleTags.Count > 0)
+                ? $" | 스타일:{string.Join(",", concept.StyleTags)}"
+                : "";
+            return $"{u.Purpose} | {u.MatchIntent}{styleSuffix} ({countsText})";
+        }
+
+        public async Task<Dictionary<string, List<HeaderAsset>>> GetCandidatesAsync(
+            DraftUnderstanding u, DesignConcept concept = null, int topK = 5)
         {
             var kinds = NeededKinds(u.NeededCombination);
-            var countsText = string.Join(", ", u.Counts.Select(kv => $"{kv.Key}:{kv.Value}"));
-            var query = $"{u.Purpose} | {u.MatchIntent} ({countsText})";
+            var query = BuildQuery(u, concept);
 
             try
             {
