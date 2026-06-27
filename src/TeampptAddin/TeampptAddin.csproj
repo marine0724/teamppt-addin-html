@@ -146,6 +146,7 @@
     <Compile Include="Services\MaterialFitScorer.cs" />
     <Compile Include="Services\BodyPatternClusterer.cs" />
     <Compile Include="Services\ConceptFitScorer.cs" />
+    <Compile Include="Services\DeckBoxPlanner.cs" />
     <Compile Include="Services\RecommendationService.cs" />
     <Compile Include="Services\UpdateService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
